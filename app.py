@@ -1152,11 +1152,13 @@ if uploaded_file is not None and hh_areas is not None:
                         break
                 
                 if vacancy_col:
-                    # Формируем данные для экспорта - БЕЗ удаления дубликатов по результату HH
-                    # Исключаем только дубликаты по исходному названию и не найденные
+                    # Формируем данные для экспорта
+                    # В режиме вакансий оставляем ВСЕ строки (включая дубликаты по HH)
+                    # Исключаем только не найденные и пустые значения
                     export_df = final_result_df[
-                        (~final_result_df['Статус'].str.contains('Дубликат \(исходное название\)', na=False)) & 
-                        (final_result_df['Итоговое гео'].notna())
+                        (final_result_df['Итоговое гео'].notna()) &
+                        (~final_result_df['Статус'].str.contains('Не найдено', na=False)) &
+                        (~final_result_df['Статус'].str.contains('Пустое значение', na=False))
                     ].copy()
                     
                     # Получаем уникальные вакансии
