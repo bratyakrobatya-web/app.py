@@ -900,10 +900,12 @@ if uploaded_file is not None and hh_areas is not None:
                 # Если режим еще не выбран, останавливаем дальнейшую обработку
                 if st.session_state.export_mode is None:
                     st.info("👆 Выберите режим экспорта для продолжения")
-                    st.stop()  
-              
-            st.markdown("---")  
-            st.subheader("📊 Результаты")  
+                    st.stop()
+            
+            # Стандартные блоки показываем только если НЕ режим "split"
+            if not (st.session_state.get('has_vacancy_mode', False) and st.session_state.export_mode == "split"):
+                st.markdown("---")  
+                st.subheader("📊 Результаты")  
               
             col1, col2, col3, col4, col5, col6 = st.columns(6)  
               
@@ -1087,59 +1089,59 @@ if uploaded_file is not None and hh_areas is not None:
                     changed_count = len(st.session_state.manual_selections) - no_match_count  
                       
                     st.success(f"✅ Внесено изменений: {changed_count} | ❌ Отмечено как 'Нет совпадения': {no_match_count}")  
-            
-            # ============================================
-            # БЛОК: ДОБАВЛЕНИЕ ЛЮБОГО ГОРОДА
-            # ============================================
-            st.markdown("---")
-            st.subheader("➕ Добавить дополнительные города")
-            st.info("Добавленные города будут использовать значения из последней строки исходного файла")
-            
-            col1, col2, col3 = st.columns([3, 1, 1])
-            
-            with col1:
-                # Получаем только города России из справочника
-                russia_cities = []
-                for city_name, city_info in hh_areas.items():
-                    if city_info.get('root_parent_id') == '113':
-                        russia_cities.append(city_name)
                 
-                selected_city = st.selectbox(
-                    "Выберите город:",
-                    options=sorted(russia_cities),
-                    key="city_selector",
-                    help="Выберите город из справочника HH.ru"
-                )
-            
-            with col2:
-                if st.button("➕ Добавить", use_container_width=True, type="primary"):
-                    if selected_city and selected_city not in st.session_state.added_cities:
-                        st.session_state.added_cities.append(selected_city)
-                        st.success(f"✅ {selected_city}")
-                    elif selected_city in st.session_state.added_cities:
-                        st.warning(f"⚠️ Уже добавлен")
-            
-            with col3:
-                if st.button("🗑️ Очистить", use_container_width=True):
-                    st.session_state.added_cities = []
-                    st.rerun()
-            
-            # Показываем список добавленных городов
-            if st.session_state.added_cities:
-                st.success(f"📋 Добавлено городов: **{len(st.session_state.added_cities)}**")
+                # ============================================
+                # БЛОК: ДОБАВЛЕНИЕ ЛЮБОГО ГОРОДА (только для НЕ split режима)
+                # ============================================
+                st.markdown("---")
+                st.subheader("➕ Добавить дополнительные города")
+                st.info("Добавленные города будут использовать значения из последней строки исходного файла")
                 
-                # Показываем города в компактном виде
-                added_cities_text = ", ".join(st.session_state.added_cities)
-                st.text_area(
-                    "Список добавленных городов:",
-                    value=added_cities_text,
-                    height=100,
-                    disabled=True,
-                    label_visibility="collapsed"
-                )
-              
-            st.markdown("---")  
-            st.subheader("💾 Скачать результаты")  
+                col1, col2, col3 = st.columns([3, 1, 1])
+                
+                with col1:
+                    # Получаем только города России из справочника
+                    russia_cities = []
+                    for city_name, city_info in hh_areas.items():
+                        if city_info.get('root_parent_id') == '113':
+                            russia_cities.append(city_name)
+                    
+                    selected_city = st.selectbox(
+                        "Выберите город:",
+                        options=sorted(russia_cities),
+                        key="city_selector",
+                        help="Выберите город из справочника HH.ru"
+                    )
+                
+                with col2:
+                    if st.button("➕ Добавить", use_container_width=True, type="primary"):
+                        if selected_city and selected_city not in st.session_state.added_cities:
+                            st.session_state.added_cities.append(selected_city)
+                            st.success(f"✅ {selected_city}")
+                        elif selected_city in st.session_state.added_cities:
+                            st.warning(f"⚠️ Уже добавлен")
+                
+                with col3:
+                    if st.button("🗑️ Очистить", use_container_width=True):
+                        st.session_state.added_cities = []
+                        st.rerun()
+                
+                # Показываем список добавленных городов
+                if st.session_state.added_cities:
+                    st.success(f"📋 Добавлено городов: **{len(st.session_state.added_cities)}**")
+                    
+                    # Показываем города в компактном виде
+                    added_cities_text = ", ".join(st.session_state.added_cities)
+                    st.text_area(
+                        "Список добавленных городов:",
+                        value=added_cities_text,
+                        height=100,
+                        disabled=True,
+                        label_visibility="collapsed"
+                    )
+                  
+                st.markdown("---")  
+                st.subheader("💾 Скачать результаты")  
               
             final_result_df = result_df.copy()
             
@@ -1214,6 +1216,11 @@ if uploaded_file is not None and hh_areas is not None:
                                 
                                 editable_vacancy_rows = vacancy_df[vacancy_df['Совпадение %'] <= 90].copy()
                                 
+                                # Убираем дубликаты по исходному названию для редактирования
+                                if len(editable_vacancy_rows) > 0:
+                                    editable_vacancy_rows['_normalized_original'] = editable_vacancy_rows['Исходное название'].apply(normalize_city_name)
+                                    editable_vacancy_rows = editable_vacancy_rows.drop_duplicates(subset=['_normalized_original'], keep='first')
+                                
                                 if len(editable_vacancy_rows) > 0:
                                     st.warning(f"⚠️ Найдено **{len(editable_vacancy_rows)}** городов для проверки")
                                     
@@ -1283,6 +1290,61 @@ if uploaded_file is not None and hh_areas is not None:
                                 else:
                                     st.success("✅ Все города распознаны корректно!")
                                 
+                                # ============================================
+                                # БЛОК: ДОБАВЛЕНИЕ ГОРОДОВ ДЛЯ ЭТОЙ ВАКАНСИИ
+                                # ============================================
+                                st.markdown("---")
+                                st.markdown("#### ➕ Добавить дополнительные города")
+                                
+                                # Инициализируем список добавленных городов для каждой вакансии
+                                vacancy_key = f"added_cities_{vacancy}"
+                                if vacancy_key not in st.session_state:
+                                    st.session_state[vacancy_key] = []
+                                
+                                col_add1, col_add2, col_add3 = st.columns([3, 1, 1])
+                                
+                                with col_add1:
+                                    # Получаем только города России
+                                    russia_cities = []
+                                    for city_name, city_info in hh_areas.items():
+                                        if city_info.get('root_parent_id') == '113':
+                                            russia_cities.append(city_name)
+                                    
+                                    selected_add_city = st.selectbox(
+                                        "Выберите город:",
+                                        options=sorted(russia_cities),
+                                        key=f"city_selector_{vacancy}_{tab_idx}",
+                                        help="Выберите город из справочника HH.ru"
+                                    )
+                                
+                                with col_add2:
+                                    if st.button("➕ Добавить", use_container_width=True, type="secondary", key=f"add_btn_{vacancy}_{tab_idx}"):
+                                        if selected_add_city and selected_add_city not in st.session_state[vacancy_key]:
+                                            st.session_state[vacancy_key].append(selected_add_city)
+                                            st.success(f"✅ {selected_add_city}")
+                                        elif selected_add_city in st.session_state[vacancy_key]:
+                                            st.warning(f"⚠️ Уже добавлен")
+                                
+                                with col_add3:
+                                    if st.button("🗑️ Очистить", use_container_width=True, key=f"clear_btn_{vacancy}_{tab_idx}"):
+                                        st.session_state[vacancy_key] = []
+                                        st.rerun()
+                                
+                                # Показываем список добавленных городов
+                                if st.session_state[vacancy_key]:
+                                    st.info(f"📋 Добавлено городов: **{len(st.session_state[vacancy_key])}**")
+                                    added_text = ", ".join(st.session_state[vacancy_key])
+                                    st.text_area(
+                                        "Список:",
+                                        value=added_text,
+                                        height=80,
+                                        disabled=True,
+                                        label_visibility="collapsed",
+                                        key=f"added_list_{vacancy}_{tab_idx}"
+                                    )
+                                
+                                st.markdown("---")
+                                
                                 # Формируем итоговый DataFrame для этой вакансии
                                 vacancy_final_df = vacancy_df.copy()
                                 
@@ -1309,6 +1371,17 @@ if uploaded_file is not None and hh_areas is not None:
                                 for col in original_cols[1:]:
                                     if col != vacancy_col and col in vacancy_final_df.columns:
                                         output_vacancy_df[col] = vacancy_final_df[col].values
+                                
+                                # Добавляем дополнительные города для этой вакансии
+                                vacancy_key = f"added_cities_{vacancy}"
+                                if vacancy_key in st.session_state and st.session_state[vacancy_key]:
+                                    # Получаем последнюю строку для значений других столбцов
+                                    if len(output_vacancy_df) > 0:
+                                        last_row_values = output_vacancy_df.iloc[-1].tolist()
+                                        
+                                        for add_city in st.session_state[vacancy_key]:
+                                            new_row = [add_city] + last_row_values[1:]
+                                            output_vacancy_df.loc[len(output_vacancy_df)] = new_row
                                 
                                 # Удаляем дубликаты по городу
                                 output_vacancy_df['_normalized'] = output_vacancy_df[original_cols[0]].apply(normalize_city_name)
