@@ -128,6 +128,7 @@ PREFERRED_MATCHES = {
     'железногорск': 'Железногорск (Красноярский край)',
     'кировск': 'Кировск (Ленинградская область)',
     'истра': 'Истра (Московская область)',
+    'красногорск': 'Красногорск (Московская область)',
 }
 
 # ============================================  
@@ -368,7 +369,7 @@ def extract_city_and_region(text):
     for prefix in city_prefixes:
         # Проверяем с пробелом: "г. Москва"
         if text_cleaned.lower().startswith(prefix + ' '):
-            text_cleaned = text_cleaned[len(prefix):].strip()
+            text_cleaned = text_cleaned[len(prefix) + 1:].strip()  # +1 для пробела
             break
         # Проверяем без пробела: "г.Москва"
         elif text_cleaned.lower().startswith(prefix):
