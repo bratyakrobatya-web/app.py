@@ -117,6 +117,18 @@ FEDERAL_DISTRICTS = {
     ]
 }
 
+# ============================================
+# СПРАВОЧНИК ПРЕДПОЧТИТЕЛЬНЫХ СОВПАДЕНИЙ
+# ============================================
+PREFERRED_MATCHES = {
+    'иваново': 'Иваново (Ивановская область)',
+    'киров': 'Киров (Кировская область)',
+    'подольск': 'Подольск (Московская область)',
+    'троицк': 'Троицк (Москва)',
+    'железногорск': 'Железногорск (Красноярский край)',
+    'кировск': 'Кировск (Ленинградская область)'
+}
+
 # ============================================  
 # ФУНКЦИИ  
 # ============================================  
@@ -253,7 +265,7 @@ def get_all_cities(hh_areas):
         normalize_city_name('Чукотский АО'),
         normalize_city_name('Ямало-Ненецкий АО'),
         normalize_city_name('Ненецкий АО'),
-        normalize_city_name('Ханты-Мансийский АО - Югра'),
+        normalize_city_name('Ханты-Мансийский АО - Yugра'),
         normalize_city_name('Еврейская АО'),
         normalize_city_name('Беловское'),
         normalize_city_name('Горькая Балка')
@@ -333,8 +345,11 @@ def normalize_region_name(text):
     return text.strip()  
 
 def extract_city_and_region(text):  
-    """Извлекает название города и региона из текста"""  
+    """Извлекает название города и региона из текста с учетом префиксов"""  
     text_lower = text.lower()  
+    
+    # Префиксы населенных пунктов
+    city_prefixes = ['г.', 'п.', 'д.', 'с.', 'пос.', 'дер.', 'село', 'город', 'поселок', 'деревня']
       
     region_keywords = [  
         'област', 'край', 'республик', 'округ',  
@@ -342,11 +357,18 @@ def extract_city_and_region(text):
         'свердлов', 'нижегород', 'новосибирск', 'тамбов',  
         'красноярск'  
     ]  
+    
+    # Удаляем префиксы в начале строки
+    text_cleaned = text.strip()
+    for prefix in city_prefixes:
+        if text_cleaned.lower().startswith(prefix):
+            text_cleaned = text_cleaned[len(prefix):].strip()
+            break
       
-    words = text.split()  
+    words = text_cleaned.split()  
       
     if len(words) == 1:  
-        return text, None  
+        return text_cleaned, None  
       
     city_words = []  
     region_words = []  
@@ -362,7 +384,7 @@ def extract_city_and_region(text):
         else:  
             city_words.append(word)  
       
-    city = ' '.join(city_words) if city_words else text  
+    city = ' '.join(city_words) if city_words else text_cleaned  
     region = ' '.join(region_words) if region_words else None  
       
     return city, region  
@@ -393,10 +415,18 @@ def get_candidates_by_word(client_city, hh_city_names, limit=20):
     return candidates[:limit]  
 
 def smart_match_city(client_city, hh_city_names, hh_areas, threshold=85):  
-    """Умное сопоставление города с сохранением кандидатов"""  
+    """Умное сопоставление города с сохранением кандидатов и учетом предпочтительных совпадений"""  
       
     city_part, region_part = extract_city_and_region(client_city)  
     city_part_lower = normalize_city_name(city_part)  
+    
+    # Проверяем предпочтительные совпадения
+    if city_part_lower in PREFERRED_MATCHES:
+        preferred_match = PREFERRED_MATCHES[city_part_lower]
+        if preferred_match in hh_city_names:
+            score = fuzz.WRatio(normalize_city_name(client_city), normalize_city_name(preferred_match))
+            word_candidates = get_candidates_by_word(client_city, hh_city_names)
+            return (preferred_match, score, 0), word_candidates
       
     word_candidates = get_candidates_by_word(client_city, hh_city_names)  
       
@@ -659,6 +689,38 @@ except Exception as e:
     hh_areas = None  
 
 # ============================================
+# БЛОК: ПРОВЕРКА ГЕО
+# ============================================
+if hh_areas:
+    st.header("🔍 Проверка гео")
+    st.info("Введите название города, чтобы найти правильное написание в справочнике HH.ru")
+    
+    col1, col2 = st.columns([3, 1])
+    
+    with col1:
+        # Получаем только города России
+        russia_cities = []
+        for city_name, city_info in hh_areas.items():
+            if city_info.get('root_parent_id') == '113':
+                russia_cities.append(city_name)
+        
+        search_geo = st.selectbox(
+            "Выберите город для проверки:",
+            options=[""] + sorted(russia_cities),
+            key="geo_checker",
+            help="Начните вводить название города"
+        )
+    
+    with col2:
+        if search_geo:
+            city_info = hh_areas[search_geo]
+            st.success("✅ Найдено")
+            st.info(f"**ID HH:** {city_info['id']}")
+            st.info(f"**Регион:** {city_info['parent']}")
+
+st.markdown("---")
+
+# ============================================
 # БЛОК: СИНХРОНИЗАТОР ГОРОДОВ
 # ============================================
 st.header("📤 Синхронизатор городов")
@@ -692,6 +754,7 @@ with st.sidebar:
     - Первый столбец - города  
     - Остальные столбцы - любые данные
     - Можно указывать область/регион  
+    - Поддерживаются префиксы: г., п., д., с.
     """)  
       
     st.markdown("---")  
@@ -715,12 +778,13 @@ with col1:
       
     with st.expander("📋 Показать пример формата файла"):  
         example_df = pd.DataFrame({  
-            'Город': ['Москва', 'Санкт-Петербург', 'Екатеринбург', 'Новосибирск'],
+            'Город': ['г. Москва', 'п. Внуковское', 'Санкт-Петербург', 'Екатеринбург'],
             'Данные 1': ['Значение 1', 'Значение 2', 'Значение 3', 'Значение 4'],
             'Данные 2': ['A', 'B', 'C', 'D']
         })  
         st.dataframe(example_df, use_container_width=True, hide_index=True)
-        st.caption("Первый столбец - города, остальные сохраняются без изменений")
+        st.caption("✅ Первый столбец - города (с префиксами г., п. и др.)")
+        st.caption("✅ Остальные столбцы сохраняются без изменений")
 
 with col2:  
     st.subheader("ℹ️ Информация")  
@@ -838,13 +902,24 @@ if uploaded_file is not None and hh_areas is not None:
               
             st.dataframe(display_df, use_container_width=True, height=400)  
               
-            editable_rows = result_df_sorted[result_df_sorted['Совпадение %'] <= 90].copy()  
+            # ИЗМЕНЕНО: Исключаем дубликаты из редактирования
+            editable_rows = result_df_sorted[
+                (result_df_sorted['Совпадение %'] <= 90) & 
+                (~result_df_sorted['Статус'].str.contains('Дубликат', na=False))
+            ].copy()  
               
             if len(editable_rows) > 0:  
                 st.markdown("---")  
                 st.subheader("✏️ Редактирование городов с совпадением ≤ 90%")  
                 st.info(f"Найдено **{len(editable_rows)}** городов, доступных для редактирования")  
                   
+                # Получаем список всех городов России для выбора
+                russia_cities_for_select = []
+                for city_name, city_info in hh_areas.items():
+                    if city_info.get('root_parent_id') == '113':
+                        russia_cities_for_select.append(city_name)
+                russia_cities_for_select = sorted(russia_cities_for_select)
+                
                 for idx, row in editable_rows.iterrows():  
                     with st.container():  
                         col1, col2, col3, col4 = st.columns([2, 3, 1, 1])  
@@ -855,8 +930,39 @@ if uploaded_file is not None and hh_areas is not None:
                         with col2:  
                             row_id = row['row_id']  
                             candidates = st.session_state.candidates_cache.get(row_id, [])  
-                              
-                            if candidates:  
+                            
+                            # ИЗМЕНЕНО: Если нет кандидатов или "не найдено", даем выбор из всего списка
+                            if not candidates or row['Статус'] == '❌ Не найдено':
+                                options = ["❌ Нет совпадения"] + russia_cities_for_select
+                                
+                                current_value = row['Итоговое гео']
+                                
+                                if row_id in st.session_state.manual_selections:
+                                    selected_value = st.session_state.manual_selections[row_id]
+                                    if selected_value == "❌ Нет совпадения":
+                                        default_idx = 0
+                                    else:
+                                        try:
+                                            default_idx = options.index(selected_value)
+                                        except ValueError:
+                                            default_idx = 0
+                                else:
+                                    default_idx = 0
+                                    if current_value and current_value in options:
+                                        default_idx = options.index(current_value)
+                                
+                                selected = st.selectbox(
+                                    "Выберите город:",
+                                    options=options,
+                                    index=default_idx,
+                                    key=f"select_{row_id}",
+                                    label_visibility="collapsed"
+                                )
+                                
+                                st.session_state.manual_selections[row_id] = selected
+                                
+                            else:
+                                # Есть кандидаты - показываем их
                                 options = ["❌ Нет совпадения"] + [f"{c[0]} ({c[1]:.1f}%)" for c in candidates]  
                                   
                                 current_value = row['Итоговое гео']  
@@ -892,16 +998,6 @@ if uploaded_file is not None and hh_areas is not None:
                                 else:  
                                     selected_city = selected.rsplit(' (', 1)[0]  
                                     st.session_state.manual_selections[row_id] = selected_city  
-                            else:  
-                                st.selectbox(  
-                                    "Нет кандидатов",  
-                                    options=["❌ Нет совпадения"],  
-                                    index=0,  
-                                    key=f"select_{row_id}",  
-                                    label_visibility="collapsed",  
-                                    disabled=True  
-                                )  
-                                st.session_state.manual_selections[row_id] = "❌ Нет совпадения"  
                           
                         with col3:  
                             st.text(f"{row['Совпадение %']}%")  
