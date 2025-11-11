@@ -900,7 +900,7 @@ if uploaded_file is not None and hh_areas is not None:
                 # Если режим еще не выбран, останавливаем дальнейшую обработку
                 if st.session_state.export_mode is None:
                     st.info("👆 Выберите режим экспорта для продолжения")
-                    return  
+                    st.stop()  
               
             st.markdown("---")  
             st.subheader("📊 Результаты")  
