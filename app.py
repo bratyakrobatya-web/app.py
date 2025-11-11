@@ -7,7 +7,7 @@ import re
 import zipfile
 from datetime import datetime
 
-# Version: 3.1.0 - Added: Multi-sheet Excel support, preview tabs, sheet processing
+# Version: 3.2.0 - Added: Tabs mode in split view with download per sheet
 
 # Настройка страницы  
 st.set_page_config(  
@@ -1364,11 +1364,124 @@ if uploaded_file is not None and hh_areas is not None:
                                     final_result_df.loc[mask, 'Изменение'] = 'Да' if check_if_changed(original, new_value) else 'Нет'  
             
             # ПРОВЕРЯЕМ РЕЖИМ РАБОТЫ
-            # Если режим split - показываем только блок редактирования по вакансиям
+            # Если режим split - показываем только блок редактирования по вакансиям/вкладкам
             if st.session_state.get('has_vacancy_mode', False) and st.session_state.export_mode == "split":
-                # РЕЖИМ: Разделение по вакансиям с редактированием
+                # РЕЖИМ: Разделение по вакансиям/вкладкам с редактированием
                 st.markdown("---")
-                st.subheader("🎯 Редактирование и выгрузка по вакансиям")
+                
+                # Определяем тип разделения: по вкладкам или по столбцу вакансий
+                if st.session_state.sheet_mode == 'tabs':
+                    # РЕЖИМ ВКЛАДОК: каждая вкладка = отдельный файл
+                    st.subheader("🎯 Редактирование и выгрузка по вкладкам")
+                    
+                    # Получаем список вкладок
+                    sheet_names = list(st.session_state.sheets_results.keys())
+                    st.success(f"📊 Найдено **{len(sheet_names)}** вкладок")
+                    
+                    # Инициализируем состояние
+                    if 'vacancy_files' not in st.session_state:
+                        st.session_state.vacancy_files = {}
+                    
+                    # Создаем вкладки для каждого листа Excel
+                    tabs = st.tabs([f"{name}" for name in sheet_names])
+                    
+                    for tab_idx, (tab, sheet_name) in enumerate(zip(tabs, sheet_names)):
+                        with tab:
+                            st.markdown(f"### 📄 {sheet_name}")
+                            
+                            # Получаем данные этой вкладки
+                            sheet_result = st.session_state.sheets_results[sheet_name]
+                            result_df_sheet = sheet_result['result_df']
+                            original_df_sheet = st.session_state.sheets_data[sheet_name]['df']
+                            
+                            st.info(f"📍 Всего строк: **{len(result_df_sheet)}**")
+                            
+                            # Показываем таблицу с редактированием (упрощенная версия без редактирования)
+                            # Формируем итоговый файл для этой вкладки
+                            output_sheet_df = result_df_sheet[
+                                (result_df_sheet['Итоговое гео'].notna()) &
+                                (~result_df_sheet['Статус'].str.contains('Не найдено', na=False)) &
+                                (~result_df_sheet['Статус'].str.contains('Пустое значение', na=False))
+                            ].copy()
+                            
+                            if len(output_sheet_df) > 0:
+                                # Берем столбцы из исходного файла
+                                original_cols = original_df_sheet.columns.tolist()
+                                final_output = pd.DataFrame()
+                                final_output[original_cols[0]] = output_sheet_df['Итоговое гео']
+                                
+                                for col in original_cols[1:]:
+                                    if col in original_df_sheet.columns:
+                                        indices = output_sheet_df['row_id'].values
+                                        final_output[col] = original_df_sheet.iloc[indices][col].values
+                                
+                                # Удаляем дубликаты
+                                final_output['_normalized'] = final_output[original_cols[0]].apply(normalize_city_name)
+                                final_output = final_output.drop_duplicates(subset=['_normalized'], keep='first')
+                                final_output = final_output.drop(columns=['_normalized'])
+                                
+                                # Превью
+                                st.markdown(f"#### 👀 Превью итогового файла - {sheet_name}")
+                                st.dataframe(final_output, use_container_width=True, height=300)
+                                
+                                # Кнопка скачивания
+                                st.markdown("---")
+                                safe_sheet_name = str(sheet_name).replace('/', '_').replace('\\', '_')[:50]
+                                
+                                file_buffer = io.BytesIO()
+                                with pd.ExcelWriter(file_buffer, engine='openpyxl') as writer:
+                                    final_output.to_excel(writer, index=False, header=True, sheet_name='Результат')
+                                file_buffer.seek(0)
+                                
+                                st.download_button(
+                                    label=f"📥 Скачать файл ({len(final_output)} уникальных городов)",
+                                    data=file_buffer,
+                                    file_name=f"{safe_sheet_name}.xlsx",
+                                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                    use_container_width=True,
+                                    type="primary",
+                                    key=f"download_sheet_{sheet_name}_{tab_idx}"
+                                )
+                                
+                                # Сохраняем в session_state для архива
+                                st.session_state.vacancy_files[sheet_name] = {
+                                    'data': file_buffer.getvalue(),
+                                    'name': f"{safe_sheet_name}.xlsx",
+                                    'count': len(final_output)
+                                }
+                            else:
+                                st.warning("⚠️ Нет данных для выгрузки")
+                    
+                    # Кнопка для скачивания всех файлов архивом
+                    st.markdown("---")
+                    st.markdown("### 📦 Скачать все вкладки одним архивом")
+                    
+                    if 'vacancy_files' in st.session_state and st.session_state.vacancy_files:
+                        total_cities = sum(f['count'] for f in st.session_state.vacancy_files.values())
+                        
+                        if st.button("📦 Сформировать архив", use_container_width=True, type="primary", key="create_sheets_archive"):
+                            zip_buffer = io.BytesIO()
+                            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                                for sheet_name, file_info in st.session_state.vacancy_files.items():
+                                    zip_file.writestr(file_info['name'], file_info['data'])
+                            
+                            zip_buffer.seek(0)
+                            
+                            st.download_button(
+                                label=f"📥 Скачать архив ({len(st.session_state.vacancy_files)} вкладок, {total_cities} городов)",
+                                data=zip_buffer,
+                                file_name=f"all_sheets_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
+                                mime="application/zip",
+                                use_container_width=True,
+                                type="secondary"
+                            )
+                    
+                    # Останавливаем выполнение
+                    st.stop()
+                
+                elif st.session_state.sheet_mode == 'columns':
+                    # РЕЖИМ СТОЛБЦА: оригинальная логика с столбцом "Вакансия"
+                    st.subheader("🎯 Редактирование и выгрузка по вакансиям")
                 
                 # Получаем названия столбцов
                 original_cols = st.session_state.original_df.columns.tolist()
