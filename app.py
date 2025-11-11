@@ -7,7 +7,7 @@ import re
 import zipfile
 from datetime import datetime
 
-# Version: 2.4.0 - Fixed candidate selection: always show top candidates, no full list
+# Version: 2.5.0 - Fixed: preserve matched values, add current match to candidates list
 
 # Настройка страницы  
 st.set_page_config(  
@@ -1272,9 +1272,19 @@ if uploaded_file is not None and hh_areas is not None:
                                         with col2:
                                             row_id = row['row_id']
                                             city_name = row['Исходное название']
+                                            current_value = row['Итоговое гео']
+                                            current_match = row['Совпадение %']
                                             
                                             # Всегда ищем кандидатов заново для корректного отображения
                                             candidates = get_candidates_by_word(city_name, list(hh_areas.keys()), limit=20)
+                                            
+                                            # Если есть текущее значение из сопоставления - добавляем его в начало
+                                            if current_value and current_value != city_name:
+                                                # Проверяем, есть ли уже это значение в кандидатах
+                                                candidate_names = [c[0] for c in candidates]
+                                                if current_value not in candidate_names:
+                                                    # Добавляем текущее значение в начало списка
+                                                    candidates.insert(0, (current_value, current_match))
                                             
                                             # Формируем опции - всегда показываем топ кандидатов
                                             if candidates:
@@ -1282,8 +1292,6 @@ if uploaded_file is not None and hh_areas is not None:
                                             else:
                                                 # Если совсем нет кандидатов - показываем хотя бы "Нет совпадения"
                                                 options = ["❌ Нет совпадения"]
-                                            
-                                            current_value = row['Итоговое гео']
                                             
                                             # Уникальный ключ для каждой вакансии
                                             unique_key = f"select_{vacancy}_{row_id}_{tab_idx}"
@@ -1293,14 +1301,22 @@ if uploaded_file is not None and hh_areas is not None:
                                                 if selected_value == "❌ Нет совпадения":
                                                     default_idx = 0
                                                 else:
-                                                    try:
-                                                        default_idx = options.index(selected_value) if selected_value in options else 0
-                                                    except ValueError:
-                                                        default_idx = 0
+                                                    # Ищем в options, может быть как с процентом, так и без
+                                                    default_idx = 0
+                                                    for i, opt in enumerate(options):
+                                                        if selected_value in opt or opt.startswith(selected_value):
+                                                            default_idx = i
+                                                            break
                                             else:
+                                                # Если manual_selections нет, используем current_value из результата сопоставления
                                                 default_idx = 0
-                                                if current_value and current_value in options:
-                                                    default_idx = options.index(current_value)
+                                                if current_value:
+                                                    # Ищем current_value в options (может быть с процентом)
+                                                    for i, opt in enumerate(options):
+                                                        # opt вида "Город (Область) (90.0%)", current_value вида "Город (Область)"
+                                                        if opt.startswith(current_value) or current_value in opt:
+                                                            default_idx = i
+                                                            break
                                             
                                             selected = st.selectbox(
                                                 "Выберите город:",
