@@ -7,7 +7,7 @@ import re
 import zipfile
 from datetime import datetime
 
-# Version: 3.0.3 - Fixed: final_result_df not defined, duplicate blocks removed
+# Version: 3.1.0 - Added: Multi-sheet Excel support, preview tabs, sheet processing
 
 # Настройка страницы  
 st.set_page_config(  
@@ -847,37 +847,91 @@ if uploaded_file is not None and hh_areas is not None:
     st.markdown("---")  
       
     try:  
-        if uploaded_file.name.endswith('.csv'):  
-            df = pd.read_csv(uploaded_file, header=None)  
-        else:  
-            df = pd.read_excel(uploaded_file, header=None)  
+        # Определяем тип файла и читаем все вкладки
+        if uploaded_file.name.endswith('.csv'):
+            # CSV - одна вкладка
+            df = pd.read_csv(uploaded_file, header=None)
+            sheets_data = {'Sheet1': df}
+        else:
+            # Excel - читаем все вкладки
+            excel_file = pd.ExcelFile(uploaded_file)
+            sheets_data = {}
+            for sheet_name in excel_file.sheet_names:
+                df_sheet = pd.read_excel(excel_file, sheet_name=sheet_name, header=None)
+                if len(df_sheet) > 0:  # Только непустые вкладки
+                    sheets_data[sheet_name] = df_sheet
         
-        # Проверяем режим работы
-        has_header = False
-        has_vacancy_column = False
-        vacancy_col_idx = None
+        # Анализируем структуру файла
+        st.session_state.sheets_data = {}
+        st.session_state.has_multiple_sheets = len(sheets_data) > 1
+        st.session_state.sheet_mode = None  # 'tabs' или 'columns' или 'both' или None
         
-        # Проверяем первую строку на наличие заголовков
-        if len(df) > 0:
-            first_row = df.iloc[0]
-            # Проверяем первую ячейку на "Город"
-            if pd.notna(first_row[0]) and 'город' in str(first_row[0]).lower():
-                has_header = True
-                # Ищем столбец "Вакансия"
-                for idx, val in enumerate(first_row):
-                    if pd.notna(val) and 'вакансия' in str(val).lower():
-                        has_vacancy_column = True
-                        vacancy_col_idx = idx
-                        break
+        # Обрабатываем каждую вкладку
+        for sheet_name, df in sheets_data.items():
+            has_header = False
+            has_vacancy_column = False
+            vacancy_col_idx = None
+            
+            # Проверяем первую строку на наличие заголовков
+            if len(df) > 0:
+                first_row = df.iloc[0]
+                # Проверяем первую ячейку на "Город"
+                if pd.notna(first_row[0]) and 'город' in str(first_row[0]).lower():
+                    has_header = True
+                    # Ищем столбец "Вакансия"
+                    for idx, val in enumerate(first_row):
+                        if pd.notna(val) and 'вакансия' in str(val).lower():
+                            has_vacancy_column = True
+                            vacancy_col_idx = idx
+                            break
+            
+            # Если есть заголовок, делаем его названиями столбцов
+            if has_header:
+                df.columns = df.iloc[0]
+                df = df.iloc[1:].reset_index(drop=True)
+            
+            # Сохраняем данные вкладки
+            st.session_state.sheets_data[sheet_name] = {
+                'df': df.copy(),
+                'has_vacancy_column': has_vacancy_column,
+                'vacancy_col_idx': vacancy_col_idx
+            }
         
-        # Если есть заголовок, удаляем первую строку и делаем её заголовком
-        if has_header:
-            df.columns = df.iloc[0]
-            df = df.iloc[1:].reset_index(drop=True)
+        # Определяем режим работы
+        if st.session_state.has_multiple_sheets:
+            # Проверяем есть ли вкладки с "вакансия" в названии
+            vacancy_sheets = [name for name in sheets_data.keys() 
+                            if 'вакансия' in name.lower() or 'вакансии' in name.lower()]
+            
+            # Проверяем есть ли столбцы "Вакансия" в каких-то вкладках
+            sheets_with_vacancy_column = [name for name, data in st.session_state.sheets_data.items() 
+                                         if data['has_vacancy_column']]
+            
+            if vacancy_sheets or len(st.session_state.sheets_data) > 1:
+                # Есть вкладки - режим вкладок
+                st.session_state.sheet_mode = 'tabs'
+                
+                # Если еще и столбцы есть - комбинированный режим
+                if sheets_with_vacancy_column:
+                    st.session_state.sheet_mode = 'both'
+                    
+                st.info(f"📄 Загружено **{len(sheets_data)}** вкладок | 🎯 **Обнаружен режим работы с вкладками**")
+            else:
+                st.session_state.sheet_mode = None
+                st.info(f"📄 Загружено **{len(sheets_data)}** вкладок")
+        else:
+            # Одна вкладка - проверяем столбец "Вакансия"
+            first_sheet_data = list(st.session_state.sheets_data.values())[0]
+            if first_sheet_data['has_vacancy_column']:
+                st.session_state.sheet_mode = 'columns'
+                st.info(f"📄 Загружено **{len(first_sheet_data['df'])}** строк, **{len(first_sheet_data['df'].columns)}** столбцов | 🎯 **Обнаружен столбец 'Вакансия'**")
+            else:
+                st.info(f"📄 Загружено **{len(first_sheet_data['df'])}** строк, **{len(first_sheet_data['df'].columns)}** столбцов")
         
-        # Сохраняем исходный DataFrame
-        st.session_state.original_df = df.copy()
-        st.session_state.has_vacancy_mode = has_vacancy_column
+        # Для обратной совместимости - сохраняем первую вкладку как основной DF
+        first_sheet_name = list(sheets_data.keys())[0]
+        st.session_state.original_df = st.session_state.sheets_data[first_sheet_name]['df'].copy()
+        st.session_state.has_vacancy_mode = st.session_state.sheet_mode in ['columns', 'tabs', 'both']
         
         # Показываем превью файла
         if has_vacancy_column:
@@ -886,15 +940,40 @@ if uploaded_file is not None and hh_areas is not None:
             st.info(f"📄 Загружено **{len(df)}** строк, **{len(df.columns)}** столбцов")
         
         with st.expander("👀 Превью загруженного файла (первые 5 строк)"):
-            st.dataframe(df.head(), use_container_width=True)
+            if st.session_state.has_multiple_sheets:
+                # Показываем вкладки для выбора
+                sheet_tabs = st.tabs(list(st.session_state.sheets_data.keys()))
+                for tab, sheet_name in zip(sheet_tabs, st.session_state.sheets_data.keys()):
+                    with tab:
+                        st.dataframe(st.session_state.sheets_data[sheet_name]['df'].head(), use_container_width=True)
+            else:
+                # Одна вкладка
+                st.dataframe(st.session_state.original_df.head(), use_container_width=True)
           
         if st.button("🚀 Начать сопоставление", type="primary", use_container_width=True):  
             with st.spinner("Обрабатываю..."):  
-                result_df, dup_original, dup_hh, total_dup = match_cities(df, hh_areas, threshold)  
-                st.session_state.result_df = result_df  
-                st.session_state.dup_original = dup_original  
-                st.session_state.dup_hh = dup_hh  
-                st.session_state.total_dup = total_dup  
+                # Обрабатываем каждую вкладку
+                st.session_state.sheets_results = {}
+                
+                for sheet_name, sheet_data in st.session_state.sheets_data.items():
+                    df_sheet = sheet_data['df']
+                    result_df, dup_original, dup_hh, total_dup = match_cities(df_sheet, hh_areas, threshold)  
+                    
+                    st.session_state.sheets_results[sheet_name] = {
+                        'result_df': result_df,
+                        'dup_original': dup_original,
+                        'dup_hh': dup_hh,
+                        'total_dup': total_dup,
+                        'has_vacancy_column': sheet_data['has_vacancy_column']
+                    }
+                
+                # Для обратной совместимости - сохраняем первую вкладку
+                first_sheet = list(st.session_state.sheets_results.keys())[0]
+                st.session_state.result_df = st.session_state.sheets_results[first_sheet]['result_df']
+                st.session_state.dup_original = st.session_state.sheets_results[first_sheet]['dup_original']
+                st.session_state.dup_hh = st.session_state.sheets_results[first_sheet]['dup_hh']
+                st.session_state.total_dup = st.session_state.sheets_results[first_sheet]['total_dup']
+                
                 st.session_state.processed = True  
                 st.session_state.manual_selections = {}  
                 st.session_state.search_query = ""
