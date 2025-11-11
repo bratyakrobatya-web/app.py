@@ -7,7 +7,7 @@ import re
 import zipfile
 from datetime import datetime
 
-# Version: 2.7.0 - Fixed: ZIP creation using cached files instead of recalculation
+# Version: 2.8.0 - Improved: larger vacancy tab names with better styling
 
 # Настройка страницы  
 st.set_page_config(  
@@ -44,7 +44,31 @@ st.markdown("""
     display: flex;  
     align-items: center;  
     margin-bottom: 20px;  
-}  
+}
+
+/* Стили для вкладок вакансий */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 8px;
+}
+
+.stTabs [data-baseweb="tab"] {
+    height: 60px;
+    padding: 0px 24px;
+    background-color: #f0f2f6;
+    border-radius: 8px 8px 0px 0px;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.stTabs [aria-selected="true"] {
+    background-color: #ff4b4b;
+    color: white;
+}
+
+.stTabs [data-baseweb="tab"]:hover {
+    background-color: #ff6b6b;
+    color: white;
+}
 </style>  
 """, unsafe_allow_html=True)  
 
