@@ -7,7 +7,7 @@ import re
 import zipfile
 from datetime import datetime
 
-# Version: 3.2.0 - Added: Tabs mode in split view with download per sheet
+# Version: 3.3.0 - Fixed: editing in tabs split mode, single mode for tabs
 
 # Настройка страницы  
 st.set_page_config(  
@@ -1396,12 +1396,105 @@ if uploaded_file is not None and hh_areas is not None:
                             
                             st.info(f"📍 Всего строк: **{len(result_df_sheet)}**")
                             
-                            # Показываем таблицу с редактированием (упрощенная версия без редактирования)
+                            # Блок редактирования городов с совпадением ≤ 90%
+                            editable_rows = result_df_sheet[
+                                (result_df_sheet['Совпадение %'] <= 90) & 
+                                (~result_df_sheet['Статус'].str.contains('Дубликат', na=False))
+                            ].copy()
+                            
+                            if len(editable_rows) > 0:
+                                # Убираем дубликаты по исходному названию
+                                editable_rows['_normalized_original'] = editable_rows['Исходное название'].apply(normalize_city_name)
+                                editable_rows = editable_rows.drop_duplicates(subset=['_normalized_original'], keep='first')
+                                
+                                st.markdown("#### ✏️ Редактирование городов с совпадением ≤ 90%")
+                                st.warning(f"⚠️ Найдено **{len(editable_rows)}** городов для проверки")
+                                
+                                # Для каждого города показываем выбор
+                                for idx, row in editable_rows.iterrows():
+                                    row_id = row['row_id']
+                                    city_name = row['Исходное название']
+                                    
+                                    # Ищем кандидатов
+                                    candidates = get_candidates_by_word(city_name, list(hh_areas.keys()), limit=20)
+                                    current_value = row['Итоговое гео']
+                                    current_match = row['Совпадение %']
+                                    
+                                    # Если есть текущее значение - добавляем в начало
+                                    if current_value and current_value != city_name:
+                                        candidate_names = [c[0] for c in candidates]
+                                        if current_value not in candidate_names:
+                                            candidates.insert(0, (current_value, current_match))
+                                    
+                                    # Формируем опции
+                                    if candidates:
+                                        options = ["❌ Нет совпадения"] + [f"{c[0]} ({c[1]:.1f}%)" for c in candidates[:20]]
+                                    else:
+                                        options = ["❌ Нет совпадения"]
+                                    
+                                    # Определяем текущий выбор
+                                    unique_key = f"select_{sheet_name}_{row_id}_{tab_idx}"
+                                    
+                                    if row_id in st.session_state.manual_selections:
+                                        selected_value = st.session_state.manual_selections[row_id]
+                                        default_idx = 0
+                                        for i, opt in enumerate(options):
+                                            if selected_value in opt or opt.startswith(selected_value):
+                                                default_idx = i
+                                                break
+                                    else:
+                                        default_idx = 0
+                                        if current_value:
+                                            for i, opt in enumerate(options):
+                                                if opt.startswith(current_value) or current_value in opt:
+                                                    default_idx = i
+                                                    break
+                                    
+                                    col1, col2, col3 = st.columns([2, 3, 1])
+                                    
+                                    with col1:
+                                        st.text(city_name)
+                                    
+                                    with col2:
+                                        selected = st.selectbox(
+                                            "Выберите город:",
+                                            options=options,
+                                            index=default_idx,
+                                            key=unique_key,
+                                            label_visibility="collapsed"
+                                        )
+                                        
+                                        if selected == "❌ Нет совпадения":
+                                            st.session_state.manual_selections[row_id] = "❌ Нет совпадения"
+                                        else:
+                                            # Извлекаем название без процента
+                                            city_match = selected.rsplit(' (', 1)[0]
+                                            st.session_state.manual_selections[row_id] = city_match
+                                    
+                                    with col3:
+                                        st.text(f"{row['Совпадение %']:.1f}%")
+                                
+                                st.markdown("---")
+                            
+                            # Применяем ручные изменения
+                            result_df_sheet_final = result_df_sheet.copy()
+                            for row_id, new_value in st.session_state.manual_selections.items():
+                                if row_id in result_df_sheet_final['row_id'].values:
+                                    mask = result_df_sheet_final['row_id'] == row_id
+                                    
+                                    if new_value == "❌ Нет совпадения":
+                                        result_df_sheet_final.loc[mask, 'Итоговое гео'] = None
+                                    else:
+                                        result_df_sheet_final.loc[mask, 'Итоговое гео'] = new_value
+                                        if new_value in hh_areas:
+                                            result_df_sheet_final.loc[mask, 'ID HH'] = hh_areas[new_value]['id']
+                                            result_df_sheet_final.loc[mask, 'Регион'] = hh_areas[new_value]['parent']
+                            
                             # Формируем итоговый файл для этой вкладки
-                            output_sheet_df = result_df_sheet[
-                                (result_df_sheet['Итоговое гео'].notna()) &
-                                (~result_df_sheet['Статус'].str.contains('Не найдено', na=False)) &
-                                (~result_df_sheet['Статус'].str.contains('Пустое значение', na=False))
+                            output_sheet_df = result_df_sheet_final[
+                                (result_df_sheet_final['Итоговое гео'].notna()) &
+                                (~result_df_sheet_final['Статус'].str.contains('Не найдено', na=False)) &
+                                (~result_df_sheet_final['Статус'].str.contains('Пустое значение', na=False))
                             ].copy()
                             
                             if len(output_sheet_df) > 0:
@@ -1783,105 +1876,177 @@ if uploaded_file is not None and hh_areas is not None:
                 st.stop()
                 
             elif st.session_state.get('has_vacancy_mode', False) and st.session_state.export_mode == "single":
-                # РЕЖИМ: Единым файлом (все вакансии в одном файле, как обычный режим)
+                # РЕЖИМ: Единым файлом
                 st.markdown("---")
                 st.subheader("💾 Скачать результаты")
                 
-                # Создаем копию result_df для применения изменений
-                final_result_df = result_df.copy()
-                
-                # Применяем ручные изменения к final_result_df
-                if st.session_state.manual_selections:
-                    for row_id, new_value in st.session_state.manual_selections.items():
-                        mask = final_result_df['row_id'] == row_id
-                        
-                        if new_value == "❌ Нет совпадения":
-                            final_result_df.loc[mask, 'Итоговое гео'] = None
-                            final_result_df.loc[mask, 'ID HH'] = None
-                            final_result_df.loc[mask, 'Регион'] = None
-                            final_result_df.loc[mask, 'Совпадение %'] = 0
-                            final_result_df.loc[mask, 'Изменение'] = 'Нет'
-                            final_result_df.loc[mask, 'Статус'] = '❌ Не найдено'
-                        else:
-                            final_result_df.loc[mask, 'Итоговое гео'] = new_value
-                        
-                        if new_value in hh_areas:
-                            final_result_df.loc[mask, 'ID HH'] = hh_areas[new_value]['id']
-                            final_result_df.loc[mask, 'Регион'] = hh_areas[new_value]['parent']
-                        
-                        original = final_result_df.loc[mask, 'Исходное название'].values[0]
-                        final_result_df.loc[mask, 'Изменение'] = 'Да' if check_if_changed(original, new_value) else 'Нет'
-                
-                # Добавляем города из added_cities
-                if st.session_state.added_cities:
-                    original_cols = st.session_state.original_df.columns.tolist()
+                if st.session_state.sheet_mode == 'tabs':
+                    # Режим вкладок - объединяем все вкладки в один файл
+                    all_data = []
                     
-                    for city in st.session_state.added_cities:
-                        if city in hh_areas:
-                            last_row = st.session_state.original_df.iloc[-1] if len(st.session_state.original_df) > 0 else {}
+                    for sheet_name, sheet_result in st.session_state.sheets_results.items():
+                        result_df_sheet = sheet_result['result_df']
+                        original_df_sheet = st.session_state.sheets_data[sheet_name]['df']
+                        
+                        # Применяем изменения
+                        for row_id, new_value in st.session_state.manual_selections.items():
+                            if row_id in result_df_sheet['row_id'].values:
+                                mask = result_df_sheet['row_id'] == row_id
+                                
+                                if new_value == "❌ Нет совпадения":
+                                    result_df_sheet.loc[mask, 'Итоговое гео'] = None
+                                else:
+                                    result_df_sheet.loc[mask, 'Итоговое гео'] = new_value
+                                    if new_value in hh_areas:
+                                        result_df_sheet.loc[mask, 'ID HH'] = hh_areas[new_value]['id']
+                                        result_df_sheet.loc[mask, 'Регион'] = hh_areas[new_value]['parent']
+                        
+                        # Формируем данные для этой вкладки
+                        output_sheet = result_df_sheet[result_df_sheet['Итоговое гео'].notna()].copy()
+                        
+                        if len(output_sheet) > 0:
+                            original_cols = original_df_sheet.columns.tolist()
+                            sheet_data = pd.DataFrame()
+                            sheet_data[original_cols[0]] = output_sheet['Итоговое гео']
                             
-                            new_row_data = {col: last_row.get(col, '') for col in original_cols}
-                            new_row_data[original_cols[0]] = city
+                            for col in original_cols[1:]:
+                                if col in original_df_sheet.columns:
+                                    indices = output_sheet['row_id'].values
+                                    sheet_data[col] = original_df_sheet.iloc[indices][col].values
                             
-                            new_row = pd.DataFrame([new_row_data])
-                            st.session_state.original_df = pd.concat([st.session_state.original_df, new_row], ignore_index=True)
+                            all_data.append(sheet_data)
+                    
+                    # Объединяем все вкладки
+                    if all_data:
+                        output_df = pd.concat(all_data, ignore_index=True)
+                        
+                        # Удаляем дубликаты
+                        output_df['_normalized'] = output_df.iloc[:, 0].apply(normalize_city_name)
+                        output_df = output_df.drop_duplicates(subset=['_normalized'], keep='first')
+                        output_df = output_df.drop(columns=['_normalized'])
+                        
+                        st.success(f"✅ Готово к выгрузке: **{len(output_df)}** уникальных городов")
+                        
+                        # Кнопка скачивания
+                        output_all = io.BytesIO()
+                        with pd.ExcelWriter(output_all, engine='openpyxl') as writer:
+                            output_df.to_excel(writer, index=False, header=True, sheet_name='Результат')
+                        output_all.seek(0)
+                        
+                        st.download_button(
+                            label=f"📥 Скачать файл ({len(output_df)} городов)",
+                            data=output_all,
+                            file_name=f"all_sheets_combined_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            use_container_width=True,
+                            type="primary"
+                        )
+                        
+                        # Превью
+                        st.markdown("---")
+                        st.markdown("#### 👀 Превью итогового файла")
+                        st.dataframe(output_df, use_container_width=True, height=400)
+                    else:
+                        st.warning("⚠️ Нет данных для выгрузки")
+                
+                else:
+                    # Режим столбца вакансий - оригинальная логика
+                
+                    # Создаем копию result_df для применения изменений
+                    final_result_df = result_df.copy()
+                    
+                    # Применяем ручные изменения к final_result_df
+                    if st.session_state.manual_selections:
+                        for row_id, new_value in st.session_state.manual_selections.items():
+                            mask = final_result_df['row_id'] == row_id
                             
-                            final_result_df = pd.concat([final_result_df, pd.DataFrame([{
-                                'row_id': len(final_result_df),
-                                'Исходное название': city,
-                                'Итоговое гео': city,
-                                'ID HH': hh_areas[city]['id'],
-                                'Регион': hh_areas[city]['parent'],
-                                'Совпадение %': 100.0,
-                                'Статус': '✅ Добавлено',
-                                'Изменение': 'Нет'
-                            }])], ignore_index=True)
+                            if new_value == "❌ Нет совпадения":
+                                    final_result_df.loc[mask, 'Итоговое гео'] = None
+                                    final_result_df.loc[mask, 'ID HH'] = None
+                                    final_result_df.loc[mask, 'Регион'] = None
+                                    final_result_df.loc[mask, 'Совпадение %'] = 0
+                                    final_result_df.loc[mask, 'Изменение'] = 'Нет'
+                                    final_result_df.loc[mask, 'Статус'] = '❌ Не найдено'
+                                else:
+                                final_result_df.loc[mask, 'Итоговое гео'] = new_value
+                        
+                            if new_value in hh_areas:
+                                final_result_df.loc[mask, 'ID HH'] = hh_areas[new_value]['id']
+                                final_result_df.loc[mask, 'Регион'] = hh_areas[new_value]['parent']
+                        
+                            original = final_result_df.loc[mask, 'Исходное название'].values[0]
+                            final_result_df.loc[mask, 'Изменение'] = 'Да' if check_if_changed(original, new_value) else 'Нет'
                 
-                # Формируем итоговый файл для скачивания (все вакансии вместе)
-                original_cols = st.session_state.original_df.columns.tolist()
+                    # Добавляем города из added_cities
+                    if st.session_state.added_cities:
+                        original_cols = st.session_state.original_df.columns.tolist()
+                    
+                        for city in st.session_state.added_cities:
+                            if city in hh_areas:
+                                last_row = st.session_state.original_df.iloc[-1] if len(st.session_state.original_df) > 0 else {}
+                            
+                                new_row_data = {col: last_row.get(col, '') for col in original_cols}
+                                new_row_data[original_cols[0]] = city
+                            
+                                new_row = pd.DataFrame([new_row_data])
+                                st.session_state.original_df = pd.concat([st.session_state.original_df, new_row], ignore_index=True)
+                            
+                                final_result_df = pd.concat([final_result_df, pd.DataFrame([{
+                                    'row_id': len(final_result_df),
+                                    'Исходное название': city,
+                                    'Итоговое гео': city,
+                                    'ID HH': hh_areas[city]['id'],
+                                    'Регион': hh_areas[city]['parent'],
+                                    'Совпадение %': 100.0,
+                                    'Статус': '✅ Добавлено',
+                                    'Изменение': 'Нет'
+                                }])], ignore_index=True)
                 
-                # Оставляем только строки с найденным гео
-                export_df = final_result_df[
-                    (final_result_df['Итоговое гео'].notna()) &
-                    (~final_result_df['Статус'].str.contains('Не найдено', na=False)) &
-                    (~final_result_df['Статус'].str.contains('Пустое значение', na=False))
-                ].copy()
+                    # Формируем итоговый файл для скачивания (все вакансии вместе)
+                    original_cols = st.session_state.original_df.columns.tolist()
                 
-                # Создаем итоговый DataFrame
-                output_df = pd.DataFrame()
-                output_df[original_cols[0]] = export_df['Итоговое гео']
+                    # Оставляем только строки с найденным гео
+                    export_df = final_result_df[
+                        (final_result_df['Итоговое гео'].notna()) &
+                        (~final_result_df['Статус'].str.contains('Не найдено', na=False)) &
+                        (~final_result_df['Статус'].str.contains('Пустое значение', na=False))
+                    ].copy()
                 
-                for col in original_cols[1:]:
-                    if col in st.session_state.original_df.columns:
-                        indices = export_df['row_id'].values
-                        output_df[col] = st.session_state.original_df.iloc[indices][col].values
+                    # Создаем итоговый DataFrame
+                    output_df = pd.DataFrame()
+                    output_df[original_cols[0]] = export_df['Итоговое гео']
                 
-                # Удаляем дубликаты
-                output_df['_normalized'] = output_df[original_cols[0]].apply(normalize_city_name)
-                output_df = output_df.drop_duplicates(subset=['_normalized'], keep='first')
-                output_df = output_df.drop(columns=['_normalized'])
+                    for col in original_cols[1:]:
+                        if col in st.session_state.original_df.columns:
+                            indices = export_df['row_id'].values
+                            output_df[col] = st.session_state.original_df.iloc[indices][col].values
                 
-                st.success(f"✅ Готово к выгрузке: **{len(output_df)}** уникальных городов")
+                    # Удаляем дубликаты
+                    output_df['_normalized'] = output_df[original_cols[0]].apply(normalize_city_name)
+                    output_df = output_df.drop_duplicates(subset=['_normalized'], keep='first')
+                    output_df = output_df.drop(columns=['_normalized'])
                 
-                # Кнопка скачивания одного файла
-                output_all = io.BytesIO()
-                with pd.ExcelWriter(output_all, engine='openpyxl') as writer:
-                    output_df.to_excel(writer, index=False, header=True, sheet_name='Результат')
-                output_all.seek(0)
+                    st.success(f"✅ Готово к выгрузке: **{len(output_df)}** уникальных городов")
                 
-                st.download_button(
-                    label=f"📥 Скачать файл ({len(output_df)} городов)",
-                    data=output_all,
-                    file_name=f"all_vacancies_combined_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True,
-                    type="primary"
-                )
+                    # Кнопка скачивания одного файла
+                    output_all = io.BytesIO()
+                    with pd.ExcelWriter(output_all, engine='openpyxl') as writer:
+                        output_df.to_excel(writer, index=False, header=True, sheet_name='Результат')
+                    output_all.seek(0)
                 
-                # Превью
-                st.markdown("---")
-                st.markdown("#### 👀 Превью итогового файла")
-                st.dataframe(output_df, use_container_width=True, height=400)
+                    st.download_button(
+                        label=f"📥 Скачать файл ({len(output_df)} городов)",
+                        data=output_all,
+                        file_name=f"all_vacancies_combined_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True,
+                        type="primary"
+                    )
+                
+                    # Превью
+                    st.markdown("---")
+                    st.markdown("#### 👀 Превью итогового файла")
+                    st.dataframe(output_df, use_container_width=True, height=400)
                 
             else:
                 # ОБЫЧНЫЙ РЕЖИМ (как было раньше)
