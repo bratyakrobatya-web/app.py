@@ -1175,23 +1175,31 @@ if uploaded_file is not None and hh_areas is not None:
                                 # Фильтруем города по вакансии
                                 vacancy_df = export_df[export_df[vacancy_col] == vacancy].copy()
                                 
-                                # Оставляем только столбец с городами
-                                cities_for_vacancy = pd.DataFrame()
-                                cities_for_vacancy['Город'] = vacancy_df['Итоговое гео']
+                                # Берем все столбцы КРОМЕ служебных и "Вакансия"
+                                # Заменяем "Исходное название" на "Итоговое гео"
+                                output_vacancy_df = pd.DataFrame()
                                 
-                                # Удаляем дубликаты городов внутри вакансии
-                                cities_for_vacancy['_normalized'] = cities_for_vacancy['Город'].apply(normalize_city_name)
-                                cities_for_vacancy = cities_for_vacancy.drop_duplicates(subset=['_normalized'], keep='first')
-                                cities_for_vacancy = cities_for_vacancy.drop(columns=['_normalized'])
+                                # Добавляем итоговое гео как первый столбец
+                                output_vacancy_df[original_cols[0]] = vacancy_df['Итоговое гео']
+                                
+                                # Добавляем остальные столбцы из исходного файла (кроме первого и вакансии)
+                                for col in original_cols[1:]:
+                                    if col != vacancy_col and col in vacancy_df.columns:
+                                        output_vacancy_df[col] = vacancy_df[col].values
+                                
+                                # Удаляем дубликаты по нормализованному названию города
+                                output_vacancy_df['_normalized'] = output_vacancy_df[original_cols[0]].apply(normalize_city_name)
+                                output_vacancy_df = output_vacancy_df.drop_duplicates(subset=['_normalized'], keep='first')
+                                output_vacancy_df = output_vacancy_df.drop(columns=['_normalized'])
                                 
                                 # Создаем безопасное имя файла
                                 safe_vacancy_name = str(vacancy).replace('/', '_').replace('\\', '_')[:50]
                                 file_name = f"{safe_vacancy_name}.xlsx"
                                 
-                                # Сохраняем в буфер
+                                # Сохраняем в буфер БЕЗ заголовков
                                 file_buffer = io.BytesIO()
                                 with pd.ExcelWriter(file_buffer, engine='openpyxl') as writer:
-                                    cities_for_vacancy[['Город']].to_excel(writer, index=False, header=False, sheet_name='Гео')
+                                    output_vacancy_df.to_excel(writer, index=False, header=False, sheet_name='Результат')
                                 file_buffer.seek(0)
                                 
                                 # Добавляем в ZIP
