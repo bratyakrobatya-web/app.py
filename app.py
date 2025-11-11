@@ -7,7 +7,7 @@ import re
 import zipfile
 from datetime import datetime
 
-# Version: 2.3.0 - Fixed indentation in split mode properly
+# Version: 2.4.0 - Fixed candidate selection: always show top candidates, no full list
 
 # Настройка страницы  
 st.set_page_config(  
@@ -1271,13 +1271,17 @@ if uploaded_file is not None and hh_areas is not None:
                                         
                                         with col2:
                                             row_id = row['row_id']
-                                            candidates = st.session_state.candidates_cache.get(row_id, [])
+                                            city_name = row['Исходное название']
                                             
-                                            # Формируем опции для выбора
-                                            if not candidates or row['Статус'] == '❌ Не найдено':
-                                                options = ["❌ Нет совпадения"] + russia_cities_for_select
+                                            # Всегда ищем кандидатов заново для корректного отображения
+                                            candidates = get_candidates_by_word(city_name, list(hh_areas.keys()), limit=20)
+                                            
+                                            # Формируем опции - всегда показываем топ кандидатов
+                                            if candidates:
+                                                options = ["❌ Нет совпадения"] + [f"{c[0]} ({c[1]:.1f}%)" for c in candidates[:20]]
                                             else:
-                                                options = ["❌ Нет совпадения"] + [f"{c[0]} ({c[1]:.1f}%)" for c in candidates]
+                                                # Если совсем нет кандидатов - показываем хотя бы "Нет совпадения"
+                                                options = ["❌ Нет совпадения"]
                                             
                                             current_value = row['Итоговое гео']
                                             
