@@ -4,6 +4,8 @@ import pandas as pd
 from rapidfuzz import fuzz, process  
 import io  
 import re
+import zipfile
+from datetime import datetime
 
 # Настройка страницы  
 st.set_page_config(  
@@ -129,7 +131,6 @@ PREFERRED_MATCHES = {
     'кировск': 'Кировск (Ленинградская область)',
     'истра': 'Истра (Московская область)',
     'красногорск': 'Красногорск (Московская область)',
-    'домодедово': 'Домодедово (Московская область)',
 }
 
 # ============================================  
@@ -818,11 +819,38 @@ if uploaded_file is not None and hh_areas is not None:
         else:  
             df = pd.read_excel(uploaded_file, header=None)  
         
+        # Проверяем режим работы
+        has_header = False
+        has_vacancy_column = False
+        vacancy_col_idx = None
+        
+        # Проверяем первую строку на наличие заголовков
+        if len(df) > 0:
+            first_row = df.iloc[0]
+            # Проверяем первую ячейку на "Город"
+            if pd.notna(first_row[0]) and 'город' in str(first_row[0]).lower():
+                has_header = True
+                # Ищем столбец "Вакансия"
+                for idx, val in enumerate(first_row):
+                    if pd.notna(val) and 'вакансия' in str(val).lower():
+                        has_vacancy_column = True
+                        vacancy_col_idx = idx
+                        break
+        
+        # Если есть заголовок, удаляем первую строку и делаем её заголовком
+        if has_header:
+            df.columns = df.iloc[0]
+            df = df.iloc[1:].reset_index(drop=True)
+        
         # Сохраняем исходный DataFrame
         st.session_state.original_df = df.copy()
+        st.session_state.has_vacancy_mode = has_vacancy_column
         
         # Показываем превью файла
-        st.info(f"📄 Загружено **{len(df)}** строк, **{len(df.columns)}** столбцов")
+        if has_vacancy_column:
+            st.info(f"📄 Загружено **{len(df)}** строк, **{len(df.columns)}** столбцов | 🎯 **Режим: Разделение по вакансиям**")
+        else:
+            st.info(f"📄 Загружено **{len(df)}** строк, **{len(df.columns)}** столбцов")
         
         with st.expander("👀 Превью загруженного файла (первые 5 строк)"):
             st.dataframe(df.head(), use_container_width=True)
@@ -1084,8 +1112,6 @@ if uploaded_file is not None and hh_areas is not None:
             st.markdown("---")  
             st.subheader("💾 Скачать результаты")  
               
-            col1, col2 = st.columns(2)  
-              
             final_result_df = result_df.copy()
             
             # Применяем ручные изменения
@@ -1109,82 +1135,166 @@ if uploaded_file is not None and hh_areas is not None:
                           
                         original = final_result_df.loc[mask, 'Исходное название'].values[0]  
                         final_result_df.loc[mask, 'Изменение'] = 'Да' if check_if_changed(original, new_value) else 'Нет'  
-              
-            with col1:  
-                # Формируем файл для публикатора с исходными столбцами
-                # Исключаем не найденные и дубликаты
-                export_df = final_result_df[
-                    (~final_result_df['Статус'].str.contains('Дубликат', na=False)) & 
-                    (final_result_df['Итоговое гео'].notna())
-                ].copy()
+            
+            # ПРОВЕРЯЕМ РЕЖИМ РАБОТЫ
+            if st.session_state.get('has_vacancy_mode', False):
+                # РЕЖИМ: Разделение по вакансиям
+                st.info("🎯 **Режим разделения по вакансиям активирован**")
                 
-                # Получаем названия столбцов из исходного файла
+                # Получаем названия столбцов
                 original_cols = st.session_state.original_df.columns.tolist()
                 
-                # Формируем итоговый DataFrame: первый столбец - итоговое гео, остальные - из исходного файла
-                publisher_df = pd.DataFrame()
-                publisher_df[original_cols[0]] = export_df['Итоговое гео']
+                # Находим индекс столбца "Вакансия"
+                vacancy_col = None
+                for col in original_cols:
+                    if 'вакансия' in str(col).lower():
+                        vacancy_col = col
+                        break
                 
-                # Добавляем остальные столбцы из исходного файла
-                for col in original_cols[1:]:
-                    if col in export_df.columns:
-                        publisher_df[col] = export_df[col].values
-                
-                # Добавляем дополнительные города с значениями из последней строки
-                if st.session_state.added_cities:
-                    # Получаем последнюю строку из исходного файла
-                    last_row_values = st.session_state.original_df.iloc[-1].tolist()
+                if vacancy_col:
+                    # Формируем данные для экспорта
+                    export_df = final_result_df[
+                        (~final_result_df['Статус'].str.contains('Дубликат', na=False)) & 
+                        (final_result_df['Итоговое гео'].notna())
+                    ].copy()
                     
-                    for city in st.session_state.added_cities:
-                        new_row = [city] + last_row_values[1:]  # Город + остальные значения из последней строки
-                        publisher_df.loc[len(publisher_df)] = new_row
+                    # Получаем уникальные вакансии
+                    if vacancy_col in export_df.columns:
+                        unique_vacancies = export_df[vacancy_col].dropna().unique()
+                        
+                        st.success(f"📊 Найдено **{len(unique_vacancies)}** уникальных вакансий")
+                        
+                        # Создаем ZIP архив со всеми файлами
+                        import zipfile
+                        from datetime import datetime
+                        
+                        zip_buffer = io.BytesIO()
+                        
+                        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                            for vacancy in unique_vacancies:
+                                # Фильтруем города по вакансии
+                                vacancy_df = export_df[export_df[vacancy_col] == vacancy].copy()
+                                
+                                # Оставляем только столбец с городами
+                                cities_for_vacancy = pd.DataFrame()
+                                cities_for_vacancy['Город'] = vacancy_df['Итоговое гео']
+                                
+                                # Удаляем дубликаты городов внутри вакансии
+                                cities_for_vacancy['_normalized'] = cities_for_vacancy['Город'].apply(normalize_city_name)
+                                cities_for_vacancy = cities_for_vacancy.drop_duplicates(subset=['_normalized'], keep='first')
+                                cities_for_vacancy = cities_for_vacancy.drop(columns=['_normalized'])
+                                
+                                # Создаем безопасное имя файла
+                                safe_vacancy_name = str(vacancy).replace('/', '_').replace('\\', '_')[:50]
+                                file_name = f"{safe_vacancy_name}.xlsx"
+                                
+                                # Сохраняем в буфер
+                                file_buffer = io.BytesIO()
+                                with pd.ExcelWriter(file_buffer, engine='openpyxl') as writer:
+                                    cities_for_vacancy[['Город']].to_excel(writer, index=False, header=False, sheet_name='Гео')
+                                file_buffer.seek(0)
+                                
+                                # Добавляем в ZIP
+                                zip_file.writestr(file_name, file_buffer.getvalue())
+                        
+                        zip_buffer.seek(0)
+                        
+                        # Кнопка скачивания ZIP
+                        st.download_button(
+                            label=f"📦 Скачать все файлы ({len(unique_vacancies)} вакансий)",
+                            data=zip_buffer,
+                            file_name=f"vacancies_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
+                            mime="application/zip",
+                            use_container_width=True,
+                            type="primary"
+                        )
+                        
+                        # Показываем превью по вакансиям
+                        with st.expander("👀 Превью файлов по вакансиям"):
+                            for vacancy in unique_vacancies:
+                                vacancy_df = export_df[export_df[vacancy_col] == vacancy].copy()
+                                cities_count = len(vacancy_df['Итоговое гео'].unique())
+                                st.markdown(f"**{vacancy}** - {cities_count} уникальных городов")
+                
+            else:
+                # ОБЫЧНЫЙ РЕЖИМ (как было раньше)
+                col1, col2 = st.columns(2)
+                
+                with col1:  
+                    # Формируем файл для публикатора с исходными столбцами
+                    # Исключаем не найденные и дубликаты
+                    export_df = final_result_df[
+                        (~final_result_df['Статус'].str.contains('Дубликат', na=False)) & 
+                        (final_result_df['Итоговое гео'].notna())
+                    ].copy()
                     
-                    # Удаляем дубликаты
-                    publisher_df['_normalized'] = publisher_df[original_cols[0]].apply(normalize_city_name)
-                    publisher_df = publisher_df.drop_duplicates(subset=['_normalized'], keep='first')
-                    publisher_df = publisher_df.drop(columns=['_normalized'])
-                
-                output_publisher = io.BytesIO()  
-                with pd.ExcelWriter(output_publisher, engine='openpyxl') as writer:  
-                    publisher_df.to_excel(writer, index=False, header=False, sheet_name='Результат')  
-                output_publisher.seek(0)  
+                    # Получаем названия столбцов из исходного файла
+                    original_cols = st.session_state.original_df.columns.tolist()
+                    
+                    # Формируем итоговый DataFrame: первый столбец - итоговое гео, остальные - из исходного файла
+                    publisher_df = pd.DataFrame()
+                    publisher_df[original_cols[0]] = export_df['Итоговое гео']
+                    
+                    # Добавляем остальные столбцы из исходного файла
+                    for col in original_cols[1:]:
+                        if col in export_df.columns:
+                            publisher_df[col] = export_df[col].values
+                    
+                    # Добавляем дополнительные города с значениями из последней строки
+                    if st.session_state.added_cities:
+                        # Получаем последнюю строку из исходного файла
+                        last_row_values = st.session_state.original_df.iloc[-1].tolist()
+                        
+                        for city in st.session_state.added_cities:
+                            new_row = [city] + last_row_values[1:]  # Город + остальные значения из последней строки
+                            publisher_df.loc[len(publisher_df)] = new_row
+                        
+                        # Удаляем дубликаты
+                        publisher_df['_normalized'] = publisher_df[original_cols[0]].apply(normalize_city_name)
+                        publisher_df = publisher_df.drop_duplicates(subset=['_normalized'], keep='first')
+                        publisher_df = publisher_df.drop(columns=['_normalized'])
+                    
+                    output_publisher = io.BytesIO()  
+                    with pd.ExcelWriter(output_publisher, engine='openpyxl') as writer:  
+                        publisher_df.to_excel(writer, index=False, header=False, sheet_name='Результат')  
+                    output_publisher.seek(0)  
+                      
+                    publisher_count = len(publisher_df)  
+                      
+                    st.download_button(  
+                        label=f"📤 Файл для публикатора\n{publisher_count} строк",  
+                        data=output_publisher,  
+                        file_name=f"geo_result_{uploaded_file.name.rsplit('.', 1)[0]}.xlsx",  
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  
+                        use_container_width=True,
+                        type="primary",
+                        key='download_publisher'  
+                    )
+                    
+                    st.caption("✅ Первый столбец заменен на итоговое гео")
+                    st.caption("✅ Остальные столбцы из исходного файла")
+                    st.caption("✅ Исключены не найденные и дубликаты")
+                    if st.session_state.added_cities:
+                        st.caption(f"✅ Добавлено городов: {len(st.session_state.added_cities)}")
                   
-                publisher_count = len(publisher_df)  
-                  
-                st.download_button(  
-                    label=f"📤 Файл для публикатора\n{publisher_count} строк",  
-                    data=output_publisher,  
-                    file_name=f"geo_result_{uploaded_file.name.rsplit('.', 1)[0]}.xlsx",  
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  
-                    use_container_width=True,
-                    type="primary",
-                    key='download_publisher'  
-                )
-                
-                st.caption("✅ Первый столбец заменен на итоговое гео")
-                st.caption("✅ Остальные столбцы из исходного файла")
-                st.caption("✅ Исключены не найденные и дубликаты")
-                if st.session_state.added_cities:
-                    st.caption(f"✅ Добавлено городов: {len(st.session_state.added_cities)}")
-              
-            with col2:  
-                output = io.BytesIO()  
-                export_full_df = final_result_df.drop(['row_id', 'sort_priority'], axis=1, errors='ignore')  
-                with pd.ExcelWriter(output, engine='openpyxl') as writer:  
-                    export_full_df.to_excel(writer, index=False, sheet_name='Результат')  
-                output.seek(0)  
-                  
-                st.download_button(  
-                    label="📥 Полный отчет с анализом",  
-                    data=output,  
-                    file_name=f"full_report_{uploaded_file.name.rsplit('.', 1)[0]}.xlsx",  
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  
-                    use_container_width=True,  
-                    key='download_full'  
-                )
-                
-                st.caption("📊 Подробный отчет со всеми данными")
-                st.caption("📊 Включает статусы и проценты совпадений")
+                with col2:  
+                    output = io.BytesIO()  
+                    export_full_df = final_result_df.drop(['row_id', 'sort_priority'], axis=1, errors='ignore')  
+                    with pd.ExcelWriter(output, engine='openpyxl') as writer:  
+                        export_full_df.to_excel(writer, index=False, sheet_name='Результат')  
+                    output.seek(0)  
+                      
+                    st.download_button(  
+                        label="📥 Полный отчет с анализом",  
+                        data=output,  
+                        file_name=f"full_report_{uploaded_file.name.rsplit('.', 1)[0]}.xlsx",  
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  
+                        use_container_width=True,  
+                        key='download_full'  
+                    )
+                    
+                    st.caption("📊 Подробный отчет со всеми данными")
+                    st.caption("📊 Включает статусы и проценты совпадений")
       
     except Exception as e:  
         st.error(f"❌ Ошибка обработки файла: {str(e)}")  
