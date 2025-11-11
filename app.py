@@ -7,7 +7,7 @@ import re
 import zipfile
 from datetime import datetime
 
-# Version: 3.0.1 - Fixed: mode display, naming, duplicate download blocks
+# Version: 3.0.2 - Fixed: syntax error in f-string with quotes
 
 # Настройка страницы  
 st.set_page_config(  
@@ -881,7 +881,7 @@ if uploaded_file is not None and hh_areas is not None:
         
         # Показываем превью файла
         if has_vacancy_column:
-            st.info(f"📄 Загружено **{len(df)}** строк, **{len(df.columns)}** столбцов | 🎯 **Обнаружен столбец "Вакансия"**")
+            st.info(f"📄 Загружено **{len(df)}** строк, **{len(df.columns)}** столбцов | 🎯 **Обнаружен столбец 'Вакансия'**")
         else:
             st.info(f"📄 Загружено **{len(df)}** строк, **{len(df.columns)}** столбцов")
         
