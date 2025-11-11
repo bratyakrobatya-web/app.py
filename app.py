@@ -1172,9 +1172,13 @@ if uploaded_file is not None and hh_areas is not None:
               
                     # ИЗМЕНЕНО: Исключаем дубликаты из редактирования
                     editable_rows = result_df_sorted[
-                        (result_df_sorted['Совпадение %'] <= 90) & 
+                        (result_df_sorted['Совпадение %'] <= 90) &
                         (~result_df_sorted['Статус'].str.contains('Дубликат', na=False))
-                    ].copy()  
+                    ].copy()
+
+                    # Сортируем: сначала города с низким совпадением (проблемные)
+                    if len(editable_rows) > 0:
+                        editable_rows = editable_rows.sort_values('Совпадение %', ascending=True)  
               
                     if len(editable_rows) > 0:  
                         st.markdown("---")  
@@ -1408,7 +1412,10 @@ if uploaded_file is not None and hh_areas is not None:
                                 # Убираем дубликаты по исходному названию
                                 editable_rows['_normalized_original'] = editable_rows['Исходное название'].apply(normalize_city_name)
                                 editable_rows = editable_rows.drop_duplicates(subset=['_normalized_original'], keep='first')
-                                
+
+                                # Сортируем: сначала города с низким совпадением (проблемные)
+                                editable_rows = editable_rows.sort_values('Совпадение %', ascending=True)
+
                                 st.markdown("#### ✏️ Редактирование городов с совпадением ≤ 90%")
                                 st.warning(f"⚠️ Найдено **{len(editable_rows)}** городов для проверки")
                                 
@@ -1642,7 +1649,10 @@ if uploaded_file is not None and hh_areas is not None:
                                 if len(editable_vacancy_rows) > 0:
                                     editable_vacancy_rows['_normalized_original'] = editable_vacancy_rows['Исходное название'].apply(normalize_city_name)
                                     editable_vacancy_rows = editable_vacancy_rows.drop_duplicates(subset=['_normalized_original'], keep='first')
-                                
+
+                                    # Сортируем: сначала города с низким совпадением (проблемные)
+                                    editable_vacancy_rows = editable_vacancy_rows.sort_values('Совпадение %', ascending=True)
+
                                 if len(editable_vacancy_rows) > 0:
                                     st.warning(f"⚠️ Найдено **{len(editable_vacancy_rows)}** городов для проверки")
                                     
