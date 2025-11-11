@@ -265,11 +265,11 @@ def get_cities_by_regions(hh_areas, selected_regions):
             # Нормализуем названия для сравнения
             region_normalized = normalize_city_name(region)
             parent_normalized = normalize_city_name(parent) if parent else ""
-            
-            # Проверяем различные варианты совпадений
-            if (region_normalized in parent_normalized or 
-                parent_normalized in region_normalized or
-                region_normalized == parent_normalized or
+            city_name_normalized = normalize_city_name(city_name)
+
+            # Используем ТОЧНОЕ совпадение, а не substring matching
+            # Это предотвращает ложные срабатывания (например: "Москва" in "Московская область")
+            if (region_normalized == parent_normalized or
                 region_normalized == city_name_normalized):
                 cities.append({
                     'Город': city_name,
