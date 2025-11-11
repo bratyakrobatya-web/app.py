@@ -63,6 +63,8 @@ if 'added_cities' not in st.session_state:
     st.session_state.added_cities = []
 if 'original_df' not in st.session_state:
     st.session_state.original_df = None
+if 'export_mode' not in st.session_state:
+    st.session_state.export_mode = None
 
 # ============================================  
 # СПРАВОЧНИК ФЕДЕРАЛЬНЫХ ОКРУГОВ И РЕГИОНОВ  
@@ -866,12 +868,39 @@ if uploaded_file is not None and hh_areas is not None:
                 st.session_state.manual_selections = {}  
                 st.session_state.search_query = ""
                 st.session_state.added_cities = []
+                st.session_state.export_mode = None  # Сбрасываем режим экспорта
           
         if st.session_state.processed and st.session_state.result_df is not None:  
             result_df = st.session_state.result_df.copy()  
             dup_original = st.session_state.dup_original  
             dup_hh = st.session_state.dup_hh  
             total_dup = st.session_state.total_dup  
+            
+            # ПРОВЕРЯЕМ РЕЖИМ ВАКАНСИЙ И ДАЕМ ВЫБОР
+            if st.session_state.get('has_vacancy_mode', False):
+                st.markdown("---")
+                st.subheader("🎯 Выбор режима работы")
+                
+                # Инициализируем выбранный режим
+                if 'export_mode' not in st.session_state:
+                    st.session_state.export_mode = None
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    if st.button("📦 Разделение по вакансиям", use_container_width=True, type="primary"):
+                        st.session_state.export_mode = "split"
+                        st.rerun()
+                
+                with col2:
+                    if st.button("📄 Единым файлом", use_container_width=True):
+                        st.session_state.export_mode = "single"
+                        st.rerun()
+                
+                # Если режим еще не выбран, останавливаем дальнейшую обработку
+                if st.session_state.export_mode is None:
+                    st.info("👆 Выберите режим экспорта для продолжения")
+                    return  
               
             st.markdown("---")  
             st.subheader("📊 Результаты")  
@@ -1137,7 +1166,183 @@ if uploaded_file is not None and hh_areas is not None:
                         final_result_df.loc[mask, 'Изменение'] = 'Да' if check_if_changed(original, new_value) else 'Нет'  
             
             # ПРОВЕРЯЕМ РЕЖИМ РАБОТЫ
-            if st.session_state.get('has_vacancy_mode', False):
+            if st.session_state.get('has_vacancy_mode', False) and st.session_state.export_mode == "split":
+                # РЕЖИМ: Разделение по вакансиям с редактированием
+                st.markdown("---")
+                st.subheader("🎯 Редактирование и выгрузка по вакансиям")
+                
+                # Получаем названия столбцов
+                original_cols = st.session_state.original_df.columns.tolist()
+                
+                # Находим столбец "Вакансия"
+                vacancy_col = None
+                for col in original_cols:
+                    if 'вакансия' in str(col).lower():
+                        vacancy_col = col
+                        break
+                
+                if vacancy_col:
+                    # Формируем данные для экспорта
+                    export_df = final_result_df[
+                        (final_result_df['Итоговое гео'].notna()) &
+                        (~final_result_df['Статус'].str.contains('Не найдено', na=False)) &
+                        (~final_result_df['Статус'].str.contains('Пустое значение', na=False))
+                    ].copy()
+                    
+                    # Получаем уникальные вакансии
+                    if vacancy_col in export_df.columns:
+                        unique_vacancies = sorted(export_df[vacancy_col].dropna().unique())
+                        
+                        st.success(f"📊 Найдено **{len(unique_vacancies)}** уникальных вакансий")
+                        
+                        # Инициализируем состояние для редактирования вакансий
+                        if 'vacancy_edits' not in st.session_state:
+                            st.session_state.vacancy_edits = {}
+                        
+                        # Создаем вкладки для каждой вакансии
+                        tabs = st.tabs([f"{v}" for v in unique_vacancies])
+                        
+                        for tab_idx, (tab, vacancy) in enumerate(zip(tabs, unique_vacancies)):
+                            with tab:
+                                # Фильтруем данные по вакансии
+                                vacancy_df = export_df[export_df[vacancy_col] == vacancy].copy()
+                                
+                                st.info(f"📍 Всего строк: **{len(vacancy_df)}**")
+                                
+                                # Показываем таблицу с возможностью редактирования
+                                st.markdown("#### Города для редактирования (совпадение ≤ 90%)")
+                                
+                                editable_vacancy_rows = vacancy_df[vacancy_df['Совпадение %'] <= 90].copy()
+                                
+                                if len(editable_vacancy_rows) > 0:
+                                    st.warning(f"⚠️ Найдено **{len(editable_vacancy_rows)}** городов для проверки")
+                                    
+                                    # Получаем список всех городов России для выбора
+                                    russia_cities_for_select = []
+                                    for city_name, city_info in hh_areas.items():
+                                        if city_info.get('root_parent_id') == '113':
+                                            russia_cities_for_select.append(city_name)
+                                    russia_cities_for_select = sorted(russia_cities_for_select)
+                                    
+                                    for idx, row in editable_vacancy_rows.iterrows():
+                                        col1, col2, col3 = st.columns([2, 3, 1])
+                                        
+                                        with col1:
+                                            st.markdown(f"**{row['Исходное название']}**")
+                                        
+                                        with col2:
+                                            row_id = row['row_id']
+                                            candidates = st.session_state.candidates_cache.get(row_id, [])
+                                            
+                                            # Формируем опции для выбора
+                                            if not candidates or row['Статус'] == '❌ Не найдено':
+                                                options = ["❌ Нет совпадения"] + russia_cities_for_select
+                                            else:
+                                                options = ["❌ Нет совпадения"] + [f"{c[0]} ({c[1]:.1f}%)" for c in candidates]
+                                            
+                                            current_value = row['Итоговое гео']
+                                            
+                                            # Уникальный ключ для каждой вакансии
+                                            unique_key = f"select_{vacancy}_{row_id}_{tab_idx}"
+                                            
+                                            if row_id in st.session_state.manual_selections:
+                                                selected_value = st.session_state.manual_selections[row_id]
+                                                if selected_value == "❌ Нет совпадения":
+                                                    default_idx = 0
+                                                else:
+                                                    try:
+                                                        default_idx = options.index(selected_value) if selected_value in options else 0
+                                                    except ValueError:
+                                                        default_idx = 0
+                                            else:
+                                                default_idx = 0
+                                                if current_value and current_value in options:
+                                                    default_idx = options.index(current_value)
+                                            
+                                            selected = st.selectbox(
+                                                "Выберите город:",
+                                                options=options,
+                                                index=default_idx,
+                                                key=unique_key,
+                                                label_visibility="collapsed"
+                                            )
+                                            
+                                            if selected == "❌ Нет совпадения":
+                                                st.session_state.manual_selections[row_id] = "❌ Нет совпадения"
+                                            else:
+                                                if "(" in selected and selected.startswith("❌") == False:
+                                                    selected_city = selected.rsplit(' (', 1)[0]
+                                                    st.session_state.manual_selections[row_id] = selected_city
+                                                else:
+                                                    st.session_state.manual_selections[row_id] = selected
+                                        
+                                        with col3:
+                                            st.text(f"{row['Совпадение %']}%")
+                                        
+                                        st.markdown("<hr style='margin-top: 5px; margin-bottom: 5px;'>", unsafe_allow_html=True)
+                                else:
+                                    st.success("✅ Все города распознаны корректно!")
+                                
+                                # Формируем итоговый DataFrame для этой вакансии
+                                vacancy_final_df = vacancy_df.copy()
+                                
+                                # Применяем ручные изменения
+                                for row_id, new_value in st.session_state.manual_selections.items():
+                                    if row_id in vacancy_final_df['row_id'].values:
+                                        mask = vacancy_final_df['row_id'] == row_id
+                                        
+                                        if new_value == "❌ Нет совпадения":
+                                            vacancy_final_df.loc[mask, 'Итоговое гео'] = None
+                                        else:
+                                            vacancy_final_df.loc[mask, 'Итоговое гео'] = new_value
+                                            if new_value in hh_areas:
+                                                vacancy_final_df.loc[mask, 'ID HH'] = hh_areas[new_value]['id']
+                                                vacancy_final_df.loc[mask, 'Регион'] = hh_areas[new_value]['parent']
+                                
+                                # Исключаем не найденные
+                                vacancy_final_df = vacancy_final_df[vacancy_final_df['Итоговое гео'].notna()].copy()
+                                
+                                # Формируем DataFrame для выгрузки
+                                output_vacancy_df = pd.DataFrame()
+                                output_vacancy_df[original_cols[0]] = vacancy_final_df['Итоговое гео']
+                                
+                                for col in original_cols[1:]:
+                                    if col != vacancy_col and col in vacancy_final_df.columns:
+                                        output_vacancy_df[col] = vacancy_final_df[col].values
+                                
+                                # Удаляем дубликаты по городу
+                                output_vacancy_df['_normalized'] = output_vacancy_df[original_cols[0]].apply(normalize_city_name)
+                                output_vacancy_df = output_vacancy_df.drop_duplicates(subset=['_normalized'], keep='first')
+                                output_vacancy_df = output_vacancy_df.drop(columns=['_normalized'])
+                                
+                                # Показываем превью
+                                st.markdown("#### 👀 Превью итогового файла")
+                                st.dataframe(output_vacancy_df, use_container_width=True, height=300)
+                                
+                                # Кнопка выгрузки для этой вакансии
+                                st.markdown("---")
+                                safe_vacancy_name = str(vacancy).replace('/', '_').replace('\\', '_')[:50]
+                                
+                                file_buffer = io.BytesIO()
+                                with pd.ExcelWriter(file_buffer, engine='openpyxl') as writer:
+                                    output_vacancy_df.to_excel(writer, index=False, header=True, sheet_name='Результат')
+                                file_buffer.seek(0)
+                                
+                                st.download_button(
+                                    label=f"📥 Скачать файл ({len(output_vacancy_df)} уникальных городов)",
+                                    data=file_buffer,
+                                    file_name=f"{safe_vacancy_name}.xlsx",
+                                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                    use_container_width=True,
+                                    type="primary",
+                                    key=f"download_{vacancy}_{tab_idx}"
+                                )
+                
+            elif st.session_state.get('has_vacancy_mode', False) and st.session_state.export_mode == "single":
+                # РЕЖИМ: Единым файлом (все вакансии в одном ZIP)
+                st.markdown("---")
+                st.subheader("📦 Выгрузка единым архивом")
+                st.info("🎯 **Режим: Все вакансии в одном ZIP-архиве**")
                 # РЕЖИМ: Разделение по вакансиям
                 st.info("🎯 **Режим разделения по вакансиям активирован**")
                 
