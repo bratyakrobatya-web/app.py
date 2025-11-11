@@ -7,7 +7,7 @@ import re
 import zipfile
 from datetime import datetime
 
-# Version: 3.3.0 - Fixed: editing in tabs split mode, single mode for tabs
+# Version: 3.3.1 - Fixed: indentation error in single mode
 
 # Настройка страницы  
 st.set_page_config(  
@@ -1968,9 +1968,9 @@ if uploaded_file is not None and hh_areas is not None:
                                     final_result_df.loc[mask, 'Изменение'] = 'Нет'
                                     final_result_df.loc[mask, 'Статус'] = '❌ Не найдено'
                                 else:
-                                final_result_df.loc[mask, 'Итоговое гео'] = new_value
+                                    final_result_df.loc[mask, 'Итоговое гео'] = new_value
                         
-                            if new_value in hh_areas:
+                                if new_value in hh_areas:
                                 final_result_df.loc[mask, 'ID HH'] = hh_areas[new_value]['id']
                                 final_result_df.loc[mask, 'Регион'] = hh_areas[new_value]['parent']
                         
