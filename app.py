@@ -1882,38 +1882,50 @@ if uploaded_file is not None and hh_areas is not None:
                 # Не показываем стандартные блоки для режима split
                 st.stop()
                 
-            elif st.session_state.get('has_vacancy_mode', False) and st.session_state.export_mode == "single":
-                # РЕЖИМ: Единым файлом
-                st.markdown("---")
-                st.subheader("💾 Скачать результаты")
-                
-                if st.session_state.sheet_mode == 'tabs':
-                    # Режим вкладок - объединяем все вкладки в один файл
-                    all_data = []
+elif st.session_state.get('has_vacancy_mode', False) and st.session_state.export_mode == "single":
+    # РЕЖИМ: Единым файлом
+    st.markdown("---")
+    st.subheader("💾 Скачать результаты")
+    
+    if st.session_state.sheet_mode == 'tabs':
+        # Режим вкладок - объединяем все вкладки в один файл
+        all_data = []
+        
+        for sheet_name, sheet_result in st.session_state.sheets_results.items():
+            result_df_sheet = sheet_result['result_df'].copy()  # ✅ ИСПРАВЛЕНО: добавлен .copy()
+            original_df_sheet = st.session_state.sheets_data[sheet_name]['df']
+            
+            # Применяем изменения только для этой вкладки
+            for selection_key, new_value in st.session_state.manual_selections.items():
+                if selection_key.startswith(f"{sheet_name}_"):
+                    # Извлекаем row_id из ключа (формат: "SheetName_row_id")
+                    try:
+                        row_id_str = selection_key.replace(f"{sheet_name}_", "")
+                        row_id = int(row_id_str)
+                    except:
+                        continue
                     
-                    for sheet_name, sheet_result in st.session_state.sheets_results.items():
-                        result_df_sheet = sheet_result['result_df']
-                        original_df_sheet = st.session_state.sheets_data[sheet_name]['df']
+                    if row_id in result_df_sheet['row_id'].values:
+                        mask = result_df_sheet['row_id'] == row_id
                         
-                        # Применяем изменения только для этой вкладки
-                        for selection_key, new_value in st.session_state.manual_selections.items():
-                            if selection_key.startswith(f"{sheet_name}_"):
-                                # Извлекаем row_id
-                                row_id = int(selection_key.split('_', 1)[1]) if '_' in selection_key else None
-                                
-                                if row_id is not None and row_id in result_df_sheet['row_id'].values:
-                                    mask = result_df_sheet['row_id'] == row_id
-                                    
-                                    if new_value == "❌ Нет совпадения":
-                                        result_df_sheet.loc[mask, 'Итоговое гео'] = None
-                                    else:
-                                        result_df_sheet.loc[mask, 'Итоговое гео'] = new_value
-                                        if new_value in hh_areas:
-                                            result_df_sheet.loc[mask, 'ID HH'] = hh_areas[new_value]['id']
-                                            result_df_sheet.loc[mask, 'Регион'] = hh_areas[new_value]['parent']
-                        
-                        # Формируем данные для этой вкладки
-                        output_sheet = result_df_sheet[result_df_sheet['Итоговое гео'].notna()].copy()
+                        if new_value == "❌ Нет совпадения":
+                            result_df_sheet.loc[mask, 'Итоговое гео'] = None
+                            result_df_sheet.loc[mask, 'ID HH'] = None
+                            result_df_sheet.loc[mask, 'Регион'] = None
+                            result_df_sheet.loc[mask, 'Статус'] = '❌ Не найдено'
+                        else:
+                            result_df_sheet.loc[mask, 'Итоговое гео'] = new_value
+                            if new_value in hh_areas:
+                                result_df_sheet.loc[mask, 'ID HH'] = hh_areas[new_value]['id']
+                                result_df_sheet.loc[mask, 'Регион'] = hh_areas[new_value]['parent']
+                                result_df_sheet.loc[mask, 'Статус'] = '✅ Исправлено'
+            
+            # Формируем данные для этой вкладки (ИСКЛЮЧАЕМ "Не найдено" и "Пустое значение")
+            output_sheet = result_df_sheet[
+                (result_df_sheet['Итоговое гео'].notna()) &
+                (~result_df_sheet['Статус'].str.contains('Не найдено', na=False)) &
+                (~result_df_sheet['Статус'].str.contains('Пустое значение', na=False))
+            ].copy()
                         
                         if len(output_sheet) > 0:
                             original_cols = original_df_sheet.columns.tolist()
