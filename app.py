@@ -412,7 +412,15 @@ def check_if_changed(original, matched):
 
 def get_candidates_by_word(client_city, hh_city_names, limit=20):  
     """Получает кандидатов по совпадению начального слова"""  
-    first_word = normalize_city_name(client_city.split()[0])  
+    # Проверка на пустую строку
+    if not client_city or not client_city.strip():
+        return []
+    
+    words = client_city.split()
+    if not words:
+        return []
+    
+    first_word = normalize_city_name(words[0])  
       
     candidates = []  
     for city_name in hh_city_names:  
