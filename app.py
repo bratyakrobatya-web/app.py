@@ -7,7 +7,7 @@ import re
 import zipfile
 from datetime import datetime
 
-# Version: 2.8.0 - Improved: larger vacancy tab names with better styling
+# Version: 3.0.0 - Major update: improved mode selection, single file for 'Единым файлом'
 
 # Настройка страницы  
 st.set_page_config(  
@@ -916,17 +916,74 @@ if uploaded_file is not None and hh_areas is not None:
                 if 'export_mode' not in st.session_state:
                     st.session_state.export_mode = None
                 
+                # CSS для стилизации кнопок режимов
+                st.markdown("""
+                <style>
+                .mode-button {
+                    padding: 30px;
+                    border-radius: 10px;
+                    text-align: center;
+                    cursor: pointer;
+                    transition: all 0.3s;
+                    border: 3px solid #e0e0e0;
+                    background: white;
+                    margin: 10px 0;
+                }
+                .mode-button:hover {
+                    border-color: #ff4b4b;
+                    box-shadow: 0 4px 12px rgba(255, 75, 75, 0.3);
+                }
+                .mode-button.selected {
+                    border-color: #ff4b4b;
+                    background: #fff5f5;
+                    box-shadow: 0 4px 12px rgba(255, 75, 75, 0.4);
+                }
+                .mode-icon {
+                    font-size: 32px;
+                    margin-bottom: 10px;
+                }
+                .mode-title {
+                    font-size: 20px;
+                    font-weight: 600;
+                    color: #262730;
+                    margin-bottom: 8px;
+                }
+                .mode-desc {
+                    font-size: 14px;
+                    color: #6c757d;
+                }
+                </style>
+                """, unsafe_allow_html=True)
+                
                 col1, col2 = st.columns(2)
                 
                 with col1:
-                    if st.button("📦 Разделение по вакансиям", use_container_width=True, type="primary"):
+                    selected_split = st.session_state.export_mode == "split"
+                    if st.button(
+                        "📦 Разделение по вакансиям\n\nОтдельный файл для каждой вакансии", 
+                        use_container_width=True, 
+                        type="primary" if selected_split else "secondary",
+                        key="mode_split"
+                    ):
                         st.session_state.export_mode = "split"
                         st.rerun()
                 
                 with col2:
-                    if st.button("📄 Единым файлом", use_container_width=True):
+                    selected_single = st.session_state.export_mode == "single"
+                    if st.button(
+                        "📄 Единым файлом\n\nВсе вакансии в одном ZIP-архиве", 
+                        use_container_width=True,
+                        type="primary" if selected_single else "secondary",
+                        key="mode_single"
+                    ):
                         st.session_state.export_mode = "single"
                         st.rerun()
+                
+                # Показываем выбранный режим
+                if st.session_state.export_mode == "split":
+                    st.success("🎯 **Режим разделения по вакансиям активирован**")
+                elif st.session_state.export_mode == "single":
+                    st.info("🎯 **Режим единого архива активирован**")
                 
                 # Если режим еще не выбран, останавливаем дальнейшую обработку
                 if st.session_state.export_mode is None:
@@ -1534,98 +1591,101 @@ if uploaded_file is not None and hh_areas is not None:
                 st.stop()
                 
             elif st.session_state.get('has_vacancy_mode', False) and st.session_state.export_mode == "single":
-                # РЕЖИМ: Единым файлом (все вакансии в одном ZIP)
+                # РЕЖИМ: Единым файлом (все вакансии в одном файле, как обычный режим)
                 st.markdown("---")
-                st.subheader("📦 Выгрузка единым архивом")
-                st.info("🎯 **Режим: Все вакансии в одном ZIP-архиве**")
-                # РЕЖИМ: Разделение по вакансиям
-                st.info("🎯 **Режим разделения по вакансиям активирован**")
+                st.subheader("💾 Скачать результаты")
                 
-                # Получаем названия столбцов
+                # Применяем ручные изменения к final_result_df
+                for row_id, new_value in st.session_state.manual_selections.items():
+                    mask = final_result_df['row_id'] == row_id
+                    
+                    if new_value == "❌ Нет совпадения":
+                        final_result_df.loc[mask, 'Итоговое гео'] = None
+                        final_result_df.loc[mask, 'ID HH'] = None
+                        final_result_df.loc[mask, 'Регион'] = None
+                        final_result_df.loc[mask, 'Совпадение %'] = 0
+                        final_result_df.loc[mask, 'Изменение'] = 'Нет'
+                        final_result_df.loc[mask, 'Статус'] = '❌ Не найдено'
+                    else:
+                        final_result_df.loc[mask, 'Итоговое гео'] = new_value
+                        
+                        if new_value in hh_areas:
+                            final_result_df.loc[mask, 'ID HH'] = hh_areas[new_value]['id']
+                            final_result_df.loc[mask, 'Регион'] = hh_areas[new_value]['parent']
+                        
+                        original = final_result_df.loc[mask, 'Исходное название'].values[0]
+                        final_result_df.loc[mask, 'Изменение'] = 'Да' if check_if_changed(original, new_value) else 'Нет'
+                
+                # Добавляем города из added_cities
+                if st.session_state.added_cities:
+                    original_cols = st.session_state.original_df.columns.tolist()
+                    
+                    for city in st.session_state.added_cities:
+                        if city in hh_areas:
+                            last_row = st.session_state.original_df.iloc[-1] if len(st.session_state.original_df) > 0 else {}
+                            
+                            new_row_data = {col: last_row.get(col, '') for col in original_cols}
+                            new_row_data[original_cols[0]] = city
+                            
+                            new_row = pd.DataFrame([new_row_data])
+                            st.session_state.original_df = pd.concat([st.session_state.original_df, new_row], ignore_index=True)
+                            
+                            final_result_df = pd.concat([final_result_df, pd.DataFrame([{
+                                'row_id': len(final_result_df),
+                                'Исходное название': city,
+                                'Итоговое гео': city,
+                                'ID HH': hh_areas[city]['id'],
+                                'Регион': hh_areas[city]['parent'],
+                                'Совпадение %': 100.0,
+                                'Статус': '✅ Добавлено',
+                                'Изменение': 'Нет'
+                            }])], ignore_index=True)
+                
+                # Формируем итоговый файл для скачивания (все вакансии вместе)
                 original_cols = st.session_state.original_df.columns.tolist()
                 
-                # Находим индекс столбца "Вакансия"
-                vacancy_col = None
-                for col in original_cols:
-                    if 'вакансия' in str(col).lower():
-                        vacancy_col = col
-                        break
+                # Оставляем только строки с найденным гео
+                export_df = final_result_df[
+                    (final_result_df['Итоговое гео'].notna()) &
+                    (~final_result_df['Статус'].str.contains('Не найдено', na=False)) &
+                    (~final_result_df['Статус'].str.contains('Пустое значение', na=False))
+                ].copy()
                 
-                if vacancy_col:
-                    # Формируем данные для экспорта
-                    # В режиме вакансий оставляем ВСЕ строки (включая дубликаты по HH)
-                    # Исключаем только не найденные и пустые значения
-                    export_df = final_result_df[
-                        (final_result_df['Итоговое гео'].notna()) &
-                        (~final_result_df['Статус'].str.contains('Не найдено', na=False)) &
-                        (~final_result_df['Статус'].str.contains('Пустое значение', na=False))
-                    ].copy()
-                    
-                    # Получаем уникальные вакансии
-                    if vacancy_col in export_df.columns:
-                        unique_vacancies = export_df[vacancy_col].dropna().unique()
-                        
-                        st.success(f"📊 Найдено **{len(unique_vacancies)}** уникальных вакансий")
-                        
-                        # Создаем ZIP архив со всеми файлами
-                        import zipfile
-                        from datetime import datetime
-                        
-                        zip_buffer = io.BytesIO()
-                        
-                        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-                            for vacancy in unique_vacancies:
-                                # Фильтруем города по вакансии
-                                vacancy_df = export_df[export_df[vacancy_col] == vacancy].copy()
-                                
-                                # Берем все столбцы КРОМЕ служебных и "Вакансия"
-                                # Заменяем "Исходное название" на "Итоговое гео"
-                                output_vacancy_df = pd.DataFrame()
-                                
-                                # Добавляем итоговое гео как первый столбец
-                                output_vacancy_df[original_cols[0]] = vacancy_df['Итоговое гео']
-                                
-                                # Добавляем остальные столбцы из исходного файла (кроме первого и вакансии)
-                                for col in original_cols[1:]:
-                                    if col != vacancy_col and col in vacancy_df.columns:
-                                        output_vacancy_df[col] = vacancy_df[col].values
-                                
-                                # Удаляем дубликаты по нормализованному названию города
-                                output_vacancy_df['_normalized'] = output_vacancy_df[original_cols[0]].apply(normalize_city_name)
-                                output_vacancy_df = output_vacancy_df.drop_duplicates(subset=['_normalized'], keep='first')
-                                output_vacancy_df = output_vacancy_df.drop(columns=['_normalized'])
-                                
-                                # Создаем безопасное имя файла
-                                safe_vacancy_name = str(vacancy).replace('/', '_').replace('\\', '_')[:50]
-                                file_name = f"{safe_vacancy_name}.xlsx"
-                                
-                                # Сохраняем в буфер С ЗАГОЛОВКАМИ
-                                file_buffer = io.BytesIO()
-                                with pd.ExcelWriter(file_buffer, engine='openpyxl') as writer:
-                                    output_vacancy_df.to_excel(writer, index=False, header=True, sheet_name='Результат')
-                                file_buffer.seek(0)
-                                
-                                # Добавляем в ZIP
-                                zip_file.writestr(file_name, file_buffer.getvalue())
-                        
-                        zip_buffer.seek(0)
-                        
-                        # Кнопка скачивания ZIP
-                        st.download_button(
-                            label=f"📦 Скачать все файлы ({len(unique_vacancies)} вакансий)",
-                            data=zip_buffer,
-                            file_name=f"vacancies_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
-                            mime="application/zip",
-                            use_container_width=True,
-                            type="primary"
-                        )
-                        
-                        # Показываем превью по вакансиям
-                        with st.expander("👀 Превью файлов по вакансиям"):
-                            for vacancy in unique_vacancies:
-                                vacancy_df = export_df[export_df[vacancy_col] == vacancy].copy()
-                                cities_count = len(vacancy_df['Итоговое гео'].unique())
-                                st.markdown(f"**{vacancy}** - {cities_count} уникальных городов")
+                # Создаем итоговый DataFrame
+                output_df = pd.DataFrame()
+                output_df[original_cols[0]] = export_df['Итоговое гео']
+                
+                for col in original_cols[1:]:
+                    if col in st.session_state.original_df.columns:
+                        indices = export_df['row_id'].values
+                        output_df[col] = st.session_state.original_df.iloc[indices][col].values
+                
+                # Удаляем дубликаты
+                output_df['_normalized'] = output_df[original_cols[0]].apply(normalize_city_name)
+                output_df = output_df.drop_duplicates(subset=['_normalized'], keep='first')
+                output_df = output_df.drop(columns=['_normalized'])
+                
+                st.success(f"✅ Готово к выгрузке: **{len(output_df)}** уникальных городов")
+                
+                # Кнопка скачивания одного файла
+                output_all = io.BytesIO()
+                with pd.ExcelWriter(output_all, engine='openpyxl') as writer:
+                    output_df.to_excel(writer, index=False, header=True, sheet_name='Результат')
+                output_all.seek(0)
+                
+                st.download_button(
+                    label=f"📥 Скачать файл ({len(output_df)} городов)",
+                    data=output_all,
+                    file_name=f"all_vacancies_combined_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True,
+                    type="primary"
+                )
+                
+                # Превью
+                st.markdown("---")
+                st.markdown("#### 👀 Превью итогового файла")
+                st.dataframe(output_df, use_container_width=True, height=400)
                 
             else:
                 # ОБЫЧНЫЙ РЕЖИМ (как было раньше)
