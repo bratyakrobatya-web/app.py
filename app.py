@@ -7,7 +7,7 @@ import re
 import zipfile
 from datetime import datetime
 
-# Version: 3.0.2 - Fixed: syntax error in f-string with quotes
+# Version: 3.0.3 - Fixed: final_result_df not defined, duplicate blocks removed
 
 # Настройка страницы  
 st.set_page_config(  
@@ -1001,9 +1001,9 @@ if uploaded_file is not None and hh_areas is not None:
                 # Для обычного режима (без вакансий) показываем стандартные блоки
                 pass
             
-            # Стандартные блоки показываем только если НЕТ режима вакансий ИЛИ режим не выбран
-            # (для обычных файлов без вакансий)
-            show_standard_blocks = not st.session_state.get('has_vacancy_mode', False) or st.session_state.export_mode is None
+            # Стандартные блоки показываем только если НЕТ режима вакансий
+            # Если есть вакансии - используем специальные блоки для split или single
+            show_standard_blocks = not st.session_state.get('has_vacancy_mode', False)
             
             if show_standard_blocks:
                 st.markdown("---")  
@@ -1595,19 +1595,23 @@ if uploaded_file is not None and hh_areas is not None:
                 st.markdown("---")
                 st.subheader("💾 Скачать результаты")
                 
+                # Создаем копию result_df для применения изменений
+                final_result_df = result_df.copy()
+                
                 # Применяем ручные изменения к final_result_df
-                for row_id, new_value in st.session_state.manual_selections.items():
-                    mask = final_result_df['row_id'] == row_id
-                    
-                    if new_value == "❌ Нет совпадения":
-                        final_result_df.loc[mask, 'Итоговое гео'] = None
-                        final_result_df.loc[mask, 'ID HH'] = None
-                        final_result_df.loc[mask, 'Регион'] = None
-                        final_result_df.loc[mask, 'Совпадение %'] = 0
-                        final_result_df.loc[mask, 'Изменение'] = 'Нет'
-                        final_result_df.loc[mask, 'Статус'] = '❌ Не найдено'
-                    else:
-                        final_result_df.loc[mask, 'Итоговое гео'] = new_value
+                if st.session_state.manual_selections:
+                    for row_id, new_value in st.session_state.manual_selections.items():
+                        mask = final_result_df['row_id'] == row_id
+                        
+                        if new_value == "❌ Нет совпадения":
+                            final_result_df.loc[mask, 'Итоговое гео'] = None
+                            final_result_df.loc[mask, 'ID HH'] = None
+                            final_result_df.loc[mask, 'Регион'] = None
+                            final_result_df.loc[mask, 'Совпадение %'] = 0
+                            final_result_df.loc[mask, 'Изменение'] = 'Нет'
+                            final_result_df.loc[mask, 'Статус'] = '❌ Не найдено'
+                        else:
+                            final_result_df.loc[mask, 'Итоговое гео'] = new_value
                         
                         if new_value in hh_areas:
                             final_result_df.loc[mask, 'ID HH'] = hh_areas[new_value]['id']
