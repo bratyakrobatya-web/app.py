@@ -901,38 +901,52 @@ if uploaded_file is not None and hh_areas is not None:
                 if st.session_state.export_mode is None:
                     st.info("👆 Выберите режим экспорта для продолжения")
                     st.stop()
+                
+                # Если выбран режим split - переходим сразу к блоку редактирования по вакансиям
+                if st.session_state.export_mode == "split":
+                    # Переходим к блоку "Редактирование и выгрузка по вакансиям" ниже
+                    pass
+                else:
+                    # Для режима "single" показываем стандартные блоки
+                    pass
+            else:
+                # Для обычного режима (без вакансий) показываем стандартные блоки
+                pass
             
-            # Стандартные блоки показываем только если НЕ режим "split"
-            if not (st.session_state.get('has_vacancy_mode', False) and st.session_state.export_mode == "split"):
+            # Стандартные блоки показываем только если НЕ режим "split"  
+            # (для обычных файлов или для режима "single")
+            show_standard_blocks = not (st.session_state.get('has_vacancy_mode', False) and st.session_state.export_mode == "split")
+            
+            if show_standard_blocks:
                 st.markdown("---")  
                 st.subheader("📊 Результаты")  
-              
-            col1, col2, col3, col4, col5, col6 = st.columns(6)  
-              
-            total = len(result_df)  
-            exact = len(result_df[result_df['Статус'] == '✅ Точное'])  
-            similar = len(result_df[result_df['Статус'] == '⚠️ Похожее'])  
-            duplicates = len(result_df[result_df['Статус'].str.contains('Дубликат', na=False)])  
-            not_found = len(result_df[result_df['Статус'] == '❌ Не найдено'])  
-              
-            to_export = len(result_df[  
-                (~result_df['Статус'].str.contains('Дубликат', na=False)) &   
-                (result_df['Итоговое гео'].notna())  
-            ])  
-              
-            col1.metric("Всего", total)  
-            col2.metric("✅ Точных", exact)  
-            col3.metric("⚠️ Похожих", similar)  
-            col4.metric("🔄 Дубликатов", duplicates)  
-            col5.metric("❌ Не найдено", not_found)  
-            col6.metric("📤 К выгрузке", to_export)  
-              
-            if duplicates > 0:  
-                st.warning(f"""  
-                ⚠️ **Найдено {duplicates} дубликатов:**  
-                - 🔄 По исходному названию: **{dup_original}**  
-                - 🔄 По результату HH: **{dup_hh}**  
-                """)  
+                  
+                col1, col2, col3, col4, col5, col6 = st.columns(6)  
+                  
+                total = len(result_df)  
+                exact = len(result_df[result_df['Статус'] == '✅ Точное'])  
+                similar = len(result_df[result_df['Статус'] == '⚠️ Похожее'])  
+                duplicates = len(result_df[result_df['Статус'].str.contains('Дубликат', na=False)])  
+                not_found = len(result_df[result_df['Статус'] == '❌ Не найдено'])  
+                  
+                to_export = len(result_df[  
+                    (~result_df['Статус'].str.contains('Дубликат', na=False)) &   
+                    (result_df['Итоговое гео'].notna())  
+                ])  
+                  
+                col1.metric("Всего", total)  
+                col2.metric("✅ Точных", exact)  
+                col3.metric("⚠️ Похожих", similar)  
+                col4.metric("🔄 Дубликатов", duplicates)  
+                col5.metric("❌ Не найдено", not_found)  
+                col6.metric("📤 К выгрузке", to_export)  
+                  
+                if duplicates > 0:  
+                    st.warning(f"""  
+                    ⚠️ **Найдено {duplicates} дубликатов:**  
+                    - 🔄 По исходному названию: **{dup_original}**  
+                    - 🔄 По результату HH: **{dup_hh}**  
+                    """)  
               
             st.markdown("---")  
             st.subheader("📋 Таблица сопоставлений")  
@@ -1142,11 +1156,18 @@ if uploaded_file is not None and hh_areas is not None:
                   
                 st.markdown("---")  
                 st.subheader("💾 Скачать результаты")  
-              
-            final_result_df = result_df.copy()
             
-            # Применяем ручные изменения
-            if st.session_state.manual_selections:  
+            # Если режим split - переходим сразу к блоку редактирования по вакансиям, пропуская стандартные блоки скачивания
+            if not show_standard_blocks:
+                # Режим split - пропускаем весь блок скачивания и идем к вакансиям
+                pass
+            else:
+                # Обычный режим или single - показываем блок скачивания
+              
+                final_result_df = result_df.copy()
+                
+                # Применяем ручные изменения
+                if st.session_state.manual_selections:  
                 for row_id, new_value in st.session_state.manual_selections.items():  
                     mask = final_result_df['row_id'] == row_id  
                       
@@ -1168,6 +1189,7 @@ if uploaded_file is not None and hh_areas is not None:
                         final_result_df.loc[mask, 'Изменение'] = 'Да' if check_if_changed(original, new_value) else 'Нет'  
             
             # ПРОВЕРЯЕМ РЕЖИМ РАБОТЫ
+            # Если режим split - показываем только блок редактирования по вакансиям
             if st.session_state.get('has_vacancy_mode', False) and st.session_state.export_mode == "split":
                 # РЕЖИМ: Разделение по вакансиям с редактированием
                 st.markdown("---")
@@ -1348,7 +1370,7 @@ if uploaded_file is not None and hh_areas is not None:
                                 # Формируем итоговый DataFrame для этой вакансии
                                 vacancy_final_df = vacancy_df.copy()
                                 
-                                # Применяем ручные изменения
+                                # Применяем ручные изменения ТОЛЬКО для строк этой вакансии
                                 for row_id, new_value in st.session_state.manual_selections.items():
                                     if row_id in vacancy_final_df['row_id'].values:
                                         mask = vacancy_final_df['row_id'] == row_id
@@ -1410,6 +1432,10 @@ if uploaded_file is not None and hh_areas is not None:
                                     type="primary",
                                     key=f"download_{vacancy}_{tab_idx}"
                                 )
+                
+                # После обработки всех вакансий - останавливаем выполнение
+                # Не показываем стандартные блоки для режима split
+                st.stop()
                 
             elif st.session_state.get('has_vacancy_mode', False) and st.session_state.export_mode == "single":
                 # РЕЖИМ: Единым файлом (все вакансии в одном ZIP)
