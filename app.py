@@ -7,7 +7,7 @@ import re
 import zipfile
 from datetime import datetime
 
-# Version: 2.5.0 - Fixed: preserve matched values, add current match to candidates list
+# Version: 2.6.0 - Added: preferred matches, download all as ZIP, vacancy name in preview
 
 # Настройка страницы  
 st.set_page_config(  
@@ -135,8 +135,11 @@ PREFERRED_MATCHES = {
     'кировск': 'Кировск (Ленинградская область)',
     'истра': 'Истра (Московская область)',
     'красногорск': 'Красногорск (Московская область)',
-    'истра, деревня Покровское': 'Покровское (городской округ Истра)',
+    'истра, деревня покровское': 'Покровское (городской округ Истра)',
     'домодедово': 'Домодедово (Московская область)',
+    'клин': 'Клин (Московская область)',
+    'октябрьский': 'Октябрьский (Московская область, Люберецкий район)',
+    'советск': 'Советск (Калининградская область)',
 }
 
 # ============================================  
@@ -1443,7 +1446,7 @@ if uploaded_file is not None and hh_areas is not None:
                                 output_vacancy_df = output_vacancy_df.drop(columns=['_normalized'])
                                 
                                 # Показываем превью
-                                st.markdown("#### 👀 Превью итогового файла")
+                                st.markdown(f"#### 👀 Превью итогового файла - {vacancy}")
                                 st.dataframe(output_vacancy_df, use_container_width=True, height=300)
                                 
                                 # Кнопка выгрузки для этой вакансии
@@ -1464,6 +1467,72 @@ if uploaded_file is not None and hh_areas is not None:
                                     type="primary",
                                     key=f"download_{vacancy}_{tab_idx}"
                                 )
+                        
+                        # Кнопка для скачивания всех файлов архивом
+                        st.markdown("---")
+                        st.markdown("### 📦 Скачать все вакансии одним архивом")
+                        
+                        # Создаем ZIP-архив со всеми файлами
+                        zip_buffer = io.BytesIO()
+                        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                            for vacancy in unique_vacancies:
+                                # Фильтруем данные для каждой вакансии
+                                vacancy_df = export_df[export_df[vacancy_col] == vacancy].copy()
+                                
+                                # Применяем изменения
+                                vacancy_final_df = vacancy_df.copy()
+                                for row_id, new_value in st.session_state.manual_selections.items():
+                                    if row_id in vacancy_final_df['row_id'].values:
+                                        mask = vacancy_final_df['row_id'] == row_id
+                                        if new_value == "❌ Нет совпадения":
+                                            vacancy_final_df.loc[mask, 'Итоговое гео'] = None
+                                        else:
+                                            vacancy_final_df.loc[mask, 'Итоговое гео'] = new_value
+                                            if new_value in hh_areas:
+                                                vacancy_final_df.loc[mask, 'ID HH'] = hh_areas[new_value]['id']
+                                                vacancy_final_df.loc[mask, 'Регион'] = hh_areas[new_value]['parent']
+                                
+                                # Добавляем города из vacancy_added_cities
+                                vacancy_key = f"vacancy_added_cities_{vacancy}"
+                                if vacancy_key in st.session_state and st.session_state[vacancy_key]:
+                                    for added_city in st.session_state[vacancy_key]:
+                                        if added_city in hh_areas:
+                                            last_row = vacancy_final_df.iloc[-1] if len(vacancy_final_df) > 0 else {}
+                                            new_row = {col: last_row.get(col, '') for col in vacancy_final_df.columns}
+                                            new_row['Исходное название'] = added_city
+                                            new_row['Итоговое гео'] = added_city
+                                            new_row['ID HH'] = hh_areas[added_city]['id']
+                                            new_row['Регион'] = hh_areas[added_city]['parent']
+                                            vacancy_final_df = pd.concat([vacancy_final_df, pd.DataFrame([new_row])], ignore_index=True)
+                                
+                                # Формируем итоговый файл
+                                output_vacancy_df = vacancy_final_df[vacancy_final_df['Итоговое гео'].notna()].copy()
+                                output_cols_to_keep = [col for col in original_cols if col in output_vacancy_df.columns]
+                                output_vacancy_df = output_vacancy_df[output_cols_to_keep]
+                                
+                                # Удаляем дубликаты
+                                output_vacancy_df['_normalized'] = output_vacancy_df.iloc[:, 0].apply(normalize_city_name)
+                                output_vacancy_df = output_vacancy_df.drop_duplicates(subset=['_normalized'], keep='first')
+                                output_vacancy_df = output_vacancy_df.drop(columns=['_normalized'])
+                                
+                                # Сохраняем в ZIP
+                                safe_vacancy_name = str(vacancy).replace('/', '_').replace('\\', '_')[:50]
+                                excel_buffer = io.BytesIO()
+                                with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+                                    output_vacancy_df.to_excel(writer, index=False, header=True, sheet_name='Результат')
+                                excel_buffer.seek(0)
+                                zip_file.writestr(f"{safe_vacancy_name}.xlsx", excel_buffer.getvalue())
+                        
+                        zip_buffer.seek(0)
+                        
+                        st.download_button(
+                            label=f"📦 Скачать все файлы архивом ({len(unique_vacancies)} вакансий)",
+                            data=zip_buffer,
+                            file_name=f"all_vacancies_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
+                            mime="application/zip",
+                            use_container_width=True,
+                            type="secondary"
+                        )
                 
                 # После обработки всех вакансий - останавливаем выполнение
                 # Не показываем стандартные блоки для режима split
