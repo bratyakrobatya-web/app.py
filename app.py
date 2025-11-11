@@ -1434,9 +1434,10 @@ if uploaded_file is not None and hh_areas is not None:
                                     
                                     # Определяем текущий выбор
                                     unique_key = f"select_{sheet_name}_{row_id}_{tab_idx}"
-                                    
-                                    if row_id in st.session_state.manual_selections:
-                                        selected_value = st.session_state.manual_selections[row_id]
+                                    selection_key = (sheet_name, row_id)
+
+                                    if selection_key in st.session_state.manual_selections:
+                                        selected_value = st.session_state.manual_selections[selection_key]
                                         default_idx = 0
                                         for i, opt in enumerate(options):
                                             if selected_value in opt or opt.startswith(selected_value):
@@ -1465,11 +1466,11 @@ if uploaded_file is not None and hh_areas is not None:
                                         )
                                         
                                         if selected == "❌ Нет совпадения":
-                                            st.session_state.manual_selections[row_id] = "❌ Нет совпадения"
+                                            st.session_state.manual_selections[selection_key] = "❌ Нет совпадения"
                                         else:
                                             # Извлекаем название без процента
                                             city_match = selected.rsplit(' (', 1)[0]
-                                            st.session_state.manual_selections[row_id] = city_match
+                                            st.session_state.manual_selections[selection_key] = city_match
                                     
                                     with col3:
                                         st.text(f"{row['Совпадение %']:.1f}%")
@@ -1478,10 +1479,20 @@ if uploaded_file is not None and hh_areas is not None:
                             
                             # Применяем ручные изменения
                             result_df_sheet_final = result_df_sheet.copy()
-                            for row_id, new_value in st.session_state.manual_selections.items():
+                            for selection_key, new_value in st.session_state.manual_selections.items():
+                                # selection_key это кортеж (sheet_name, row_id) или просто row_id для старых данных
+                                if isinstance(selection_key, tuple):
+                                    key_sheet_name, row_id = selection_key
+                                    # Применяем только для текущей вкладки
+                                    if key_sheet_name != sheet_name:
+                                        continue
+                                else:
+                                    # Для обратной совместимости - применяем как раньше
+                                    row_id = selection_key
+
                                 if row_id in result_df_sheet_final['row_id'].values:
                                     mask = result_df_sheet_final['row_id'] == row_id
-                                    
+
                                     if new_value == "❌ Нет совпадения":
                                         result_df_sheet_final.loc[mask, 'Итоговое гео'] = None
                                     else:
@@ -1666,9 +1677,10 @@ if uploaded_file is not None and hh_areas is not None:
                                             
                                             # Уникальный ключ для каждой вакансии
                                             unique_key = f"select_{vacancy}_{row_id}_{tab_idx}"
-                                            
-                                            if row_id in st.session_state.manual_selections:
-                                                selected_value = st.session_state.manual_selections[row_id]
+                                            selection_key = (vacancy, row_id)
+
+                                            if selection_key in st.session_state.manual_selections:
+                                                selected_value = st.session_state.manual_selections[selection_key]
                                                 if selected_value == "❌ Нет совпадения":
                                                     default_idx = 0
                                                 else:
@@ -1698,13 +1710,13 @@ if uploaded_file is not None and hh_areas is not None:
                                             )
                                             
                                             if selected == "❌ Нет совпадения":
-                                                st.session_state.manual_selections[row_id] = "❌ Нет совпадения"
+                                                st.session_state.manual_selections[selection_key] = "❌ Нет совпадения"
                                             else:
                                                 if "(" in selected and selected.startswith("❌") == False:
                                                     selected_city = selected.rsplit(' (', 1)[0]
-                                                    st.session_state.manual_selections[row_id] = selected_city
+                                                    st.session_state.manual_selections[selection_key] = selected_city
                                                 else:
-                                                    st.session_state.manual_selections[row_id] = selected
+                                                    st.session_state.manual_selections[selection_key] = selected
                                         
                                         with col3:
                                             st.text(f"{row['Совпадение %']}%")
@@ -1772,10 +1784,20 @@ if uploaded_file is not None and hh_areas is not None:
                                 vacancy_final_df = vacancy_df.copy()
                                 
                                 # Применяем ручные изменения ТОЛЬКО для строк этой вакансии
-                                for row_id, new_value in st.session_state.manual_selections.items():
+                                for selection_key, new_value in st.session_state.manual_selections.items():
+                                    # selection_key это кортеж (vacancy, row_id) или просто row_id для старых данных
+                                    if isinstance(selection_key, tuple):
+                                        key_vacancy, row_id = selection_key
+                                        # Применяем только для текущей вакансии
+                                        if key_vacancy != vacancy:
+                                            continue
+                                    else:
+                                        # Для обратной совместимости - применяем как раньше
+                                        row_id = selection_key
+
                                     if row_id in vacancy_final_df['row_id'].values:
                                         mask = vacancy_final_df['row_id'] == row_id
-                                        
+
                                         if new_value == "❌ Нет совпадения":
                                             vacancy_final_df.loc[mask, 'Итоговое гео'] = None
                                         else:
@@ -1889,10 +1911,20 @@ if uploaded_file is not None and hh_areas is not None:
                         original_df_sheet = st.session_state.sheets_data[sheet_name]['df']
                         
                         # Применяем изменения
-                        for row_id, new_value in st.session_state.manual_selections.items():
+                        for selection_key, new_value in st.session_state.manual_selections.items():
+                            # selection_key это кортеж (sheet_name, row_id) или просто row_id для старых данных
+                            if isinstance(selection_key, tuple):
+                                key_sheet_name, row_id = selection_key
+                                # Применяем только для текущей вкладки
+                                if key_sheet_name != sheet_name:
+                                    continue
+                            else:
+                                # Для обратной совместимости - применяем как раньше
+                                row_id = selection_key
+
                             if row_id in result_df_sheet['row_id'].values:
                                 mask = result_df_sheet['row_id'] == row_id
-                                
+
                                 if new_value == "❌ Нет совпадения":
                                     result_df_sheet.loc[mask, 'Итоговое гео'] = None
                                 else:
