@@ -1196,10 +1196,10 @@ if uploaded_file is not None and hh_areas is not None:
                                 safe_vacancy_name = str(vacancy).replace('/', '_').replace('\\', '_')[:50]
                                 file_name = f"{safe_vacancy_name}.xlsx"
                                 
-                                # Сохраняем в буфер БЕЗ заголовков
+                                # Сохраняем в буфер С ЗАГОЛОВКАМИ
                                 file_buffer = io.BytesIO()
                                 with pd.ExcelWriter(file_buffer, engine='openpyxl') as writer:
-                                    output_vacancy_df.to_excel(writer, index=False, header=False, sheet_name='Результат')
+                                    output_vacancy_df.to_excel(writer, index=False, header=True, sheet_name='Результат')
                                 file_buffer.seek(0)
                                 
                                 # Добавляем в ZIP
