@@ -7,7 +7,7 @@ import re
 import zipfile
 from datetime import datetime
 
-# Version: 2.6.0 - Added: preferred matches, download all as ZIP, vacancy name in preview
+# Version: 2.6.1 - Fixed: ZIP archive creation error with empty dataframes
 
 # Настройка страницы  
 st.set_page_config(  
@@ -1510,18 +1510,21 @@ if uploaded_file is not None and hh_areas is not None:
                                 output_cols_to_keep = [col for col in original_cols if col in output_vacancy_df.columns]
                                 output_vacancy_df = output_vacancy_df[output_cols_to_keep]
                                 
-                                # Удаляем дубликаты
-                                output_vacancy_df['_normalized'] = output_vacancy_df.iloc[:, 0].apply(normalize_city_name)
-                                output_vacancy_df = output_vacancy_df.drop_duplicates(subset=['_normalized'], keep='first')
-                                output_vacancy_df = output_vacancy_df.drop(columns=['_normalized'])
+                                # Удаляем дубликаты только если есть данные
+                                if len(output_vacancy_df) > 0 and len(output_vacancy_df.columns) > 0:
+                                    first_col = output_vacancy_df.columns[0]
+                                    output_vacancy_df['_normalized'] = output_vacancy_df[first_col].apply(normalize_city_name)
+                                    output_vacancy_df = output_vacancy_df.drop_duplicates(subset=['_normalized'], keep='first')
+                                    output_vacancy_df = output_vacancy_df.drop(columns=['_normalized'])
                                 
-                                # Сохраняем в ZIP
-                                safe_vacancy_name = str(vacancy).replace('/', '_').replace('\\', '_')[:50]
-                                excel_buffer = io.BytesIO()
-                                with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
-                                    output_vacancy_df.to_excel(writer, index=False, header=True, sheet_name='Результат')
-                                excel_buffer.seek(0)
-                                zip_file.writestr(f"{safe_vacancy_name}.xlsx", excel_buffer.getvalue())
+                                # Сохраняем в ZIP только если есть данные
+                                if len(output_vacancy_df) > 0:
+                                    safe_vacancy_name = str(vacancy).replace('/', '_').replace('\\', '_')[:50]
+                                    excel_buffer = io.BytesIO()
+                                    with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+                                        output_vacancy_df.to_excel(writer, index=False, header=True, sheet_name='Результат')
+                                    excel_buffer.seek(0)
+                                    zip_file.writestr(f"{safe_vacancy_name}.xlsx", excel_buffer.getvalue())
                         
                         zip_buffer.seek(0)
                         
