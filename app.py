@@ -351,6 +351,10 @@ def extract_city_and_region(text):
     
     # Префиксы населенных пунктов
     city_prefixes = ['г.', 'п.', 'д.', 'с.', 'пос.', 'дер.', 'село', 'город', 'поселок', 'деревня']
+    
+    # Убираем всё после запятой (дополнительная информация типа "Истра, деревня Покровское")
+    if ',' in text:
+        text = text.split(',')[0].strip()
       
     region_keywords = [  
         'област', 'край', 'республик', 'округ',  
@@ -359,10 +363,15 @@ def extract_city_and_region(text):
         'красноярск'  
     ]  
     
-    # Удаляем префиксы в начале строки
+    # Удаляем префиксы в начале строки (с пробелом и без)
     text_cleaned = text.strip()
     for prefix in city_prefixes:
-        if text_cleaned.lower().startswith(prefix):
+        # Проверяем с пробелом: "г. Москва"
+        if text_cleaned.lower().startswith(prefix + ' '):
+            text_cleaned = text_cleaned[len(prefix):].strip()
+            break
+        # Проверяем без пробела: "г.Москва"
+        elif text_cleaned.lower().startswith(prefix):
             text_cleaned = text_cleaned[len(prefix):].strip()
             break
       
