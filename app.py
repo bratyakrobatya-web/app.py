@@ -588,22 +588,22 @@ def smart_match_city(client_city, hh_city_names, hh_areas, threshold=85):
       
     return (best_match if best_match else candidates[0]), word_candidates  
 
-def match_cities(original_df, hh_areas, threshold=85):  
-    """Сопоставляет города с сохранением кандидатов и всех столбцов"""  
-    results = []  
-    hh_city_names = list(hh_areas.keys())  
-    
+def match_cities(original_df, hh_areas, threshold=85, sheet_name=None):
+    """Сопоставляет города с сохранением кандидатов и всех столбцов"""
+    results = []
+    hh_city_names = list(hh_areas.keys())
+
     # Определяем названия столбцов
     first_col_name = original_df.columns[0]
     other_cols = original_df.columns[1:].tolist() if len(original_df.columns) > 1 else []
-      
-    seen_original_cities = {}  
-    seen_hh_cities = {}  
-      
-    duplicate_original_count = 0  
-    duplicate_hh_count = 0  
-      
-    st.session_state.candidates_cache = {}  
+
+    seen_original_cities = {}
+    seen_hh_cities = {}
+
+    duplicate_original_count = 0
+    duplicate_hh_count = 0
+
+    # Не перезаписываем кэш, чтобы сохранить данные для всех вкладок  
       
     progress_bar = st.progress(0)  
     status_text = st.empty()  
@@ -651,9 +651,11 @@ def match_cities(original_df, hh_areas, threshold=85):
             })  
             continue  
           
-        match_result, candidates = smart_match_city(client_city_original, hh_city_names, hh_areas, threshold)  
-          
-        st.session_state.candidates_cache[idx] = candidates  
+        match_result, candidates = smart_match_city(client_city_original, hh_city_names, hh_areas, threshold)
+
+        # Используем составной ключ для вкладок, простой для базового режима
+        cache_key = (sheet_name, idx) if sheet_name else idx
+        st.session_state.candidates_cache[cache_key] = candidates  
           
         if match_result:  
             matched_name = match_result[0]  
@@ -957,7 +959,7 @@ if uploaded_file is not None and hh_areas is not None:
                 
                 for sheet_name, sheet_data in st.session_state.sheets_data.items():
                     df_sheet = sheet_data['df']
-                    result_df, dup_original, dup_hh, total_dup = match_cities(df_sheet, hh_areas, threshold)  
+                    result_df, dup_original, dup_hh, total_dup = match_cities(df_sheet, hh_areas, threshold, sheet_name=sheet_name)  
                     
                     st.session_state.sheets_results[sheet_name] = {
                         'result_df': result_df,
@@ -1414,9 +1416,15 @@ if uploaded_file is not None and hh_areas is not None:
                                 for idx, row in editable_rows.iterrows():
                                     row_id = row['row_id']
                                     city_name = row['Исходное название']
-                                    
-                                    # Ищем кандидатов
-                                    candidates = get_candidates_by_word(city_name, list(hh_areas.keys()), limit=20)
+
+                                    # Используем кэш кандидатов из smart_match_city
+                                    cache_key = (sheet_name, row_id)
+                                    candidates = st.session_state.candidates_cache.get(cache_key, [])
+
+                                    # Если кэша нет, ищем заново (для обратной совместимости)
+                                    if not candidates:
+                                        candidates = get_candidates_by_word(city_name, list(hh_areas.keys()), limit=20)
+
                                     current_value = row['Итоговое гео']
                                     current_match = row['Совпадение %']
                                     
@@ -1656,9 +1664,13 @@ if uploaded_file is not None and hh_areas is not None:
                                             city_name = row['Исходное название']
                                             current_value = row['Итоговое гео']
                                             current_match = row['Совпадение %']
-                                            
-                                            # Всегда ищем кандидатов заново для корректного отображения
-                                            candidates = get_candidates_by_word(city_name, list(hh_areas.keys()), limit=20)
+
+                                            # Используем кэш кандидатов из smart_match_city
+                                            candidates = st.session_state.candidates_cache.get(row_id, [])
+
+                                            # Если кэша нет, ищем заново (для обратной совместимости)
+                                            if not candidates:
+                                                candidates = get_candidates_by_word(city_name, list(hh_areas.keys()), limit=20)
                                             
                                             # Если есть текущее значение из сопоставления - добавляем его в начало
                                             if current_value and current_value != city_name:
