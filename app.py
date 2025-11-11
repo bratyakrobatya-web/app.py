@@ -435,11 +435,11 @@ def smart_match_city(client_city, hh_city_names, hh_areas, threshold=85):
     if city_part_lower in PREFERRED_MATCHES:
         preferred_match = PREFERRED_MATCHES[city_part_lower]
         if preferred_match in hh_city_names:
-            score = fuzz.WRatio(normalize_city_name(client_city), normalize_city_name(preferred_match))
-            word_candidates = get_candidates_by_word(client_city, hh_city_names)
+            score = fuzz.WRatio(city_part_lower, normalize_city_name(preferred_match))
+            word_candidates = get_candidates_by_word(city_part, hh_city_names)
             return (preferred_match, score, 0), word_candidates
       
-    word_candidates = get_candidates_by_word(client_city, hh_city_names)  
+    word_candidates = get_candidates_by_word(city_part, hh_city_names)  
       
     if word_candidates and len(word_candidates) > 0 and word_candidates[0][1] >= threshold:  
         best_candidate = word_candidates[0]  
@@ -468,15 +468,15 @@ def smart_match_city(client_city, hh_city_names, hh_areas, threshold=85):
       
     if exact_matches_with_region:  
         best_match = exact_matches_with_region[0]  
-        score = fuzz.WRatio(normalize_city_name(client_city), normalize_city_name(best_match))  
+        score = fuzz.WRatio(city_part_lower, normalize_city_name(best_match))  
         return (best_match, score, 0), word_candidates  
     elif exact_matches:  
         best_match = exact_matches[0]  
-        score = fuzz.WRatio(normalize_city_name(client_city), normalize_city_name(best_match))  
+        score = fuzz.WRatio(city_part_lower, normalize_city_name(best_match))  
         return (best_match, score, 0), word_candidates  
       
     candidates = process.extract(  
-        client_city,  
+        city_part,  
         hh_city_names,  
         scorer=fuzz.WRatio,  
         limit=10  
@@ -495,8 +495,6 @@ def smart_match_city(client_city, hh_city_names, hh_areas, threshold=85):
       
     best_match = None  
     best_score = 0  
-      
-    client_city_lower = normalize_city_name(client_city)  
       
     for candidate_name, score, _ in candidates:  
         candidate_lower = normalize_city_name(candidate_name)  
@@ -529,11 +527,11 @@ def smart_match_city(client_city, hh_city_names, hh_areas, threshold=85):
         if len(candidate_city) > len(city_part_lower) + 4:  
             adjusted_score -= 25  
           
-        if len(candidate_name) > 15 and len(client_city) > 15:  
+        if len(candidate_name) > 15 and len(city_part) > 15:  
             adjusted_score += 5  
           
-        region_keywords = ['област', 'край', 'республик', 'округ']  
-        client_has_region = any(keyword in client_city_lower for keyword in region_keywords)  
+        region_keywords = ['oblast', 'край', 'республик', 'округ']  
+        client_has_region = any(keyword in city_part_lower for keyword in region_keywords)  
         candidate_has_region = any(keyword in candidate_lower for keyword in region_keywords)  
           
         if client_has_region and candidate_has_region:  
