@@ -7,7 +7,7 @@ import re
 import zipfile
 from datetime import datetime
 
-# Version: 3.3.2 - Fixed: corrected all indentation in single mode block
+# Version: 3.4.0 - Fixed: unique keys per sheet, prevent cross-sheet interference
 
 # Настройка страницы  
 st.set_page_config(  
@@ -1433,10 +1433,12 @@ if uploaded_file is not None and hh_areas is not None:
                                         options = ["❌ Нет совпадения"]
                                     
                                     # Определяем текущий выбор
+                                    # Используем уникальный ключ для каждой вкладки
+                                    selection_key = f"{sheet_name}_{row_id}"
                                     unique_key = f"select_{sheet_name}_{row_id}_{tab_idx}"
                                     
-                                    if row_id in st.session_state.manual_selections:
-                                        selected_value = st.session_state.manual_selections[row_id]
+                                    if selection_key in st.session_state.manual_selections:
+                                        selected_value = st.session_state.manual_selections[selection_key]
                                         default_idx = 0
                                         for i, opt in enumerate(options):
                                             if selected_value in opt or opt.startswith(selected_value):
@@ -1465,11 +1467,11 @@ if uploaded_file is not None and hh_areas is not None:
                                         )
                                         
                                         if selected == "❌ Нет совпадения":
-                                            st.session_state.manual_selections[row_id] = "❌ Нет совпадения"
+                                            st.session_state.manual_selections[selection_key] = "❌ Нет совпадения"
                                         else:
                                             # Извлекаем название без процента
                                             city_match = selected.rsplit(' (', 1)[0]
-                                            st.session_state.manual_selections[row_id] = city_match
+                                            st.session_state.manual_selections[selection_key] = city_match
                                     
                                     with col3:
                                         st.text(f"{row['Совпадение %']:.1f}%")
@@ -1478,17 +1480,22 @@ if uploaded_file is not None and hh_areas is not None:
                             
                             # Применяем ручные изменения
                             result_df_sheet_final = result_df_sheet.copy()
-                            for row_id, new_value in st.session_state.manual_selections.items():
-                                if row_id in result_df_sheet_final['row_id'].values:
-                                    mask = result_df_sheet_final['row_id'] == row_id
+                            for selection_key, new_value in st.session_state.manual_selections.items():
+                                # Проверяем что ключ относится к этой вкладке
+                                if selection_key.startswith(f"{sheet_name}_"):
+                                    # Извлекаем row_id из ключа
+                                    row_id = int(selection_key.split('_', 1)[1]) if '_' in selection_key else None
                                     
-                                    if new_value == "❌ Нет совпадения":
-                                        result_df_sheet_final.loc[mask, 'Итоговое гео'] = None
-                                    else:
-                                        result_df_sheet_final.loc[mask, 'Итоговое гео'] = new_value
-                                        if new_value in hh_areas:
-                                            result_df_sheet_final.loc[mask, 'ID HH'] = hh_areas[new_value]['id']
-                                            result_df_sheet_final.loc[mask, 'Регион'] = hh_areas[new_value]['parent']
+                                    if row_id is not None and row_id in result_df_sheet_final['row_id'].values:
+                                        mask = result_df_sheet_final['row_id'] == row_id
+                                        
+                                        if new_value == "❌ Нет совпадения":
+                                            result_df_sheet_final.loc[mask, 'Итоговое гео'] = None
+                                        else:
+                                            result_df_sheet_final.loc[mask, 'Итоговое гео'] = new_value
+                                            if new_value in hh_areas:
+                                                result_df_sheet_final.loc[mask, 'ID HH'] = hh_areas[new_value]['id']
+                                                result_df_sheet_final.loc[mask, 'Регион'] = hh_areas[new_value]['parent']
                             
                             # Формируем итоговый файл для этой вкладки
                             output_sheet_df = result_df_sheet_final[
@@ -1888,18 +1895,22 @@ if uploaded_file is not None and hh_areas is not None:
                         result_df_sheet = sheet_result['result_df']
                         original_df_sheet = st.session_state.sheets_data[sheet_name]['df']
                         
-                        # Применяем изменения
-                        for row_id, new_value in st.session_state.manual_selections.items():
-                            if row_id in result_df_sheet['row_id'].values:
-                                mask = result_df_sheet['row_id'] == row_id
+                        # Применяем изменения только для этой вкладки
+                        for selection_key, new_value in st.session_state.manual_selections.items():
+                            if selection_key.startswith(f"{sheet_name}_"):
+                                # Извлекаем row_id
+                                row_id = int(selection_key.split('_', 1)[1]) if '_' in selection_key else None
                                 
-                                if new_value == "❌ Нет совпадения":
-                                    result_df_sheet.loc[mask, 'Итоговое гео'] = None
-                                else:
-                                    result_df_sheet.loc[mask, 'Итоговое гео'] = new_value
-                                    if new_value in hh_areas:
-                                        result_df_sheet.loc[mask, 'ID HH'] = hh_areas[new_value]['id']
-                                        result_df_sheet.loc[mask, 'Регион'] = hh_areas[new_value]['parent']
+                                if row_id is not None and row_id in result_df_sheet['row_id'].values:
+                                    mask = result_df_sheet['row_id'] == row_id
+                                    
+                                    if new_value == "❌ Нет совпадения":
+                                        result_df_sheet.loc[mask, 'Итоговое гео'] = None
+                                    else:
+                                        result_df_sheet.loc[mask, 'Итоговое гео'] = new_value
+                                        if new_value in hh_areas:
+                                            result_df_sheet.loc[mask, 'ID HH'] = hh_areas[new_value]['id']
+                                            result_df_sheet.loc[mask, 'Регион'] = hh_areas[new_value]['parent']
                         
                         # Формируем данные для этой вкладки
                         output_sheet = result_df_sheet[result_df_sheet['Итоговое гео'].notna()].copy()
