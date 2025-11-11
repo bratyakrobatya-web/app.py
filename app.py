@@ -7,7 +7,7 @@ import re
 import zipfile
 from datetime import datetime
 
-# Version: 3.3.1 - Fixed: indentation error in single mode
+# Version: 3.3.2 - Fixed: corrected all indentation in single mode block
 
 # Настройка страницы  
 st.set_page_config(  
@@ -1961,21 +1961,21 @@ if uploaded_file is not None and hh_areas is not None:
                             mask = final_result_df['row_id'] == row_id
                             
                             if new_value == "❌ Нет совпадения":
-                                    final_result_df.loc[mask, 'Итоговое гео'] = None
-                                    final_result_df.loc[mask, 'ID HH'] = None
-                                    final_result_df.loc[mask, 'Регион'] = None
-                                    final_result_df.loc[mask, 'Совпадение %'] = 0
-                                    final_result_df.loc[mask, 'Изменение'] = 'Нет'
-                                    final_result_df.loc[mask, 'Статус'] = '❌ Не найдено'
-                                else:
-                                    final_result_df.loc[mask, 'Итоговое гео'] = new_value
-                        
+                                final_result_df.loc[mask, 'Итоговое гео'] = None
+                                final_result_df.loc[mask, 'ID HH'] = None
+                                final_result_df.loc[mask, 'Регион'] = None
+                                final_result_df.loc[mask, 'Совпадение %'] = 0
+                                final_result_df.loc[mask, 'Изменение'] = 'Нет'
+                                final_result_df.loc[mask, 'Статус'] = '❌ Не найдено'
+                            else:
+                                final_result_df.loc[mask, 'Итоговое гео'] = new_value
+                                
                                 if new_value in hh_areas:
-                                final_result_df.loc[mask, 'ID HH'] = hh_areas[new_value]['id']
-                                final_result_df.loc[mask, 'Регион'] = hh_areas[new_value]['parent']
-                        
-                            original = final_result_df.loc[mask, 'Исходное название'].values[0]
-                            final_result_df.loc[mask, 'Изменение'] = 'Да' if check_if_changed(original, new_value) else 'Нет'
+                                    final_result_df.loc[mask, 'ID HH'] = hh_areas[new_value]['id']
+                                    final_result_df.loc[mask, 'Регион'] = hh_areas[new_value]['parent']
+                                
+                                original = final_result_df.loc[mask, 'Исходное название'].values[0]
+                                final_result_df.loc[mask, 'Изменение'] = 'Да' if check_if_changed(original, new_value) else 'Нет'
                 
                     # Добавляем города из added_cities
                     if st.session_state.added_cities:
