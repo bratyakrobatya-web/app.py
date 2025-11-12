@@ -2260,7 +2260,7 @@ if hh_areas is not None:
     all_cities_full = get_all_cities(hh_areas)
 
     # КНОПКА ВЫГРУЗКИ ВСЕХ ГОРОДОВ (ПЕРЕД ФИЛЬТРАМИ)
-    if st.button("🌍 Выгрузить ВСЕ города из справочника", type="primary", use_container_width=False):
+    if st.button("🌍 Выгрузить ВСЕ города из справочника", type="secondary", use_container_width=False):
         with st.spinner("Формирую полный список..."):
             all_cities_df = get_all_cities(hh_areas)
             if not all_cities_df.empty:
@@ -2303,12 +2303,23 @@ if hh_areas is not None:
     col_filter1, col_filter2, col_filter3, col_filter4 = st.columns(4)
 
     with col_filter1:
-        selected_districts = st.multiselect(
+        # Форматируем федеральные округа с количеством регионов
+        districts_formatted = []
+        districts_mapping = {}
+        for district, regions in FEDERAL_DISTRICTS.items():
+            formatted = f"{district} ({len(regions)} рег.)"
+            districts_formatted.append(formatted)
+            districts_mapping[formatted] = district
+
+        selected_districts_formatted = st.multiselect(
             "Федеральные округа:",
-            options=list(FEDERAL_DISTRICTS.keys()),
+            options=districts_formatted,
             help="Можно выбрать несколько",
             key="districts_select"
         )
+
+        # Получаем оригинальные названия округов
+        selected_districts = [districts_mapping[d] for d in selected_districts_formatted]
 
     # Формируем список доступных регионов на основе выбранных округов
     available_regions = []
@@ -2320,12 +2331,30 @@ if hh_areas is not None:
             available_regions.extend(regions)
 
     with col_filter2:
-        selected_regions = st.multiselect(
+        # Форматируем регионы с указанием федерального округа
+        regions_formatted = []
+        regions_mapping = {}
+        for region in sorted(available_regions):
+            # Находим федеральный округ для региона
+            fed_district = get_federal_district_by_region(region)
+            if fed_district != "Не определен":
+                # Сокращаем название округа для компактности
+                district_short = fed_district.replace("Федеральный округ", "ФО").replace("федеральный округ", "ФО")
+                formatted = f"{region} ({district_short})"
+            else:
+                formatted = region
+            regions_formatted.append(formatted)
+            regions_mapping[formatted] = region
+
+        selected_regions_formatted = st.multiselect(
             "Области/Регионы:",
-            options=sorted(available_regions),
+            options=regions_formatted,
             help="Можно выбрать несколько",
             key="regions_select"
         )
+
+        # Получаем оригинальные названия регионов
+        selected_regions = [regions_mapping[r] for r in selected_regions_formatted]
 
     with col_filter3:
         # Фильтр по часовому поясу (мультиселект)
@@ -2410,8 +2439,46 @@ if hh_areas is not None:
                     st.session_state.regions_cities_df = get_cities_by_regions(hh_areas, regions_to_search)
 
     with col_btn2:
-        # Этот столбец оставляем пустым для симметрии
-        pass
+        # Кнопка для выбранного города
+        if selected_single_city and selected_single_city != "":
+            if st.button(f"📍 Получить информацию о городе", type="primary", use_container_width=True):
+                with st.spinner(f"Получаю информацию о {selected_single_city}..."):
+                    # Фильтруем данные по выбранному городу
+                    city_df = all_cities_full[all_cities_full['Город'] == selected_single_city].copy()
+                    if not city_df.empty:
+                        st.success(f"✅ Информация о городе: **{selected_single_city}**")
+                        st.dataframe(city_df, use_container_width=True, height=150)
+
+                        col1, col2 = st.columns(2)
+                        with col1:
+                            output_city = io.BytesIO()
+                            with pd.ExcelWriter(output_city, engine='openpyxl') as writer:
+                                city_df.to_excel(writer, index=False, sheet_name='Город')
+                            output_city.seek(0)
+                            st.download_button(
+                                label=f"📥 Скачать полный отчет",
+                                data=output_city,
+                                file_name=f"city_{selected_single_city}.xlsx",
+                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                use_container_width=True,
+                                key="download_city_full"
+                            )
+                        with col2:
+                            publisher_city_df = pd.DataFrame({'Город': city_df['Город']})
+                            output_city_pub = io.BytesIO()
+                            with pd.ExcelWriter(output_city_pub, engine='openpyxl') as writer:
+                                publisher_city_df.to_excel(writer, index=False, header=False, sheet_name='Гео')
+                            output_city_pub.seek(0)
+                            st.download_button(
+                                label=f"📤 Для публикатора",
+                                data=output_city_pub,
+                                file_name=f"city_{selected_single_city}_publisher.xlsx",
+                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                use_container_width=True,
+                                key="download_city_publisher"
+                            )
+                    else:
+                        st.warning(f"⚠️ Город {selected_single_city} не найден")
 
     with col_btn3:
         # Кнопка для выгрузки по часовым поясам
