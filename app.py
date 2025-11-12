@@ -1415,7 +1415,7 @@ if uploaded_file is not None and hh_areas is not None:
 
         # Показываем превью файла с информацией о размерах
         vacancy_info = " | 🎯 **Обнаружен столбец 'Вакансия'**" if has_vacancy_column else ""
-        with st.expander(f"👀 Превью ({len(df)} строк, {len(df).columns)} столбцов{vacancy_info})", expanded=False):
+        with st.expander(f"👀 Превью ({len(df)} строк, {len(df.columns)} столбцов{vacancy_info})", expanded=False):
             if st.session_state.has_multiple_sheets:
                 # Показываем вкладки для выбора
                 sheet_tabs = st.tabs(list(st.session_state.sheets_data.keys()))
