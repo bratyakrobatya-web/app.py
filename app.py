@@ -19,11 +19,11 @@ st.set_page_config(
 # Кастомный CSS для современного дизайна
 st.markdown("""
 <style>
-    /* Подключение шрифта hhsans Medium */
+    /* Подключение шрифта hhsans Display */
     @font-face {
-        font-family: 'hhsans';
-        src: url('hhsans-Medium.woff2') format('woff2'),
-             url('hhsans-Medium.ttf') format('truetype');
+        font-family: 'hhsans-display';
+        src: url('hhsans-Display.woff2') format('woff2'),
+             url('hhsans-Display.ttf') format('truetype');
         font-weight: normal;
         font-style: normal;
         font-display: swap;
@@ -41,6 +41,22 @@ st.markdown("""
         font-size: 1em;
         vertical-align: middle;
         margin-right: 8px;
+    }
+
+    /* Красные круги с цифрами */
+    .step-number {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        background: #ea3324;
+        color: white;
+        border-radius: 50%;
+        font-weight: bold;
+        font-size: 16px;
+        margin-right: 8px;
+        vertical-align: middle;
     }
 
     .main-title {
@@ -69,7 +85,7 @@ st.markdown("""
 
     /* Базовые стили */
     html, body, [class*="css"] {
-        font-family: 'hhsans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        font-family: 'hhsans-display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
     .block-container {
@@ -201,10 +217,19 @@ st.markdown("""
     }
 
     .stSuccess {
-        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
-        border-left: 5px solid #4caf50;
+        background: rgba(76, 175, 80, 0.1);
+        border: 2px solid rgba(76, 175, 80, 0.4);
         border-radius: 10px;
         padding: 1rem;
+        color: #1a1a1a !important;
+    }
+
+    .stSuccess > div {
+        color: #1a1a1a !important;
+    }
+
+    .stSuccess p, .stSuccess strong {
+        color: #1a1a1a !important;
     }
 
     .stWarning {
@@ -1204,18 +1229,30 @@ with st.sidebar:
     st.markdown("### 📖 Инструкция")
     st.markdown("""
     **Сценарии использования:**
+    """, unsafe_allow_html=True)
 
-    **1️⃣ Простой сценарий (файл с одним столбцом)**
+    st.markdown("""
+    <p><span class="step-number">1</span><strong>Простой сценарий (файл с одним столбцом)</strong></p>
+    """, unsafe_allow_html=True)
+    st.markdown("""
     - Загрузите Excel или CSV файл, где в первом столбце указаны города
     - Система автоматически сопоставит города со справочником HH.ru
     - Подходит для быстрой проверки списка городов
+    """)
 
-    **2️⃣ Сценарий со столбцом "Вакансия"**
+    st.markdown("""
+    <p><span class="step-number">2</span><strong>Сценарий со столбцом "Вакансия"</strong></p>
+    """, unsafe_allow_html=True)
+    st.markdown("""
     - Загрузите файл, где есть столбец с заголовком "Вакансия"
     - Система разделит данные по вакансиям и обработает отдельно
     - Подходит для работы с несколькими вакансиями в одном файле
+    """)
 
-    **3️⃣ Сценарий с вкладками "вакансия"**
+    st.markdown("""
+    <p><span class="step-number">3</span><strong>Сценарий с вкладками "вакансия"</strong></p>
+    """, unsafe_allow_html=True)
+    st.markdown("""
     - Загрузите Excel файл с несколькими вкладками
     - Вкладки с названием "вакансия" будут обработаны как отдельные вакансии
     - Подходит для структурированной работы с большим количеством вакансий
