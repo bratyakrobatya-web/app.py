@@ -40,10 +40,20 @@ st.markdown("""
     margin: 0;  
 }  
 
-.title-container {  
-    display: flex;  
-    align-items: center;  
-    margin-bottom: 20px;  
+.title-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+/* Адаптация логотипа для sidebar */
+[data-testid="stSidebar"] .rotating-earth {
+    font-size: 2em;
+    margin-right: 10px;
+}
+
+[data-testid="stSidebar"] .main-title {
+    font-size: 1.5em;
 }
 
 /* Стили для вкладок вакансий */
@@ -782,18 +792,9 @@ def match_cities(original_df, hh_areas, threshold=85, sheet_name=None):
       
     return pd.DataFrame(results), duplicate_original_count, duplicate_hh_count, total_duplicates  
 
+# ============================================
+# ИНТЕРФЕЙС
 # ============================================  
-# ИНТЕРФЕЙС  
-# ============================================  
-# Заголовок с анимированной землей  
-st.markdown(  
-    '<div class="title-container">'  
-    '<span class="rotating-earth">🌍</span>'  
-    '<span class="main-title">Синхронизатор гео HH.ru</span>'  
-    '</div>',  
-    unsafe_allow_html=True  
-)  
-st.markdown("---")  
 
 # Загрузка справочника HH
 try:  
@@ -837,9 +838,18 @@ st.markdown("---")
 # ============================================
 # БЛОК: СИНХРОНИЗАТОР ГОРОДОВ
 # ============================================
+st.header("📤 Синхронизатор городов")
 
 with st.sidebar:
-    st.header("📤 Синхронизатор городов")
+    # Логотип с анимированной землей
+    st.markdown(
+        '<div class="title-container">'
+        '<span class="rotating-earth">🌍</span>'
+        '<span class="main-title">Синхронизатор гео HH.ru</span>'
+        '</div>',
+        unsafe_allow_html=True
+    )
+    st.markdown("---")
 
     st.markdown("### 📖 Инструкция")
     st.markdown("""
