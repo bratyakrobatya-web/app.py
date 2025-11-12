@@ -38,9 +38,9 @@ st.markdown("""
     .rotating-earth {
         display: inline-block;
         animation: rotate 3s linear infinite;
-        font-size: 3em;
+        font-size: 1em;
         vertical-align: middle;
-        margin-right: 15px;
+        margin-right: 8px;
     }
 
     .main-title {
@@ -59,8 +59,8 @@ st.markdown("""
 
     /* Адаптация логотипа для sidebar */
     [data-testid="stSidebar"] .rotating-earth {
-        font-size: 2em;
-        margin-right: 10px;
+        font-size: 0.67em;
+        margin-right: 6px;
     }
 
     [data-testid="stSidebar"] .main-title {
@@ -140,12 +140,14 @@ st.markdown("""
         border: none;
         transition: all 0.3s ease;
         box-shadow: 0 2px 8px rgba(234, 51, 36, 0.3);
+        color: white !important;
     }
 
     .stDownloadButton>button:hover {
         transform: translateY(-2px);
         box-shadow: 0 4px 16px rgba(234, 51, 36, 0.5);
         background: linear-gradient(135deg, #ff4539 0%, #ea3324 100%);
+        color: white !important;
     }
 
     /* File Uploader */
@@ -170,7 +172,14 @@ st.markdown("""
     /* Inputs */
     .stSelectbox > div > div {
         border-radius: 10px;
-        border: 1px solid #dee2e6;
+        background: transparent !important;
+        border: 2px solid #ea3324 !important;
+        transition: all 0.3s ease;
+    }
+
+    .stSelectbox:hover > div > div {
+        background: rgba(234, 51, 36, 0.05) !important;
+        box-shadow: 0 2px 12px rgba(234, 51, 36, 0.2);
     }
 
     .stTextInput > div > div {
@@ -239,6 +248,17 @@ st.markdown("""
     /* Slider */
     .stSlider > div > div {
         background: linear-gradient(90deg, #ea3324 0%, #c02a1e 100%);
+    }
+
+    /* Тумблер слайдера - белый */
+    .stSlider > div > div > div > div {
+        background-color: white !important;
+        border: 2px solid #ea3324 !important;
+    }
+
+    .stSlider > div > div > div > div:hover {
+        background-color: white !important;
+        box-shadow: 0 0 8px rgba(234, 51, 36, 0.5) !important;
     }
 
     /* Вкладки */
