@@ -19,11 +19,11 @@ st.set_page_config(
 # Кастомный CSS для современного дизайна
 st.markdown("""
 <style>
-    /* Подключение шрифта hhsans Display */
+    /* Подключение шрифта hhsans Regular */
     @font-face {
-        font-family: 'hhsans-display';
-        src: url('hhsans-Display.woff2') format('woff2'),
-             url('hhsans-Display.ttf') format('truetype');
+        font-family: 'hhsans';
+        src: url('hhsans-Regular.woff2') format('woff2'),
+             url('hhsans-Regular.ttf') format('truetype');
         font-weight: normal;
         font-style: normal;
         font-display: swap;
@@ -86,7 +86,7 @@ st.markdown("""
 
     /* Базовые стили */
     html, body, [class*="css"], * {
-        font-family: 'hhsans-display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        font-family: 'hhsans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
     }
 
     /* Применяем шрифт ко всем элементам Streamlit */
@@ -95,7 +95,7 @@ st.markdown("""
     .stTextArea textarea, .stNumberInput input,
     [data-testid="stFileUploader"], .uploadedFileName,
     p, span, div, label, h1, h2, h3, h4, h5, h6 {
-        font-family: 'hhsans-display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        font-family: 'hhsans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
     }
 
     .block-container {
@@ -1280,32 +1280,30 @@ with st.sidebar:
         max_value=100,
         value=85,
         help="Минимальный процент совпадения"
-    )  
+    )
 
-col1, col2 = st.columns([1, 1])  
+    st.markdown("---")
 
-with col1:
-    st.subheader("📁 Загрузка файла")
-    uploaded_file = st.file_uploader(  
-        "Выберите файл с городами",  
-        type=['xlsx', 'csv'],  
-        help="Поддерживаются форматы: Excel (.xlsx) и CSV"  
-    )  
-      
-    with st.expander("📋 Показать пример формата файла"):  
-        example_df = pd.DataFrame({  
-            'Город': ['г. Москва', 'п. Внуковское', 'Санкт-Петербург', 'Екатеринбург'],
-            'Данные 1': ['Значение 1', 'Значение 2', 'Значение 3', 'Значение 4'],
-            'Данные 2': ['A', 'B', 'C', 'D']
-        })  
-        st.dataframe(example_df, use_container_width=True, hide_index=True)
-        st.caption("✅ Первый столбец - города (с префиксами г., п. и др.)")
-        st.caption("✅ Остальные столбцы сохраняются без изменений")
-
-with col2:  
-    st.subheader("ℹ️ Информация")  
+    st.markdown("### ℹ️ Информация")
     if hh_areas:
-        st.success(f"✅ Справочник HH загружен: **{len(hh_areas)}** городов")  
+        st.success(f"✅ Справочник HH загружен: **{len(hh_areas)}** городов")
+
+st.subheader("📁 Загрузка файла")
+uploaded_file = st.file_uploader(
+    "Выберите файл с городами",
+    type=['xlsx', 'csv'],
+    help="Поддерживаются форматы: Excel (.xlsx) и CSV"
+)
+
+with st.expander("📋 Показать пример формата файла"):
+    example_df = pd.DataFrame({
+        'Город': ['г. Москва', 'п. Внуковское', 'Санкт-Петербург', 'Екатеринбург'],
+        'Данные 1': ['Значение 1', 'Значение 2', 'Значение 3', 'Значение 4'],
+        'Данные 2': ['A', 'B', 'C', 'D']
+    })
+    st.dataframe(example_df, use_container_width=True, hide_index=True)
+    st.caption("✅ Первый столбец - города (с префиксами г., п. и др.)")
+    st.caption("✅ Остальные столбцы сохраняются без изменений")
 
 if uploaded_file is not None and hh_areas is not None:  
     st.markdown("---")  
@@ -2632,13 +2630,14 @@ if uploaded_file is not None and hh_areas is not None:
                         export_full_df.to_excel(writer, index=False, sheet_name='Результат')  
                     output.seek(0)  
                       
-                    st.download_button(  
-                        label="📥 Полный отчет с анализом",  
-                        data=output,  
-                        file_name=f"full_report_{uploaded_file.name.rsplit('.', 1)[0]}.xlsx",  
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  
-                        use_container_width=True,  
-                        key='download_full'  
+                    st.download_button(
+                        label="📥 Полный отчет с анализом",
+                        data=output,
+                        file_name=f"full_report_{uploaded_file.name.rsplit('.', 1)[0]}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True,
+                        type="primary",
+                        key='download_full'
                     )
                     
                     st.caption("📊 Подробный отчет со всеми данными")
@@ -2681,6 +2680,7 @@ if hh_areas is not None:
                         file_name="all_cities.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         use_container_width=True,
+                        type="primary",
                         key="download_all_full"
                     )
                 with col2:
@@ -2695,6 +2695,7 @@ if hh_areas is not None:
                         file_name="all_cities_publisher.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         use_container_width=True,
+                        type="primary",
                         key="download_all_publisher"
                     )
 
