@@ -295,19 +295,6 @@ st.markdown("""
         background: linear-gradient(90deg, transparent 0%, #dee2e6 50%, transparent 100%);
     }
 
-    /* Кнопка "Выгрузить все города" - без заливки */
-    .stButton button[kind="secondary"] {
-        background: transparent !important;
-        border: 2px solid #e1011c !important;
-        color: #e1011c !important;
-    }
-
-    .stButton button[kind="secondary"]:hover {
-        background: rgba(225, 1, 28, 0.1) !important;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(225, 1, 28, 0.3) !important;
-    }
-
     /* Слайдер "Порог совпадения" - без заливки */
     .stSlider {
         background: transparent !important;
