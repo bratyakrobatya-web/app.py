@@ -98,29 +98,31 @@ st.markdown("""
         padding: 0.6rem 2rem;
         font-weight: 500;
         border: none;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #e1011c 0%, #b8010f 100%);
         transition: all 0.3s ease;
-        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        box-shadow: 0 2px 8px rgba(225, 1, 28, 0.3);
     }
 
     .stButton>button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(102, 126, 234, 0.5);
+        box-shadow: 0 4px 16px rgba(225, 1, 28, 0.5);
+        background: linear-gradient(135deg, #ff1a33 0%, #e1011c 100%);
     }
 
     .stDownloadButton>button {
         border-radius: 10px;
         padding: 0.6rem 2rem;
         font-weight: 500;
-        background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        background: linear-gradient(135deg, #e1011c 0%, #b8010f 100%);
         border: none;
         transition: all 0.3s ease;
-        box-shadow: 0 2px 8px rgba(72, 187, 120, 0.3);
+        box-shadow: 0 2px 8px rgba(225, 1, 28, 0.3);
     }
 
     .stDownloadButton>button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(72, 187, 120, 0.5);
+        box-shadow: 0 4px 16px rgba(225, 1, 28, 0.5);
+        background: linear-gradient(135deg, #ff1a33 0%, #e1011c 100%);
     }
 
     /* File Uploader */
@@ -133,12 +135,12 @@ st.markdown("""
     }
 
     [data-testid="stFileUploader"]:hover {
-        border-color: #667eea;
+        border-color: #e1011c;
         background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
     }
 
     .uploadedFileName {
-        color: #667eea;
+        color: #e1011c;
         font-weight: 500;
     }
 
@@ -196,7 +198,7 @@ st.markdown("""
     [data-testid="stSidebar"] h1 {
         font-size: 1.5rem;
         padding-bottom: 1rem;
-        border-bottom: 2px solid #667eea;
+        border-bottom: 2px solid #e1011c;
     }
 
     /* Expander */
@@ -213,7 +215,7 @@ st.markdown("""
 
     /* Slider */
     .stSlider > div > div {
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(90deg, #e1011c 0%, #b8010f 100%);
     }
 
     /* Вкладки */
@@ -235,9 +237,9 @@ st.markdown("""
     }
 
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #e1011c 0%, #b8010f 100%);
         color: white;
-        border-bottom: 2px solid #667eea;
+        border-bottom: 2px solid #e1011c;
     }
 
     .stTabs [data-baseweb="tab"]:hover {
@@ -245,7 +247,7 @@ st.markdown("""
     }
 
     .stTabs [aria-selected="true"]:hover {
-        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+        background: linear-gradient(135deg, #b8010f 0%, #e1011c 100%);
     }
 
     /* DataFrame */
@@ -281,7 +283,7 @@ st.markdown("""
 
     /* Прогресс бар */
     .stProgress > div > div {
-        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(90deg, #e1011c 0%, #b8010f 100%);
         border-radius: 10px;
     }
 
@@ -291,6 +293,32 @@ st.markdown("""
         border: none;
         height: 2px;
         background: linear-gradient(90deg, transparent 0%, #dee2e6 50%, transparent 100%);
+    }
+
+    /* Кнопка "Выгрузить все города" - без заливки */
+    .stButton button[kind="secondary"] {
+        background: transparent !important;
+        border: 2px solid #e1011c !important;
+        color: #e1011c !important;
+    }
+
+    .stButton button[kind="secondary"]:hover {
+        background: rgba(225, 1, 28, 0.1) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(225, 1, 28, 0.3) !important;
+    }
+
+    /* Слайдер "Порог совпадения" - без заливки */
+    .stSlider {
+        background: transparent !important;
+    }
+
+    .stSlider > div {
+        background: transparent !important;
+    }
+
+    .stSlider > div > div > div {
+        background: transparent !important;
     }
 </style>
 """, unsafe_allow_html=True)  
@@ -1053,6 +1081,12 @@ except Exception as e:
     hh_areas = None  
 
 # ============================================
+# ГЛАВНЫЙ ЗАГОЛОВОК
+# ============================================
+st.markdown('<h1 style="text-align: left; color: #1a1a1a; margin-bottom: 1rem;">🌍 Синхронизатор гео HH.ru</h1>', unsafe_allow_html=True)
+st.markdown("---")
+
+# ============================================
 # БЛОК: ПРОВЕРКА ГЕО
 # ============================================
 if hh_areas:
@@ -1090,14 +1124,17 @@ st.markdown("---")
 st.header("📤 Синхронизатор городов")
 
 with st.sidebar:
-    # Логотип с анимированной землей
-    st.markdown(
-        '<div class="title-container">'
-        '<span class="rotating-earth">🌍</span>'
-        '<span class="main-title">Синхронизатор гео HH.ru</span>'
-        '</div>',
-        unsafe_allow_html=True
-    )
+    # Логотип (требуется PNG версия: конвертируйте min-hh-red.eps в min-hh-red.png)
+    try:
+        st.image("min-hh-red.png", width=150)
+    except:
+        # Fallback если PNG еще не создан
+        st.markdown(
+            '<div class="title-container">'
+            '<span class="rotating-earth">🌍</span>'
+            '</div>',
+            unsafe_allow_html=True
+        )
     st.markdown("---")
 
     st.markdown("### 📖 Инструкция")
