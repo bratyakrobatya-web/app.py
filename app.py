@@ -2275,12 +2275,45 @@ if hh_areas is not None:
         # Фильтр по часовому поясу
         if not all_cities_full.empty:
             unique_timezones = sorted([tz for tz in all_cities_full['UTC'].unique() if tz and str(tz) != 'nan'])
-            selected_timezone = st.selectbox(
+
+            # Создаем форматированные опции с разницей от МСК
+            timezone_options_formatted = ["Все"]
+            timezone_mapping = {}  # Маппинг отформатированных значений на оригинальные UTC
+
+            for tz in unique_timezones:
+                try:
+                    # Парсим UTC offset для вычисления разницы с Москвой
+                    sign = 1 if tz[0] == '+' else -1
+                    hours = int(tz[1:3])
+                    tz_hours = sign * hours
+                    diff_msk = tz_hours - 3  # Москва = UTC+3
+
+                    if diff_msk == 0:
+                        formatted = f"{tz} (МСК)"
+                    elif diff_msk > 0:
+                        formatted = f"{tz} (+{diff_msk}ч от МСК)"
+                    else:
+                        formatted = f"{tz} ({diff_msk}ч от МСК)"
+
+                    timezone_options_formatted.append(formatted)
+                    timezone_mapping[formatted] = tz
+                except:
+                    # Если не удалось распарсить, добавляем как есть
+                    timezone_options_formatted.append(tz)
+                    timezone_mapping[tz] = tz
+
+            selected_timezone_formatted = st.selectbox(
                 "Часовой пояс (UTC):",
-                options=["Все"] + unique_timezones,
+                options=timezone_options_formatted,
                 help="Фильтр по часовому поясу",
                 key="timezone_filter"
             )
+
+            # Получаем оригинальное значение UTC
+            if selected_timezone_formatted == "Все":
+                selected_timezone = "Все"
+            else:
+                selected_timezone = timezone_mapping.get(selected_timezone_formatted, selected_timezone_formatted)
         else:
             selected_timezone = "Все"
 
@@ -2309,7 +2342,7 @@ if hh_areas is not None:
 
     # КНОПКИ ДЕЙСТВИЙ
     col_btn1, col_btn2, col_btn3 = st.columns(3)
-    
+
     with col_btn1:
         # Показываем кнопку только если что-то выбрано
         if regions_to_search:
@@ -2318,57 +2351,11 @@ if hh_areas is not None:
                 st.info(f"📍 Выбрано регионов: **{len(selected_regions)}**")
             elif selected_districts:
                 st.info(f"📍 Выбрано округов: **{len(selected_districts)}** (включает {len(regions_to_search)} регионов)")
-            
+
             if st.button("🔍 Получить список городов по регионам", type="primary", use_container_width=True):
                 with st.spinner("Формирую список городов..."):
-                    cities_df = get_cities_by_regions(hh_areas, regions_to_search)
-                    
-                    if not cities_df.empty:
-                        st.success(f"✅ Найдено **{len(cities_df)}** городов в выбранных регионах")
-                        
-                        # Показываем таблицу
-                        st.dataframe(cities_df, use_container_width=True, height=400)
-                        
-                        # Кнопки для скачивания
-                        col1, col2 = st.columns(2)
-                        
-                        with col1:
-                            # Полный отчет
-                            output_full = io.BytesIO()
-                            with pd.ExcelWriter(output_full, engine='openpyxl') as writer:
-                                cities_df.to_excel(writer, index=False, sheet_name='Города')
-                            output_full.seek(0)
-                            
-                            st.download_button(
-                                label=f"📥 Скачать полный отчет ({len(cities_df)} городов)",
-                                data=output_full,
-                                file_name="cities_full_report.xlsx",
-                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                use_container_width=True,
-                                key="download_regions_full"
-                            )
-                        
-                        with col2:
-                            # Только названия городов для публикатора
-                            publisher_df = pd.DataFrame({'Город': cities_df['Город']})
-                            output_publisher = io.BytesIO()
-                            with pd.ExcelWriter(output_publisher, engine='openpyxl') as writer:
-                                publisher_df.to_excel(writer, index=False, header=False, sheet_name='Гео')
-                            output_publisher.seek(0)
-                            
-                            st.download_button(
-                                label=f"📤 Для публикатора ({len(cities_df)} городов)",
-                                data=output_publisher,
-                                file_name="cities_for_publisher.xlsx",
-                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                use_container_width=True,
-                                key="download_regions_publisher"
-                            )
-                    else:
-                        st.warning("⚠️ Города не найдены в выбранных регионах")
-        else:
-            st.info("👆 Выберите федеральные округа или конкретные регионы для получения списка городов")
-    
+                    st.session_state.regions_cities_df = get_cities_by_regions(hh_areas, regions_to_search)
+
     with col_btn2:
         # Кнопка для выгрузки всех городов
         if st.button("🌍 Выгрузить ВСЕ города", type="secondary", use_container_width=True):
@@ -2447,58 +2434,52 @@ if hh_areas is not None:
                             )
                     else:
                         st.warning(f"⚠️ Нет городов с UTC {selected_timezone}")
-        else:
-            st.info("👆 Выберите часовой пояс")
 
-    # Информация об отдельном выбранном городе
-    if selected_single_city:
-        st.markdown("---")
-        st.markdown("### 📍 Информация о городе")
+    # ОТОБРАЖЕНИЕ РЕЗУЛЬТАТОВ (ТАБЛИЦА ПРЕВЬЮ НА ПОЛНУЮ ШИРИНУ)
+    st.markdown("---")
 
-        city_info = all_cities_full[all_cities_full['Город'] == selected_single_city]
-        if not city_info.empty:
-            city_row = city_info.iloc[0]
+    if 'regions_cities_df' in st.session_state and not st.session_state.regions_cities_df.empty:
+        cities_df = st.session_state.regions_cities_df
+        st.success(f"✅ Найдено **{len(cities_df)}** городов в выбранных регионах")
 
-            col_info1, col_info2, col_info3 = st.columns(3)
-            with col_info1:
-                st.metric("Город", city_row['Город'])
-                st.metric("Регион", city_row['Регион'])
-            with col_info2:
-                st.metric("ID HH.ru", city_row['ID HH'])
-                st.metric("UTC", city_row['UTC'] if city_row['UTC'] else "Не указано")
-            with col_info3:
-                st.metric("Разница с МСК", city_row['Разница с МСК'])
+        # Показываем таблицу на полную ширину
+        st.dataframe(cities_df, use_container_width=True, height=400)
 
-            # Кнопки для выгрузки
-            col_single1, col_single2 = st.columns(2)
-            with col_single1:
-                single_df = pd.DataFrame([city_row])
-                output_single = io.BytesIO()
-                with pd.ExcelWriter(output_single, engine='openpyxl') as writer:
-                    single_df.to_excel(writer, index=False, sheet_name='Город')
-                output_single.seek(0)
-                st.download_button(
-                    label="📥 Скачать информацию",
-                    data=output_single,
-                    file_name=f"city_{city_row['Город']}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True,
-                    key="download_single_full"
-                )
-            with col_single2:
-                publisher_single = pd.DataFrame({'Город': [city_row['Город']]})
-                output_single_pub = io.BytesIO()
-                with pd.ExcelWriter(output_single_pub, engine='openpyxl') as writer:
-                    publisher_single.to_excel(writer, index=False, header=False, sheet_name='Гео')
-                output_single_pub.seek(0)
-                st.download_button(
-                    label="📤 Для публикатора",
-                    data=output_single_pub,
-                    file_name=f"city_{city_row['Город']}_publisher.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True,
-                    key="download_single_publisher"
-                )
+        # Кнопки для скачивания
+        col1, col2 = st.columns(2)
+
+        with col1:
+            # Полный отчет
+            output_full = io.BytesIO()
+            with pd.ExcelWriter(output_full, engine='openpyxl') as writer:
+                cities_df.to_excel(writer, index=False, sheet_name='Города')
+            output_full.seek(0)
+
+            st.download_button(
+                label=f"📥 Скачать полный отчет ({len(cities_df)} городов)",
+                data=output_full,
+                file_name="cities_full_report.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
+                key="download_regions_full"
+            )
+
+        with col2:
+            # Только названия городов для публикатора
+            publisher_df = pd.DataFrame({'Город': cities_df['Город']})
+            output_publisher = io.BytesIO()
+            with pd.ExcelWriter(output_publisher, engine='openpyxl') as writer:
+                publisher_df.to_excel(writer, index=False, header=False, sheet_name='Гео')
+            output_publisher.seek(0)
+
+            st.download_button(
+                label=f"📤 Для публикатора ({len(cities_df)} городов)",
+                data=output_publisher,
+                file_name="cities_for_publisher.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
+                key="download_regions_publisher"
+            )
 
 st.markdown("---")  
 st.markdown(  
