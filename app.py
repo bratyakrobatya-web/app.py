@@ -206,19 +206,6 @@ st.markdown("""
         align-items: center;
     }
 
-    [data-testid="stFileUploader"] section {
-        display: flex;
-        flex-direction: column-reverse;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-    }
-
-    /* Browse files слева от Drag and drop */
-    [data-testid="stFileUploader"] section > button {
-        order: -1;
-        margin-bottom: 10px;
-    }
 
     .uploadedFileName {
         color: #ea3324;
@@ -2487,8 +2474,13 @@ if uploaded_file is not None and hh_areas is not None:
                     # Применяем ручные изменения к final_result_df
                     if st.session_state.manual_selections:
                         for row_id, new_value in st.session_state.manual_selections.items():
+                            # row_id может быть кортежем (sheet_name, row_id) или просто значением
+                            if isinstance(row_id, tuple):
+                                # Для режима вакансий с листами - пропускаем, т.к. это другой блок
+                                continue
+
                             mask = final_result_df['row_id'] == row_id
-                            
+
                             if new_value == "❌ Нет совпадения":
                                 final_result_df.loc[mask, 'Итоговое гео'] = None
                                 final_result_df.loc[mask, 'ID HH'] = None
@@ -2498,11 +2490,11 @@ if uploaded_file is not None and hh_areas is not None:
                                 final_result_df.loc[mask, 'Статус'] = '❌ Не найдено'
                             else:
                                 final_result_df.loc[mask, 'Итоговое гео'] = new_value
-                                
+
                                 if new_value in hh_areas:
                                     final_result_df.loc[mask, 'ID HH'] = hh_areas[new_value]['id']
                                     final_result_df.loc[mask, 'Регион'] = hh_areas[new_value]['parent']
-                                
+
                                 original = final_result_df.loc[mask, 'Исходное название'].values[0]
                                 final_result_df.loc[mask, 'Изменение'] = 'Да' if check_if_changed(original, new_value) else 'Нет'
                 
