@@ -16,70 +16,283 @@ st.set_page_config(
     layout="wide"  
 )  
 
-# CSS для анимации земли и стилей  
-st.markdown("""  
-<style>  
-@keyframes rotate {  
-    from { transform: rotate(0deg); }  
-    to { transform: rotate(360deg); }  
-}  
+# Кастомный CSS для современного дизайна
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-.rotating-earth {  
-    display: inline-block;  
-    animation: rotate 3s linear infinite;  
-    font-size: 3em;  
-    vertical-align: middle;  
-    margin-right: 15px;  
-}  
+    /* Анимация для логотипа */
+    @keyframes rotate {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
 
-.main-title {  
-    display: inline-block;  
-    font-size: 3em;  
-    font-weight: bold;  
-    vertical-align: middle;  
-    margin: 0;  
-}  
+    .rotating-earth {
+        display: inline-block;
+        animation: rotate 3s linear infinite;
+        font-size: 3em;
+        vertical-align: middle;
+        margin-right: 15px;
+    }
 
-.title-container {
-    display: flex;
-    align-items: center;
-    margin-bottom: 20px;
-}
+    .main-title {
+        display: inline-block;
+        font-size: 3em;
+        font-weight: bold;
+        vertical-align: middle;
+        margin: 0;
+    }
 
-/* Адаптация логотипа для sidebar */
-[data-testid="stSidebar"] .rotating-earth {
-    font-size: 2em;
-    margin-right: 10px;
-}
+    .title-container {
+        display: flex;
+        align-items: center;
+        margin-bottom: 20px;
+    }
 
-[data-testid="stSidebar"] .main-title {
-    font-size: 1.5em;
-}
+    /* Адаптация логотипа для sidebar */
+    [data-testid="stSidebar"] .rotating-earth {
+        font-size: 2em;
+        margin-right: 10px;
+    }
 
-/* Стили для вкладок вакансий */
-.stTabs [data-baseweb="tab-list"] {
-    gap: 8px;
-}
+    [data-testid="stSidebar"] .main-title {
+        font-size: 1.5em;
+    }
 
-.stTabs [data-baseweb="tab"] {
-    height: 60px;
-    padding: 0px 24px;
-    background-color: #f0f2f6;
-    border-radius: 8px 8px 0px 0px;
-    font-size: 18px;
-    font-weight: 600;
-}
+    /* Базовые стили */
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+    }
 
-.stTabs [aria-selected="true"] {
-    background-color: #ff4b4b;
-    color: white;
-}
+    .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+        max-width: 1200px;
+    }
 
-.stTabs [data-baseweb="tab"]:hover {
-    background-color: #ff6b6b;
-    color: white;
-}
-</style>  
+    /* Заголовки */
+    h1 {
+        font-weight: 700;
+        color: #1a1a1a;
+        margin-bottom: 0.5rem;
+        font-size: 2.5rem;
+    }
+
+    h2 {
+        font-weight: 600;
+        color: #2d2d2d;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        font-size: 1.8rem;
+    }
+
+    h3 {
+        font-weight: 500;
+        color: #4a4a4a;
+        font-size: 1.3rem;
+    }
+
+    /* Кнопки */
+    .stButton>button {
+        border-radius: 10px;
+        padding: 0.6rem 2rem;
+        font-weight: 500;
+        border: none;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    }
+
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(102, 126, 234, 0.5);
+    }
+
+    .stDownloadButton>button {
+        border-radius: 10px;
+        padding: 0.6rem 2rem;
+        font-weight: 500;
+        background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+        border: none;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(72, 187, 120, 0.3);
+    }
+
+    .stDownloadButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(72, 187, 120, 0.5);
+    }
+
+    /* File Uploader */
+    [data-testid="stFileUploader"] {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: 2px dashed #adb5bd;
+        border-radius: 16px;
+        padding: 2.5rem;
+        transition: all 0.3s ease;
+    }
+
+    [data-testid="stFileUploader"]:hover {
+        border-color: #667eea;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    }
+
+    .uploadedFileName {
+        color: #667eea;
+        font-weight: 500;
+    }
+
+    /* Inputs */
+    .stSelectbox > div > div {
+        border-radius: 10px;
+        border: 1px solid #dee2e6;
+    }
+
+    .stTextInput > div > div {
+        border-radius: 10px;
+        border: 1px solid #dee2e6;
+    }
+
+    .stMultiSelect > div > div {
+        border-radius: 10px;
+        border: 1px solid #dee2e6;
+    }
+
+    /* Информационные блоки */
+    .stInfo {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border-left: 5px solid #2196f3;
+        border-radius: 10px;
+        padding: 1rem;
+    }
+
+    .stSuccess {
+        background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+        border-left: 5px solid #4caf50;
+        border-radius: 10px;
+        padding: 1rem;
+    }
+
+    .stWarning {
+        background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+        border-left: 5px solid #ff9800;
+        border-radius: 10px;
+        padding: 1rem;
+    }
+
+    .stError {
+        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+        border-left: 5px solid #f44336;
+        border-radius: 10px;
+        padding: 1rem;
+    }
+
+    /* Sidebar */
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+        border-right: 1px solid #e9ecef;
+    }
+
+    [data-testid="stSidebar"] h1 {
+        font-size: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #667eea;
+    }
+
+    /* Expander */
+    .streamlit-expanderHeader {
+        background: #f8f9fa;
+        border-radius: 10px;
+        font-weight: 500;
+        border: 1px solid #e9ecef;
+    }
+
+    .streamlit-expanderHeader:hover {
+        background: #e9ecef;
+    }
+
+    /* Slider */
+    .stSlider > div > div {
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    }
+
+    /* Вкладки */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 12px;
+        background: transparent;
+    }
+
+    .stTabs [data-baseweb="tab"] {
+        height: 60px;
+        padding: 0px 24px;
+        border-radius: 10px 10px 0 0;
+        font-weight: 500;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-bottom: none;
+        font-size: 18px;
+        transition: all 0.3s ease;
+    }
+
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-bottom: 2px solid #667eea;
+    }
+
+    .stTabs [data-baseweb="tab"]:hover {
+        background: #e9ecef;
+    }
+
+    .stTabs [aria-selected="true"]:hover {
+        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    }
+
+    /* DataFrame */
+    [data-testid="stDataFrame"] {
+        border-radius: 10px;
+        overflow: hidden;
+        border: 1px solid #e9ecef;
+    }
+
+    [data-testid="stDataFrameResizable"] {
+        border-radius: 10px;
+    }
+
+    /* Checkbox */
+    div.stCheckbox {
+        padding: 0.5rem;
+        border-radius: 8px;
+        transition: background 0.2s ease;
+    }
+
+    div.stCheckbox:hover {
+        background: #f8f9fa;
+    }
+
+    /* Метрики */
+    .stMetric {
+        background: white;
+        padding: 1rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        border: 1px solid #f0f0f0;
+    }
+
+    /* Прогресс бар */
+    .stProgress > div > div {
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+    }
+
+    /* Divider */
+    hr {
+        margin: 2rem 0;
+        border: none;
+        height: 2px;
+        background: linear-gradient(90deg, transparent 0%, #dee2e6 50%, transparent 100%);
+    }
+</style>
 """, unsafe_allow_html=True)  
 
 # Инициализация session_state  
