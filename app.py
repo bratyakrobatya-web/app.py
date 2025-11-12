@@ -2550,6 +2550,27 @@ if hh_areas is not None:
                     # Сохраняем в общий результат
                     if not city_df.empty:
                         st.session_state.regions_cities_df = city_df
+        # Кнопка для фильтра по населению (если выбрано только население)
+        elif selected_population_ranges and not regions_to_search and not selected_timezones:
+            # Информация о выборе
+            if len(selected_population_ranges) == 1:
+                st.info(f"👥 Выбран диапазон: **{selected_population_ranges[0]}**")
+            else:
+                st.info(f"👥 Выбрано диапазонов: **{len(selected_population_ranges)}**")
+
+            if st.button("🔍 Получить список городов по населению", type="primary", use_container_width=True):
+                with st.spinner("Фильтрую по населению..."):
+                    # Очищаем старые результаты
+                    if 'city_df' in st.session_state:
+                        del st.session_state.city_df
+                    if 'timezones_df' in st.session_state:
+                        del st.session_state.timezones_df
+                    # Берем все города и фильтруем по населению
+                    result_df = all_cities_full.copy()
+                    result_df = filter_by_population(result_df, selected_population_ranges, population_ranges)
+                    # Сохраняем результат
+                    if not result_df.empty:
+                        st.session_state.regions_cities_df = result_df
 
     with col_btn3:
         # Кнопка для выгрузки по часовым поясам
