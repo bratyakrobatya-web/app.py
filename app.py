@@ -208,9 +208,16 @@ st.markdown("""
 
     [data-testid="stFileUploader"] section {
         display: flex;
+        flex-direction: column-reverse;
         justify-content: center;
         align-items: center;
         text-align: center;
+    }
+
+    /* Browse files слева от Drag and drop */
+    [data-testid="stFileUploader"] section > button {
+        order: -1;
+        margin-bottom: 10px;
     }
 
     .uploadedFileName {
@@ -333,7 +340,7 @@ st.markdown("""
         background: #f8f9fa;
         border: 1px solid #dee2e6;
         border-bottom: none;
-        font-size: 18px;
+        font-size: 20px;
         transition: all 0.3s ease;
     }
 
@@ -1213,8 +1220,7 @@ st.markdown("---")
 # ============================================
 if hh_areas:
     st.header("🔍 Проверка гео")
-    st.info("Введите название города, чтобы найти правильное написание в справочнике HH.ru")
-    
+
     col1, col2 = st.columns([3, 1])
     
     with col1:
@@ -1250,7 +1256,7 @@ with st.sidebar:
     try:
         from PIL import Image
         logo_image = Image.open("min-hh-red.png")
-        st.image(logo_image, width=100)
+        st.image(logo_image, width=200)
     except:
         # Fallback если PNG еще не создан
         st.markdown(
@@ -1409,7 +1415,7 @@ if uploaded_file is not None and hh_areas is not None:
 
         # Показываем превью файла с информацией о размерах
         vacancy_info = " | 🎯 **Обнаружен столбец 'Вакансия'**" if has_vacancy_column else ""
-        with st.expander(f"👀 Превью ({len(df)} строк, {len(df.columns)} столбцов{vacancy_info})", expanded=True):
+        with st.expander(f"👀 Превью ({len(df)} строк, {len(df).columns)} столбцов{vacancy_info})", expanded=False):
             if st.session_state.has_multiple_sheets:
                 # Показываем вкладки для выбора
                 sheet_tabs = st.tabs(list(st.session_state.sheets_data.keys()))
@@ -1528,15 +1534,14 @@ if uploaded_file is not None and hh_areas is not None:
                         st.session_state.export_mode = "single"
                         st.rerun()
                 
-                # Показываем выбранный режим
-                if st.session_state.export_mode == "split":
-                    st.success("🎯 **Режим разделения по вакансиям активирован**")
-                elif st.session_state.export_mode == "single":
-                    st.info("🎯 **Режим единого архива активирован**")
+                # Показываем выбранный режим (скрыто)
+                # if st.session_state.export_mode == "split":
+                #     st.success("🎯 **Режим разделения по вакансиям активирован**")
+                # elif st.session_state.export_mode == "single":
+                #     st.info("🎯 **Режим единого архива активирован**")
                 
                 # Если режим еще не выбран, останавливаем дальнейшую обработку
                 if st.session_state.export_mode is None:
-                    st.info("👆 Выберите режим экспорта для продолжения")
                     st.stop()
                 
                 # Если выбран режим split - переходим сразу к блоку редактирования по вакансиям
@@ -1760,31 +1765,33 @@ if uploaded_file is not None and hh_areas is not None:
                         st.subheader("➕ Добавить дополнительные города")
                         st.info("Добавленные города будут использовать значения из последней строки исходного файла")
                 
-                        col1, col2, col3 = st.columns([3, 1, 1])
-                
-                        with col1:
+                        # Селектор на половину ширины экрана
+                        col_selector = st.columns([1, 1])
+                        with col_selector[0]:
                             # Получаем только города России из справочника
                             russia_cities = []
                             for city_name, city_info in hh_areas.items():
                                 if city_info.get('root_parent_id') == '113':
                                     russia_cities.append(city_name)
-                    
+
                             selected_city = st.selectbox(
                                 "Выберите город:",
                                 options=sorted(russia_cities),
                                 key="city_selector",
                                 help="Выберите город из справочника HH.ru"
                             )
-                
-                        with col2:
+
+                        # Кнопки под селектором
+                        col_btn1, col_btn2 = st.columns(2)
+                        with col_btn1:
                             if st.button("➕ Добавить", use_container_width=True, type="primary"):
                                 if selected_city and selected_city not in st.session_state.added_cities:
                                     st.session_state.added_cities.append(selected_city)
                                     st.success(f"✅ {selected_city}")
                                 elif selected_city in st.session_state.added_cities:
                                     st.warning(f"⚠️ Уже добавлен")
-                
-                        with col3:
+
+                        with col_btn2:
                             if st.button("🗑️ Очистить", use_container_width=True):
                                 st.session_state.added_cities = []
                                 st.rerun()
@@ -2091,9 +2098,7 @@ if uploaded_file is not None and hh_areas is not None:
                     # Получаем уникальные вакансии
                     if vacancy_col in export_df.columns:
                         unique_vacancies = sorted(export_df[vacancy_col].dropna().unique())
-                        
-                        st.success(f"📊 Найдено **{len(unique_vacancies)}** уникальных вакансий")
-                        
+
                         # Инициализируем состояние для редактирования вакансий
                         if 'vacancy_edits' not in st.session_state:
                             st.session_state.vacancy_edits = {}
@@ -2226,31 +2231,33 @@ if uploaded_file is not None and hh_areas is not None:
                                 if vacancy_key not in st.session_state:
                                     st.session_state[vacancy_key] = []
                                 
-                                col_add1, col_add2, col_add3 = st.columns([3, 1, 1])
-                                
-                                with col_add1:
+                                # Селектор на половину ширины экрана
+                                col_add_selector = st.columns([1, 1])
+                                with col_add_selector[0]:
                                     # Получаем только города России
                                     russia_cities = []
                                     for city_name, city_info in hh_areas.items():
                                         if city_info.get('root_parent_id') == '113':
                                             russia_cities.append(city_name)
-                                    
+
                                     selected_add_city = st.selectbox(
                                         "Выберите город:",
                                         options=sorted(russia_cities),
                                         key=f"city_selector_{vacancy}_{tab_idx}",
                                         help="Выберите город из справочника HH.ru"
                                     )
-                                
-                                with col_add2:
+
+                                # Кнопки под селектором
+                                col_add_btn1, col_add_btn2 = st.columns(2)
+                                with col_add_btn1:
                                     if st.button("➕ Добавить", use_container_width=True, type="secondary", key=f"add_btn_{vacancy}_{tab_idx}"):
                                         if selected_add_city and selected_add_city not in st.session_state[vacancy_key]:
                                             st.session_state[vacancy_key].append(selected_add_city)
                                             st.success(f"✅ {selected_add_city}")
                                         elif selected_add_city in st.session_state[vacancy_key]:
                                             st.warning(f"⚠️ Уже добавлен")
-                                
-                                with col_add3:
+
+                                with col_add_btn2:
                                     if st.button("🗑️ Очистить", use_container_width=True, key=f"clear_btn_{vacancy}_{tab_idx}"):
                                         st.session_state[vacancy_key] = []
                                         st.rerun()
