@@ -837,20 +837,10 @@ st.markdown("---")
 # ============================================
 # БЛОК: СИНХРОНИЗАТОР ГОРОДОВ
 # ============================================
-st.header("📤 Синхронизатор городов")
 
-with st.sidebar:  
-    st.header("⚙️ Настройки")  
-    threshold = st.slider(  
-        "Порог совпадения (%)",  
-        min_value=50,  
-        max_value=100,  
-        value=85,  
-        help="Минимальный процент совпадения"  
-    )  
-      
-    st.markdown("---")  
-      
+with st.sidebar:
+    st.header("📤 Синхронизатор городов")
+
     st.markdown("### 📖 Инструкция")
     st.markdown("""
     **Сценарии использования:**
@@ -872,7 +862,18 @@ with st.sidebar:
 
     **Как работать:**
     1. Загрузите файл → 2. Нажмите "🚀 Начать сопоставление" → 3. Проверьте результаты → 4. Отредактируйте при необходимости → 5. Скачайте итоговый файл
-    """)  
+    """)
+
+    st.markdown("---")
+
+    st.markdown("### ⚙️ Настройки")
+    threshold = st.slider(
+        "Порог совпадения (%)",
+        min_value=50,
+        max_value=100,
+        value=85,
+        help="Минимальный процент совпадения"
+    )  
 
 col1, col2 = st.columns([1, 1])  
 
@@ -2290,8 +2291,6 @@ if hh_areas is not None:
                         key="download_all_publisher"
                     )
 
-    st.markdown("---")
-
     # ФИЛЬТРЫ В ОДНОМ БЛОКЕ
     st.markdown("### 🔍 Фильтры")
     col_filter1, col_filter2, col_filter3, col_filter4 = st.columns(4)
@@ -2414,7 +2413,10 @@ if hh_areas is not None:
         for district in selected_districts:
             regions_to_search.extend(FEDERAL_DISTRICTS[district])
 
-    st.markdown("---")
+    # Очищаем превью если все фильтры сняты
+    if not regions_to_search and not selected_single_city and not selected_timezones:
+        if 'regions_cities_df' in st.session_state:
+            del st.session_state.regions_cities_df
 
     # КНОПКИ ДЕЙСТВИЙ
     col_btn1, col_btn2, col_btn3 = st.columns(3)
@@ -2484,8 +2486,6 @@ if hh_areas is not None:
                         st.session_state.regions_cities_df = filtered_df
 
     # ОТОБРАЖЕНИЕ РЕЗУЛЬТАТОВ (ТАБЛИЦА ПРЕВЬЮ НА ПОЛНУЮ ШИРИНУ)
-    st.markdown("---")
-
     # Единый блок для отображения результатов всех фильтров
     if 'regions_cities_df' in st.session_state and not st.session_state.regions_cities_df.empty:
         cities_df = st.session_state.regions_cities_df
