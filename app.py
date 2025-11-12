@@ -50,8 +50,9 @@ st.markdown("""
         justify-content: center;
         width: 32px;
         height: 32px;
-        background: #ea3324;
-        color: white;
+        background: transparent;
+        color: #ea3324;
+        border: 2px solid #ea3324;
         border-radius: 50%;
         font-weight: bold;
         font-size: 16px;
@@ -84,8 +85,17 @@ st.markdown("""
     }
 
     /* Базовые стили */
-    html, body, [class*="css"] {
-        font-family: 'hhsans-display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    html, body, [class*="css"], * {
+        font-family: 'hhsans-display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    }
+
+    /* Применяем шрифт ко всем элементам Streamlit */
+    .stButton button, .stDownloadButton button,
+    .stTextInput input, .stSelectbox, .stMultiSelect,
+    .stTextArea textarea, .stNumberInput input,
+    [data-testid="stFileUploader"], .uploadedFileName,
+    p, span, div, label, h1, h2, h3, h4, h5, h6 {
+        font-family: 'hhsans-display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
     }
 
     .block-container {
@@ -2790,17 +2800,17 @@ if hh_areas is not None:
             selected_timezones = []
 
     with col_filter4:
-        # Выбор отдельного города (только название, без приписок)
+        # Выбор городов (множественный выбор)
         if not all_cities_full.empty:
             city_options = sorted(all_cities_full['Город'].unique())
-            selected_single_city = st.selectbox(
+            selected_cities = st.multiselect(
                 "Выбрать город:",
-                options=[""] + city_options,
-                help="Начните вводить название",
-                key="single_city_select"
+                options=city_options,
+                help="Можно выбрать несколько",
+                key="cities_multiselect"
             )
         else:
-            selected_single_city = ""
+            selected_cities = []
 
     # ВТОРАЯ СТРОКА ФИЛЬТРОВ - Население
     st.markdown("---")
@@ -2837,7 +2847,7 @@ if hh_areas is not None:
             regions_to_search.extend(FEDERAL_DISTRICTS[district])
 
     # Очищаем превью если все фильтры сняты
-    if not regions_to_search and not selected_single_city and not selected_timezones and not selected_population_ranges:
+    if not regions_to_search and not selected_cities and not selected_timezones and not selected_population_ranges:
         if 'regions_cities_df' in st.session_state:
             del st.session_state.regions_cities_df
 
@@ -2882,20 +2892,23 @@ if hh_areas is not None:
                     st.session_state.regions_cities_df = result_df
 
     with col_btn2:
-        # Кнопка для выбранного города
-        if selected_single_city and selected_single_city != "":
+        # Кнопка для выбранных городов
+        if selected_cities:
             # Информация о выборе
-            st.info(f"📍 Выбран город: **{selected_single_city}**")
+            if len(selected_cities) == 1:
+                st.info(f"📍 Выбран город: **{selected_cities[0]}**")
+            else:
+                st.info(f"📍 Выбрано городов: **{len(selected_cities)}**")
 
-            if st.button(f"🔍 Получить информацию о городе", type="primary", use_container_width=True):
-                with st.spinner(f"Получаю информацию о {selected_single_city}..."):
+            if st.button(f"🔍 Получить информацию о {'городе' if len(selected_cities) == 1 else 'городах'}", type="primary", use_container_width=True):
+                with st.spinner(f"Получаю информацию о {len(selected_cities)} {'городе' if len(selected_cities) == 1 else 'городах'}..."):
                     # Очищаем старые результаты
                     if 'city_df' in st.session_state:
                         del st.session_state.city_df
                     if 'timezones_df' in st.session_state:
                         del st.session_state.timezones_df
-                    # Фильтруем данные по выбранному городу
-                    city_df = all_cities_full[all_cities_full['Город'] == selected_single_city].copy()
+                    # Фильтруем данные по выбранным городам
+                    city_df = all_cities_full[all_cities_full['Город'].isin(selected_cities)].copy()
                     # Применяем фильтр по населению
                     city_df = filter_by_population(city_df, selected_population_ranges, population_ranges)
                     # Сохраняем в общий результат
