@@ -95,13 +95,16 @@ st.markdown("""
     .stTextInput input, .stSelectbox, .stMultiSelect,
     .stTextArea textarea, .stNumberInput input,
     [data-testid="stFileUploader"], .uploadedFileName,
-    p, span:not([data-icon]):not([class*="icon"]), div, label, h1, h2, h3, h4, h5, h6 {
+    p, div, label, h1, h2, h3, h4, h5, h6 {
         font-family: 'hhsans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
     }
 
     /* Исключаем иконочные шрифты из глобального применения */
-    [data-icon], [class*="icon"], .material-icons, [class*="material"] {
-        font-family: 'Material Icons', 'Material Symbols Outlined', system-ui !important;
+    span[data-icon], span[class*="icon"], span.material-icons, span[class*="material"],
+    button span[data-icon], button span[class*="icon"],
+    [data-testid="collapsedControl"] span,
+    [data-testid="stSidebarCollapsedControl"] span {
+        font-family: 'Material Symbols Outlined', 'Material Icons', system-ui !important;
     }
 
     .block-container {
@@ -1243,9 +1246,11 @@ st.markdown("---")
 st.header("📤 Синхронизатор городов")
 
 with st.sidebar:
-    # Логотип (требуется PNG версия: конвертируйте min-hh-red.eps в min-hh-red.png)
+    # Логотип - используем прямое чтение файла для обхода кэша
     try:
-        st.image("min-hh-red.png", width=100)
+        from PIL import Image
+        logo_image = Image.open("min-hh-red.png")
+        st.image(logo_image, width=100)
     except:
         # Fallback если PNG еще не создан
         st.markdown(
@@ -1396,22 +1401,15 @@ if uploaded_file is not None and hh_areas is not None:
             first_sheet_data = list(st.session_state.sheets_data.values())[0]
             if first_sheet_data['has_vacancy_column']:
                 st.session_state.sheet_mode = 'columns'
-                st.info(f"📄 Загружено **{len(first_sheet_data['df'])}** строк, **{len(first_sheet_data['df'].columns)}** столбцов | 🎯 **Обнаружен столбец 'Вакансия'**")
-            else:
-                st.info(f"📄 Загружено **{len(first_sheet_data['df'])}** строк, **{len(first_sheet_data['df'].columns)}** столбцов")
         
         # Для обратной совместимости - сохраняем первую вкладку как основной DF
         first_sheet_name = list(sheets_data.keys())[0]
         st.session_state.original_df = st.session_state.sheets_data[first_sheet_name]['df'].copy()
         st.session_state.has_vacancy_mode = st.session_state.sheet_mode in ['columns', 'tabs', 'both']
-        
-        # Показываем превью файла
-        if has_vacancy_column:
-            st.info(f"📄 Загружено **{len(df)}** строк, **{len(df.columns)}** столбцов | 🎯 **Обнаружен столбец 'Вакансия'**")
-        else:
-            st.info(f"📄 Загружено **{len(df)}** строк, **{len(df.columns)}** столбцов")
-        
-        with st.expander("👀 Превью загруженного файла (первые 5 строк)"):
+
+        # Показываем превью файла с информацией о размерах
+        vacancy_info = " | 🎯 **Обнаружен столбец 'Вакансия'**" if has_vacancy_column else ""
+        with st.expander(f"👀 Превью ({len(df)} строк, {len(df.columns)} столбцов{vacancy_info})", expanded=True):
             if st.session_state.has_multiple_sheets:
                 # Показываем вкладки для выбора
                 sheet_tabs = st.tabs(list(st.session_state.sheets_data.keys()))
