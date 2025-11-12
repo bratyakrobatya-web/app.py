@@ -85,18 +85,23 @@ st.markdown("""
     }
 
     /* Базовые стили */
-    html, body, [class*="css"], * {
+    html, body, [class*="css"] {
         font-family: 'hhsans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
         font-size: 14px;
     }
 
-    /* Применяем шрифт ко всем элементам Streamlit */
+    /* Применяем шрифт ко всем элементам Streamlit, кроме иконок */
     .stButton button, .stDownloadButton button,
     .stTextInput input, .stSelectbox, .stMultiSelect,
     .stTextArea textarea, .stNumberInput input,
     [data-testid="stFileUploader"], .uploadedFileName,
-    p, span, div, label, h1, h2, h3, h4, h5, h6 {
+    p, span:not([data-icon]):not([class*="icon"]), div, label, h1, h2, h3, h4, h5, h6 {
         font-family: 'hhsans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    }
+
+    /* Исключаем иконочные шрифты из глобального применения */
+    [data-icon], [class*="icon"], .material-icons, [class*="material"] {
+        font-family: 'Material Icons', 'Material Symbols Outlined', system-ui !important;
     }
 
     .block-container {
