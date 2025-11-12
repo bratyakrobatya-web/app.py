@@ -87,6 +87,7 @@ st.markdown("""
     /* Базовые стили */
     html, body, [class*="css"], * {
         font-family: 'hhsans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        font-size: 14px;
     }
 
     /* Применяем шрифт ко всем элементам Streamlit */
@@ -188,6 +189,20 @@ st.markdown("""
     [data-testid="stFileUploader"]:hover {
         border-color: #ea3324;
         background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+    }
+
+    /* Центрирование содержимого file uploader */
+    [data-testid="stFileUploader"] > div {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    [data-testid="stFileUploader"] section {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
     }
 
     .uploadedFileName {
@@ -1295,7 +1310,7 @@ uploaded_file = st.file_uploader(
     help="Поддерживаются форматы: Excel (.xlsx) и CSV"
 )
 
-with st.expander("📋 Показать пример формата файла"):
+with st.expander("📋 Показать пример формата файла", expanded=False):
     example_df = pd.DataFrame({
         'Город': ['г. Москва', 'п. Внуковское', 'Санкт-Петербург', 'Екатеринбург'],
         'Данные 1': ['Значение 1', 'Значение 2', 'Значение 3', 'Значение 4'],
