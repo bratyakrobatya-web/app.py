@@ -226,6 +226,28 @@ def get_hh_areas():
     parse_areas(data)
     return areas_dict
 
+@st.cache_data(ttl=3600)
+def load_population_data():
+    """Загружает данные о населении городов из CSV файла"""
+    try:
+        # Читаем CSV с разделителем точка с запятой
+        df = pd.read_csv('population.csv', sep=';', encoding='utf-8')
+
+        # Создаем словарь {город: население}
+        population_dict = {}
+        for _, row in df.iterrows():
+            city_name = row['ГОРОДА']
+            population = int(row['Население'])
+            population_dict[city_name] = population
+
+        return population_dict
+    except FileNotFoundError:
+        st.warning("⚠️ Файл population.csv не найден. Фильтр по населению будет недоступен.")
+        return {}
+    except Exception as e:
+        st.error(f"❌ Ошибка загрузки данных о населении: {str(e)}")
+        return {}
+
 def get_federal_district_by_region(region_name):
     """Определяет федеральный округ по названию региона"""
     for district, regions in FEDERAL_DISTRICTS.items():
@@ -236,7 +258,10 @@ def get_federal_district_by_region(region_name):
 def get_cities_by_regions(hh_areas, selected_regions):
     """Получает все города из выбранных регионов (только Россия, только города)"""
     cities = []
-    
+
+    # Загружаем данные о населении
+    population_dict = load_population_data()
+
     # Список исключений - что не выгружать (нормализованные названия)
     excluded_names_normalized = [
         normalize_city_name('Россия'),
@@ -315,13 +340,17 @@ def get_cities_by_regions(hh_areas, selected_regions):
                 region = parent if parent else 'Россия'
                 federal_district = get_federal_district_by_region(region)
 
+                # Получаем население из словаря (0 если данных нет)
+                population = population_dict.get(city_name, 0)
+
                 cities.append({
                     'Город': city_name,
                     'ID HH': city_info['id'],
                     'Регион': region,
                     'Федеральный округ': federal_district,
                     'UTC': utc_offset,
-                    'Разница с МСК': f"{diff_with_moscow:+d}ч" if diff_with_moscow != 0 else "0ч"
+                    'Разница с МСК': f"{diff_with_moscow:+d}ч" if diff_with_moscow != 0 else "0ч",
+                    'Население': population
                 })
                 break
     
@@ -339,7 +368,10 @@ def get_cities_by_regions(hh_areas, selected_regions):
 def get_all_cities(hh_areas):
     """Получает все города из справочника HH (только Россия, только города)"""
     cities = []
-    
+
+    # Загружаем данные о населении
+    population_dict = load_population_data()
+
     # Список исключений - что не выгружать (нормализованные названия)
     excluded_names_normalized = [
         normalize_city_name('Россия'),
@@ -407,13 +439,17 @@ def get_all_cities(hh_areas):
         region = parent if parent else 'Россия'
         federal_district = get_federal_district_by_region(region)
 
+        # Получаем население из словаря (0 если данных нет)
+        population = population_dict.get(city_name, 0)
+
         cities.append({
             'Город': city_name,
             'ID HH': city_info['id'],
             'Регион': region,
             'Федеральный округ': federal_district,
             'UTC': utc_offset,
-            'Разница с МСК': f"{diff_with_moscow:+d}ч" if diff_with_moscow != 0 else "0ч"
+            'Разница с МСК': f"{diff_with_moscow:+d}ч" if diff_with_moscow != 0 else "0ч",
+            'Население': population
         })
     
     # Создаем DataFrame
@@ -2415,6 +2451,32 @@ if hh_areas is not None:
         else:
             selected_single_city = ""
 
+    # ВТОРАЯ СТРОКА ФИЛЬТРОВ - Население
+    st.markdown("---")
+    col_filter_pop1, col_filter_pop2 = st.columns([1, 3])
+
+    with col_filter_pop1:
+        # Фильтр по населению (multiselect)
+        if not all_cities_full.empty and 'Население' in all_cities_full.columns:
+            # Определяем диапазоны населения
+            population_ranges = {
+                "До 10,000 человек": (0, 10_000),
+                "10,000 - 100,000 человек": (10_000, 100_000),
+                "100,000 - 500,000 человек": (100_000, 500_000),
+                "500,000 - 1,000,000 человек": (500_000, 1_000_000),
+                "Более 1,000,000 человек": (1_000_000, float('inf'))
+            }
+
+            selected_population_ranges = st.multiselect(
+                "Население (жители):",
+                options=list(population_ranges.keys()),
+                help="Можно выбрать несколько диапазонов",
+                key="population_filter"
+            )
+        else:
+            selected_population_ranges = []
+            population_ranges = {}
+
     # Определяем, какие регионы использовать для поиска
     regions_to_search = []
     if selected_regions:
@@ -2424,9 +2486,23 @@ if hh_areas is not None:
             regions_to_search.extend(FEDERAL_DISTRICTS[district])
 
     # Очищаем превью если все фильтры сняты
-    if not regions_to_search and not selected_single_city and not selected_timezones:
+    if not regions_to_search and not selected_single_city and not selected_timezones and not selected_population_ranges:
         if 'regions_cities_df' in st.session_state:
             del st.session_state.regions_cities_df
+
+    # Функция для фильтрации по населению
+    def filter_by_population(df, selected_ranges, ranges_dict):
+        """Фильтрует DataFrame по выбранным диапазонам населения"""
+        if not selected_ranges or df.empty or 'Население' not in df.columns:
+            return df
+
+        # Создаем маску для фильтрации
+        mask = pd.Series([False] * len(df), index=df.index)
+        for range_name in selected_ranges:
+            min_pop, max_pop = ranges_dict[range_name]
+            mask |= (df['Население'] >= min_pop) & (df['Население'] < max_pop)
+
+        return df[mask]
 
     # КНОПКИ ДЕЙСТВИЙ
     col_btn1, col_btn2, col_btn3 = st.columns(3)
@@ -2447,8 +2523,12 @@ if hh_areas is not None:
                         del st.session_state.city_df
                     if 'timezones_df' in st.session_state:
                         del st.session_state.timezones_df
+                    # Получаем список городов по регионам
+                    result_df = get_cities_by_regions(hh_areas, regions_to_search)
+                    # Применяем фильтр по населению
+                    result_df = filter_by_population(result_df, selected_population_ranges, population_ranges)
                     # Сохраняем новый результат
-                    st.session_state.regions_cities_df = get_cities_by_regions(hh_areas, regions_to_search)
+                    st.session_state.regions_cities_df = result_df
 
     with col_btn2:
         # Кнопка для выбранного города
@@ -2463,8 +2543,11 @@ if hh_areas is not None:
                         del st.session_state.city_df
                     if 'timezones_df' in st.session_state:
                         del st.session_state.timezones_df
-                    # Фильтруем данные по выбранному городу и сохраняем в общий результат
+                    # Фильтруем данные по выбранному городу
                     city_df = all_cities_full[all_cities_full['Город'] == selected_single_city].copy()
+                    # Применяем фильтр по населению
+                    city_df = filter_by_population(city_df, selected_population_ranges, population_ranges)
+                    # Сохраняем в общий результат
                     if not city_df.empty:
                         st.session_state.regions_cities_df = city_df
 
@@ -2490,8 +2573,11 @@ if hh_areas is not None:
                         del st.session_state.city_df
                     if 'timezones_df' in st.session_state:
                         del st.session_state.timezones_df
-                    # Фильтруем города по выбранным часовым поясам и сохраняем в общий результат
+                    # Фильтруем города по выбранным часовым поясам
                     filtered_df = all_cities_full[all_cities_full['UTC'].isin(selected_timezones)].copy()
+                    # Применяем фильтр по населению
+                    filtered_df = filter_by_population(filtered_df, selected_population_ranges, population_ranges)
+                    # Сохраняем в общий результат
                     if not filtered_df.empty:
                         st.session_state.regions_cities_df = filtered_df
 
