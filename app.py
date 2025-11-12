@@ -19,7 +19,15 @@ st.set_page_config(
 # Кастомный CSS для современного дизайна
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    /* Подключение шрифта hhsans Medium */
+    @font-face {
+        font-family: 'hhsans';
+        src: url('hhsans-Medium.woff2') format('woff2'),
+             url('hhsans-Medium.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
+        font-display: swap;
+    }
 
     /* Анимация для логотипа */
     @keyframes rotate {
@@ -61,7 +69,7 @@ st.markdown("""
 
     /* Базовые стили */
     html, body, [class*="css"] {
-        font-family: 'Inter', sans-serif;
+        font-family: 'hhsans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     }
 
     .block-container {
