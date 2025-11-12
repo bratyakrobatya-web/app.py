@@ -320,6 +320,40 @@ st.markdown("""
     .stSlider > div > div > div {
         background: transparent !important;
     }
+
+    /* Кнопка Browse files в File Uploader - красная рамка */
+    [data-testid="stFileUploader"] button {
+        background: transparent !important;
+        border: 2px solid #e1011c !important;
+        color: #e1011c !important;
+        border-radius: 10px;
+        padding: 0.5rem 1.5rem;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    [data-testid="stFileUploader"] button:hover {
+        background: rgba(225, 1, 28, 0.1) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(225, 1, 28, 0.3) !important;
+    }
+
+    /* Селектор "Федеральные округа" - красная рамка */
+    [data-testid="stMultiSelect"] {
+        border-radius: 10px;
+    }
+
+    [data-testid="stMultiSelect"] > div {
+        background: transparent !important;
+        border: 2px solid #e1011c !important;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+
+    [data-testid="stMultiSelect"]:hover > div {
+        background: rgba(225, 1, 28, 0.05) !important;
+        box-shadow: 0 2px 12px rgba(225, 1, 28, 0.2);
+    }
 </style>
 """, unsafe_allow_html=True)  
 
@@ -1126,7 +1160,7 @@ st.header("📤 Синхронизатор городов")
 with st.sidebar:
     # Логотип (требуется PNG версия: конвертируйте min-hh-red.eps в min-hh-red.png)
     try:
-        st.image("min-hh-red.png", width=150)
+        st.image("min-hh-red.png", width=100)
     except:
         # Fallback если PNG еще не создан
         st.markdown(
@@ -1173,8 +1207,8 @@ with st.sidebar:
 
 col1, col2 = st.columns([1, 1])  
 
-with col1:  
-    st.subheader("📤 Загрузка файла")  
+with col1:
+    st.subheader("📁 Загрузка файла")
     uploaded_file = st.file_uploader(  
         "Выберите файл с городами",  
         type=['xlsx', 'csv'],  
