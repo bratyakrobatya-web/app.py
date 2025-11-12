@@ -19,11 +19,11 @@ st.set_page_config(
 # Кастомный CSS для современного дизайна
 st.markdown("""
 <style>
-    /* Подключение шрифта hhsans Display */
+    /* Подключение шрифта hhsans Regular */
     @font-face {
-        font-family: 'hhsans-display';
-        src: url('hhsans-Display.woff2') format('woff2'),
-             url('hhsans-Display.ttf') format('truetype');
+        font-family: 'hhsans';
+        src: url('hhsans-Regular.woff2') format('woff2'),
+             url('hhsans-Regular.ttf') format('truetype');
         font-weight: normal;
         font-style: normal;
         font-display: swap;
@@ -86,7 +86,7 @@ st.markdown("""
 
     /* Базовые стили */
     html, body, [class*="css"], * {
-        font-family: 'hhsans-display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        font-family: 'hhsans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
     }
 
     /* Применяем шрифт ко всем элементам Streamlit */
@@ -95,7 +95,7 @@ st.markdown("""
     .stTextArea textarea, .stNumberInput input,
     [data-testid="stFileUploader"], .uploadedFileName,
     p, span, div, label, h1, h2, h3, h4, h5, h6 {
-        font-family: 'hhsans-display', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        font-family: 'hhsans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
     }
 
     .block-container {
