@@ -622,6 +622,35 @@ def get_russian_cities(hh_areas):
         if city_info.get('root_parent_id', '') == russia_id
     ]
 
+def remove_header_row_if_needed(df, first_col_name):
+    """
+    Удаляет первую строку, если она является заголовком (не реальными данными города).
+    Логика как в публикаторе.
+    """
+    if len(df) == 0:
+        return df
+
+    # Получаем значение первой ячейки в первой строке
+    first_value = df.iloc[0][first_col_name]
+
+    if pd.isna(first_value):
+        return df
+
+    # Нормализуем значение для проверки
+    first_value_str = str(first_value).strip().lower()
+
+    # Список ключевых слов, указывающих на то, что это заголовок
+    header_keywords = [
+        'название', 'город', 'регион', 'гео', 'location', 'city',
+        'region', 'населенный пункт', 'geography', 'область'
+    ]
+
+    # Если первая строка содержит ключевые слова заголовка - удаляем её
+    if any(keyword in first_value_str for keyword in header_keywords):
+        df = df.iloc[1:].reset_index(drop=True)
+
+    return df
+
 def normalize_city_name(text):
     """Нормализует название города: ё->е, нижний регистр, убирает лишние пробелы"""
     # Проверяем, что text это строка, иначе возвращаем пустую строку
@@ -996,27 +1025,42 @@ def check_if_changed(original, matched):
       
     return original_clean != matched_clean  
 
-def get_candidates_by_word(client_city, hh_city_names, limit=20):  
-    """Получает кандидатов по совпадению начального слова"""  
+def get_candidates_by_word(client_city, hh_city_names, limit=20):
+    """Получает кандидатов по совпадению начального слова с применением PREFERRED_MATCHES"""
     # Проверка на пустую строку
     if not client_city or not client_city.strip():
         return []
-    
+
+    # Нормализуем исходное название для проверки исключений
+    client_city_normalized = normalize_city_name(client_city)
+
+    # Проверяем исключения - города, которые НЕ должны совпадать
+    if client_city_normalized in EXCLUDED_EXACT_MATCHES:
+        return []
+
+    # Проверяем предпочтительные совпадения
+    if client_city_normalized in PREFERRED_MATCHES:
+        preferred_match = PREFERRED_MATCHES[client_city_normalized]
+        if preferred_match in hh_city_names:
+            score = fuzz.WRatio(client_city_normalized, normalize_city_name(preferred_match))
+            # Возвращаем предпочтительное совпадение с наивысшим приоритетом
+            return [(preferred_match, score)]
+
     words = client_city.split()
     if not words:
         return []
-    
-    first_word = normalize_city_name(words[0])  
-      
-    candidates = []  
-    for city_name in hh_city_names:  
-        city_lower = normalize_city_name(city_name)  
-        if first_word in city_lower:  
-            score = fuzz.WRatio(normalize_city_name(client_city), city_lower)  
-            candidates.append((city_name, score))  
-      
-    candidates.sort(key=lambda x: x[1], reverse=True)  
-      
+
+    first_word = normalize_city_name(words[0])
+
+    candidates = []
+    for city_name in hh_city_names:
+        city_lower = normalize_city_name(city_name)
+        if first_word in city_lower:
+            score = fuzz.WRatio(client_city_normalized, city_lower)
+            candidates.append((city_name, score))
+
+    candidates.sort(key=lambda x: x[1], reverse=True)
+
     return candidates[:limit]  
 
 def smart_match_city(client_city, hh_city_names, hh_areas, threshold=85):
@@ -1612,67 +1656,54 @@ if uploaded_file is not None and hh_areas is not None:
             if st.session_state.get('has_vacancy_mode', False):
                 st.markdown("---")
                 st.subheader("🎯 Выбор режима работы")
-                
+
                 # Инициализируем выбранный режим
                 if 'export_mode' not in st.session_state:
                     st.session_state.export_mode = None
-                
-                # CSS для стилизации кнопок режимов
+
+                # CSS для стилизации кнопок как selectbox
                 st.markdown("""
                 <style>
-                .mode-button {
-                    padding: 30px;
+                /* Стилизация кнопок режима как selectbox */
+                div[data-testid="column"] > div > div > button[kind="secondary"],
+                div[data-testid="column"] > div > div > button[kind="primary"] {
                     border-radius: 10px;
-                    text-align: center;
-                    cursor: pointer;
-                    transition: all 0.3s;
-                    border: 3px solid #e0e0e0;
-                    background: white;
-                    margin: 10px 0;
-                }
-                .mode-button:hover {
-                    border-color: #ff4b4b;
-                    box-shadow: 0 4px 12px rgba(255, 75, 75, 0.3);
-                }
-                .mode-button.selected {
-                    border-color: #ff4b4b;
-                    background: #fff5f5;
-                    box-shadow: 0 4px 12px rgba(255, 75, 75, 0.4);
-                }
-                .mode-icon {
-                    font-size: 32px;
-                    margin-bottom: 10px;
-                }
-                .mode-title {
-                    font-size: 20px;
+                    border: 2px solid #000000;
+                    background: transparent;
+                    transition: all 0.3s ease;
+                    padding: 15px;
+                    font-size: 16px;
                     font-weight: 600;
-                    color: #262730;
-                    margin-bottom: 8px;
+                    letter-spacing: 0.5px;
                 }
-                .mode-desc {
-                    font-size: 14px;
-                    color: #6c757d;
+                div[data-testid="column"] > div > div > button[kind="secondary"]:hover {
+                    background: rgba(0, 0, 0, 0.05);
+                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+                }
+                div[data-testid="column"] > div > div > button[kind="primary"] {
+                    background: rgba(0, 0, 0, 0.1);
+                    border-color: #000000;
                 }
                 </style>
                 """, unsafe_allow_html=True)
-                
+
                 col1, col2 = st.columns(2)
-                
+
                 with col1:
                     selected_split = st.session_state.export_mode == "split"
                     if st.button(
-                        "📦 Разделение по вакансиям\n\nОтдельный файл для каждой вакансии", 
-                        use_container_width=True, 
+                        "РАЗДЕЛЕНИЕ ПО ВАКАНСИЯМ",
+                        use_container_width=True,
                         type="primary" if selected_split else "secondary",
                         key="mode_split"
                     ):
                         st.session_state.export_mode = "split"
                         st.rerun()
-                
+
                 with col2:
                     selected_single = st.session_state.export_mode == "single"
                     if st.button(
-                        "📄 Единым файлом\n\nБез разделения на вакансии", 
+                        "ЕДИНЫМ ФАЙЛОМ",
                         use_container_width=True,
                         type="primary" if selected_single else "secondary",
                         key="mode_single"
@@ -1830,9 +1861,17 @@ if uploaded_file is not None and hh_areas is not None:
                         (~result_df_sorted['Статус'].str.contains('Дубликат', na=False))
                     ].copy()
 
-                    # Сортируем: сначала города с низким совпадением (проблемные)
+                    # Сортируем: сначала "Нет совпадения", затем по возрастанию процента
                     if len(editable_rows) > 0:
-                        editable_rows = editable_rows.sort_values('Совпадение %', ascending=True)  
+                        # Создаем приоритет: 0 для "Нет совпадения", 1 для остальных
+                        editable_rows['_sort_priority'] = editable_rows['Статус'].apply(
+                            lambda x: 0 if '❌ Не найдено' in str(x) else 1
+                        )
+                        editable_rows = editable_rows.sort_values(
+                            ['_sort_priority', 'Совпадение %'],
+                            ascending=[True, True]
+                        )
+                        editable_rows = editable_rows.drop(columns=['_sort_priority'])  
               
                     if len(editable_rows) > 0:
                         st.markdown("---")
@@ -2066,8 +2105,15 @@ if uploaded_file is not None and hh_areas is not None:
                                 editable_rows['_normalized_original'] = editable_rows['Исходное название'].apply(normalize_city_name)
                                 editable_rows = editable_rows.drop_duplicates(subset=['_normalized_original'], keep='first')
 
-                                # Сортируем: сначала города с низким совпадением (проблемные)
-                                editable_rows = editable_rows.sort_values('Совпадение %', ascending=True)
+                                # Сортируем: сначала "Нет совпадения", затем по возрастанию процента
+                                editable_rows['_sort_priority'] = editable_rows['Статус'].apply(
+                                    lambda x: 0 if '❌ Не найдено' in str(x) else 1
+                                )
+                                editable_rows = editable_rows.sort_values(
+                                    ['_sort_priority', 'Совпадение %'],
+                                    ascending=[True, True]
+                                )
+                                editable_rows = editable_rows.drop(columns=['_sort_priority'])
 
                                 st.markdown("#### ✏️ Редактирование городов с совпадением ≤ 90%")
                                 st.warning(f"⚠️ Найдено **{len(editable_rows)}** городов для проверки")
@@ -2219,7 +2265,10 @@ if uploaded_file is not None and hh_areas is not None:
                                 final_output['_normalized'] = final_output[original_cols[0]].apply(normalize_city_name)
                                 final_output = final_output.drop_duplicates(subset=['_normalized'], keep='first')
                                 final_output = final_output.drop(columns=['_normalized'])
-                                
+
+                                # Удаляем первую строку, если она является заголовком
+                                final_output = remove_header_row_if_needed(final_output, original_cols[0])
+
                                 # Превью
                                 st.markdown(f"#### 👀 Превью итогового файла - {sheet_name}")
                                 st.dataframe(final_output, use_container_width=True, height=300)
@@ -2327,8 +2376,15 @@ if uploaded_file is not None and hh_areas is not None:
                                     editable_vacancy_rows['_normalized_original'] = editable_vacancy_rows['Исходное название'].apply(normalize_city_name)
                                     editable_vacancy_rows = editable_vacancy_rows.drop_duplicates(subset=['_normalized_original'], keep='first')
 
-                                    # Сортируем: сначала города с низким совпадением (проблемные)
-                                    editable_vacancy_rows = editable_vacancy_rows.sort_values('Совпадение %', ascending=True)
+                                    # Сортируем: сначала "Нет совпадения", затем по возрастанию процента
+                                    editable_vacancy_rows['_sort_priority'] = editable_vacancy_rows['Статус'].apply(
+                                        lambda x: 0 if '❌ Не найдено' in str(x) else 1
+                                    )
+                                    editable_vacancy_rows = editable_vacancy_rows.sort_values(
+                                        ['_sort_priority', 'Совпадение %'],
+                                        ascending=[True, True]
+                                    )
+                                    editable_vacancy_rows = editable_vacancy_rows.drop(columns=['_sort_priority'])
 
                                 if len(editable_vacancy_rows) > 0:
                                     st.warning(f"⚠️ Найдено **{len(editable_vacancy_rows)}** городов для проверки")
@@ -2537,7 +2593,10 @@ if uploaded_file is not None and hh_areas is not None:
                                 output_vacancy_df['_normalized'] = output_vacancy_df[original_cols[0]].apply(normalize_city_name)
                                 output_vacancy_df = output_vacancy_df.drop_duplicates(subset=['_normalized'], keep='first')
                                 output_vacancy_df = output_vacancy_df.drop(columns=['_normalized'])
-                                
+
+                                # Удаляем первую строку, если она является заголовком
+                                output_vacancy_df = remove_header_row_if_needed(output_vacancy_df, original_cols[0])
+
                                 # Показываем превью
                                 st.markdown(f"#### 👀 Превью итогового файла - {vacancy}")
                                 st.dataframe(output_vacancy_df, use_container_width=True, height=300)
@@ -2670,7 +2729,11 @@ if uploaded_file is not None and hh_areas is not None:
                         output_df['_normalized'] = output_df.iloc[:, 0].apply(normalize_city_name)
                         output_df = output_df.drop_duplicates(subset=['_normalized'], keep='first')
                         output_df = output_df.drop(columns=['_normalized'])
-                        
+
+                        # Удаляем первую строку, если она является заголовком
+                        first_col_name = output_df.columns[0]
+                        output_df = remove_header_row_if_needed(output_df, first_col_name)
+
                         st.success(f"✅ Готово к выгрузке: **{len(output_df)}** уникальных городов")
                         
                         # Кнопка скачивания
@@ -2776,7 +2839,10 @@ if uploaded_file is not None and hh_areas is not None:
                     output_df['_normalized'] = output_df[original_cols[0]].apply(normalize_city_name)
                     output_df = output_df.drop_duplicates(subset=['_normalized'], keep='first')
                     output_df = output_df.drop(columns=['_normalized'])
-                
+
+                    # Удаляем первую строку, если она является заголовком
+                    output_df = remove_header_row_if_needed(output_df, original_cols[0])
+
                     st.success(f"✅ Готово к выгрузке: **{len(output_df)}** уникальных городов")
                 
                     # Кнопка скачивания одного файла
@@ -2822,7 +2888,10 @@ if uploaded_file is not None and hh_areas is not None:
                     for col in original_cols[1:]:
                         if col in export_df.columns:
                             publisher_df[col] = export_df[col].values
-                    
+
+                    # Удаляем первую строку, если она является заголовком (применяется до добавления городов)
+                    publisher_df = remove_header_row_if_needed(publisher_df, original_cols[0])
+
                     # Добавляем дополнительные города с значениями из последней строки
                     if st.session_state.added_cities:
                         # Получаем последнюю строку из исходного файла
@@ -2836,7 +2905,7 @@ if uploaded_file is not None and hh_areas is not None:
                         publisher_df['_normalized'] = publisher_df[original_cols[0]].apply(normalize_city_name)
                         publisher_df = publisher_df.drop_duplicates(subset=['_normalized'], keep='first')
                         publisher_df = publisher_df.drop(columns=['_normalized'])
-                    
+
                     output_publisher = io.BytesIO()  
                     with pd.ExcelWriter(output_publisher, engine='openpyxl') as writer:  
                         publisher_df.to_excel(writer, index=False, header=False, sheet_name='Результат')  
