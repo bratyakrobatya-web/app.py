@@ -280,6 +280,19 @@ st.markdown("""
         box-shadow: 0 2px 12px rgba(234, 51, 36, 0.2);
     }
 
+    /* Черная окантовка для блока редактирования городов */
+    .edit-cities-block .stSelectbox > div > div,
+    .edit-cities-block .stSelectbox > div > div > div,
+    .edit-cities-block [data-baseweb="select"] > div {
+        border: 2px solid #000000 !important;
+        border-radius: 10px;
+    }
+
+    .edit-cities-block .stSelectbox:hover > div > div {
+        background: rgba(0, 0, 0, 0.05) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
     .stTextInput > div > div {
         border-radius: 10px;
         border: 1px solid #dee2e6;
@@ -1769,6 +1782,9 @@ if uploaded_file is not None and hh_areas is not None:
                         st.subheader("✏️ Редактирование городов с совпадением ≤ 90%")
                         st.info(f"Найдено **{len(editable_rows)}** городов, доступных для редактирования")
 
+                        # Обертка для черной окантовки
+                        st.markdown('<div class="edit-cities-block">', unsafe_allow_html=True)
+
                         for idx, row in editable_rows.iterrows():
                             with st.container():
                                 row_id = row['row_id']
@@ -1858,6 +1874,9 @@ if uploaded_file is not None and hh_areas is not None:
                                     st.text(row['Статус'])
 
                                 st.markdown("<hr style='margin-top: 5px; margin-bottom: 5px;'>", unsafe_allow_html=True)
+
+                        # Закрываем обертку для черной окантовки
+                        st.markdown('</div>', unsafe_allow_html=True)
 
                         # ============================================
                         # БЛОК: ДОБАВЛЕНИЕ ЛЮБОГО ГОРОДА (только для НЕ split режима)
@@ -1992,6 +2011,9 @@ if uploaded_file is not None and hh_areas is not None:
                                 st.markdown("#### ✏️ Редактирование городов с совпадением ≤ 90%")
                                 st.warning(f"⚠️ Найдено **{len(editable_rows)}** городов для проверки")
 
+                                # Обертка для черной окантовки
+                                st.markdown('<div class="edit-cities-block">', unsafe_allow_html=True)
+
                                 # Для каждого города показываем выбор
                                 for idx, row in editable_rows.iterrows():
                                     row_id = row['row_id']
@@ -2082,6 +2104,9 @@ if uploaded_file is not None and hh_areas is not None:
                                         st.text(f"{row['Совпадение %']:.1f}%")
 
                                 st.markdown("---")
+
+                                # Закрываем обертку для черной окантовки
+                                st.markdown('</div>', unsafe_allow_html=True)
 
                             # Применяем ручные изменения
                             result_df_sheet_final = result_df_sheet.copy()
