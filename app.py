@@ -603,6 +603,9 @@ PREFERRED_MATCHES = {
 # ============================================  
 def normalize_city_name(text):
     """Нормализует название города: ё->е, нижний регистр, убирает лишние пробелы"""
+    # Проверяем, что text это строка, иначе возвращаем пустую строку
+    if pd.isna(text) or not isinstance(text, str):
+        return ""
     if not text:
         return ""
     # Заменяем ё на е
@@ -2570,18 +2573,27 @@ if uploaded_file is not None and hh_areas is not None:
                                         result_df_sheet.loc[mask, 'Регион'] = hh_areas[new_value]['parent']
                         
                         # Формируем данные для этой вкладки
-                        output_sheet = result_df_sheet[result_df_sheet['Итоговое гео'].notna()].copy()
-                        
+                        output_sheet = result_df_sheet[
+                            (result_df_sheet['Итоговое гео'].notna()) &
+                            (~result_df_sheet['Статус'].str.contains('Не найдено', na=False)) &
+                            (~result_df_sheet['Статус'].str.contains('Пустое значение', na=False))
+                        ].copy()
+
                         if len(output_sheet) > 0:
-                            original_cols = original_df_sheet.columns.tolist()
+                            # Получаем индексы из row_id
+                            indices = output_sheet['row_id'].values
+
+                            # Формируем данные: первая колонка - Итоговое гео, остальные из оригинала
                             sheet_data = pd.DataFrame()
-                            sheet_data[original_cols[0]] = output_sheet['Итоговое гео']
-                            
-                            for col in original_cols[1:]:
-                                if col in original_df_sheet.columns:
-                                    indices = output_sheet['row_id'].values
-                                    sheet_data[col] = original_df_sheet.iloc[indices][col].values
-                            
+
+                            # Первая колонка - Итоговое гео
+                            first_col_name = original_df_sheet.columns[0]
+                            sheet_data[first_col_name] = output_sheet['Итоговое гео'].values
+
+                            # Остальные колонки из оригинального датафрейма (используем loc для правильного доступа по индексам)
+                            for col in original_df_sheet.columns[1:]:
+                                sheet_data[col] = original_df_sheet.loc[indices, col].values
+
                             all_data.append(sheet_data)
                     
                     # Объединяем все вкладки
