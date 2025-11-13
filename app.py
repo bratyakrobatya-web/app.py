@@ -115,20 +115,24 @@ st.markdown("""
         font-family: 'Material Symbols Outlined', 'Material Icons', system-ui !important;
     }
 
-    /* Улучшение качества изображений - плавный рендеринг для логотипов */
+    /* Улучшение качества изображений - максимальная четкость */
     img {
+        image-rendering: high-quality;
         image-rendering: -webkit-optimize-contrast;
-        image-rendering: auto;
         -ms-interpolation-mode: bicubic;
+        max-width: 100%;
+        height: auto;
     }
 
-    /* Специально для логотипа в sidebar - максимальное качество */
+    /* Специально для логотипа в sidebar - ультра-качество */
     [data-testid="stSidebar"] img {
-        image-rendering: -webkit-optimize-contrast;
-        image-rendering: auto;
+        image-rendering: high-quality !important;
+        image-rendering: -webkit-optimize-contrast !important;
         backface-visibility: hidden;
         transform: translateZ(0);
         -webkit-font-smoothing: antialiased;
+        will-change: transform;
+        filter: contrast(1.02) saturate(1.05);
     }
 
     .block-container {
@@ -1278,14 +1282,9 @@ with st.sidebar:
         from PIL import Image
         logo_image = Image.open("min-hh-red.png")
 
-        # Для максимального качества уменьшаем только если изображение огромное
-        # Оставляем 4x от целевого размера для super retina дисплеев
-        target_width = 800  # 4x от 200px для максимальной четкости
-        if logo_image.width > target_width:
-            aspect_ratio = logo_image.height / logo_image.width
-            new_height = int(target_width * aspect_ratio)
-            # LANCZOS дает наилучшее качество при уменьшении
-            logo_image = logo_image.resize((target_width, new_height), Image.Resampling.LANCZOS)
+        # Используем полное разрешение исходного изображения БЕЗ уменьшения
+        # Браузер масштабирует с максимальным качеством благодаря большому количеству пикселей
+        # Исходник 4165x1745px обеспечит идеальную четкость при отображении 200px
 
         st.image(logo_image, width=200, output_format="PNG")
     except:
