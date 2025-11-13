@@ -3221,48 +3221,60 @@ st.markdown("""
 with st.expander("💬 AI Помощник (Claude Sonnet 4.5)", expanded=False):
     st.markdown("Задавайте вопросы о работе синхронизатора городов")
 
-    # История чата
-    chat_container = st.container()
-    with chat_container:
-        for msg in st.session_state.chat_history:
-            if msg['role'] == 'user':
-                st.markdown(f'<div class="chat-message-user">👤 <strong>Вы:</strong><br>{msg["content"]}</div>', unsafe_allow_html=True)
+    # Проверка наличия API ключа
+    if not st.session_state.anthropic_api_key:
+        st.warning("⚠️ API ключ Anthropic не найден. Введите ключ для использования AI помощника.")
+        api_key_input = st.text_input("API ключ Anthropic:", type="password", key="api_key_input")
+        if st.button("Сохранить ключ"):
+            if api_key_input:
+                st.session_state.anthropic_api_key = api_key_input
+                st.success("✅ API ключ сохранен!")
+                st.rerun()
             else:
-                st.markdown(f'<div class="chat-message-assistant">🤖 <strong>Помощник:</strong><br>{msg["content"]}</div>', unsafe_allow_html=True)
+                st.error("Введите API ключ")
+    else:
+        # История чата
+        chat_container = st.container()
+        with chat_container:
+            for msg in st.session_state.chat_history:
+                if msg['role'] == 'user':
+                    st.markdown(f'<div class="chat-message-user">👤 <strong>Вы:</strong><br>{msg["content"]}</div>', unsafe_allow_html=True)
+                else:
+                    st.markdown(f'<div class="chat-message-assistant">🤖 <strong>Помощник:</strong><br>{msg["content"]}</div>', unsafe_allow_html=True)
 
-    # Поле ввода и кнопки
-    user_input = st.text_area("Ваш вопрос:", key="chat_input", height=100, placeholder="Например: Как сопоставить города со справочником HH?")
+        # Поле ввода и кнопки
+        user_input = st.text_area("Ваш вопрос:", key="chat_input", height=100, placeholder="Например: Как сопоставить города со справочником HH?")
 
-    col1, col2, col3 = st.columns([2, 1, 1])
+        col1, col2, col3 = st.columns([2, 1, 1])
 
-    with col1:
-        send_button = st.button("📤 Отправить", type="primary", use_container_width=True)
+        with col1:
+            send_button = st.button("📤 Отправить", type="primary", use_container_width=True)
 
-    with col2:
-        clear_button = st.button("🗑️ Очистить", use_container_width=True)
+        with col2:
+            clear_button = st.button("🗑️ Очистить", use_container_width=True)
 
-    with col3:
-        if len(st.session_state.chat_history) > 0:
-            st.caption(f"Сообщений: {len(st.session_state.chat_history)}")
+        with col3:
+            if len(st.session_state.chat_history) > 0:
+                st.caption(f"Сообщений: {len(st.session_state.chat_history)}")
 
-    if send_button and user_input:
-        with st.spinner("Думаю..."):
-            # Добавляем сообщение пользователя
-            st.session_state.chat_history.append({
-                'role': 'user',
-                'content': user_input
-            })
+        if send_button and user_input:
+            with st.spinner("Думаю..."):
+                # Добавляем сообщение пользователя
+                st.session_state.chat_history.append({
+                    'role': 'user',
+                    'content': user_input
+                })
 
-            # Вызов Anthropic API
-            try:
-                import anthropic
+                # Вызов Anthropic API
+                try:
+                    import anthropic
 
-                client = anthropic.Anthropic(
-                    api_key=st.session_state.anthropic_api_key
-                )
+                    client = anthropic.Anthropic(
+                        api_key=st.session_state.anthropic_api_key
+                    )
 
-                # Системный промпт с контекстом приложения
-                system_prompt = """Ты - AI помощник для приложения "Синхронизатор гео HH.ru".
+                    # Системный промпт с контекстом приложения
+                    system_prompt = """Ты - AI помощник для приложения "Синхронизатор гео HH.ru".
 
 Приложение помогает пользователям:
 - Сопоставлять названия городов со справочником HH.ru
@@ -3272,36 +3284,36 @@ with st.expander("💬 AI Помощник (Claude Sonnet 4.5)", expanded=False)
 
 Отвечай кратко, по делу и на русском языке. Помогай пользователям разобраться с функциями приложения."""
 
-                # Формируем историю для API
-                messages = [
-                    {"role": msg['role'], "content": msg['content']}
-                    for msg in st.session_state.chat_history
-                ]
+                    # Формируем историю для API
+                    messages = [
+                        {"role": msg['role'], "content": msg['content']}
+                        for msg in st.session_state.chat_history
+                    ]
 
-                # Запрос к Claude
-                response = client.messages.create(
-                    model="claude-sonnet-4-20250514",
-                    max_tokens=1024,
-                    system=system_prompt,
-                    messages=messages
-                )
+                    # Запрос к Claude
+                    response = client.messages.create(
+                        model="claude-sonnet-4-20250514",
+                        max_tokens=1024,
+                        system=system_prompt,
+                        messages=messages
+                    )
 
-                assistant_message = response.content[0].text
+                    assistant_message = response.content[0].text
 
-                # Добавляем ответ ассистента
-                st.session_state.chat_history.append({
-                    'role': 'assistant',
-                    'content': assistant_message
-                })
+                    # Добавляем ответ ассистента
+                    st.session_state.chat_history.append({
+                        'role': 'assistant',
+                        'content': assistant_message
+                    })
 
-                st.rerun()
+                    st.rerun()
 
-            except Exception as e:
-                st.error(f"❌ Ошибка при обращении к API: {str(e)}")
+                except Exception as e:
+                    st.error(f"❌ Ошибка при обращении к API: {str(e)}")
 
-    if clear_button:
-        st.session_state.chat_history = []
-        st.rerun()
+        if clear_button:
+            st.session_state.chat_history = []
+            st.rerun()
 
 st.markdown("---")
 st.markdown(
