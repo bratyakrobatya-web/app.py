@@ -3192,33 +3192,43 @@ if 'chat_history' not in st.session_state:
 if 'anthropic_api_key' not in st.session_state:
     st.session_state.anthropic_api_key = get_anthropic_api_key()
 
-# CSS для красной кнопки справа
+# CSS для красной кнопки справа и popover
 st.markdown("""
 <style>
-/* Красная кнопка-триггер справа */
-.stButton.chat-trigger-btn button {
+/* Красная кнопка-триггер справа для popover */
+[data-testid="stPopover"] {
     position: fixed !important;
     right: 0 !important;
     top: 50% !important;
     transform: translateY(-50%) !important;
+    z-index: 999 !important;
+}
+
+[data-testid="stPopover"] > button {
     width: 50px !important;
     height: 150px !important;
     background: linear-gradient(135deg, #ea3324 0%, #c02a1e 100%) !important;
     border-radius: 10px 0 0 10px !important;
     border: none !important;
     box-shadow: -2px 0 10px rgba(234, 51, 36, 0.3) !important;
-    z-index: 999 !important;
     transition: all 0.3s ease !important;
     writing-mode: vertical-rl !important;
     color: white !important;
     font-weight: bold !important;
     font-size: 14px !important;
     letter-spacing: 2px !important;
+    padding: 10px !important;
 }
 
-.stButton.chat-trigger-btn button:hover {
+[data-testid="stPopover"] > button:hover {
     width: 60px !important;
     box-shadow: -4px 0 15px rgba(234, 51, 36, 0.5) !important;
+}
+
+/* Popover content styling */
+[data-testid="stPopover"] > div[data-baseweb="popover"] {
+    max-width: 400px !important;
+    max-height: 80vh !important;
 }
 
 .chat-message-user {
@@ -3242,8 +3252,12 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Чат интерфейс с expander
-with st.expander("💬 AI Помощник (Claude Sonnet 4.5)", expanded=False):
+# Инициализация ключа для очистки поля ввода
+if 'chat_input_key' not in st.session_state:
+    st.session_state.chat_input_key = 0
+
+# Чат интерфейс с popover
+with st.popover("💬 AI ПОМОЩНИК", use_container_width=False):
     # Проверяем наличие API ключа
     if not st.session_state.anthropic_api_key:
         st.warning("⚠️ API ключ Anthropic не настроен")
@@ -3260,10 +3274,11 @@ ANTHROPIC_API_KEY = "ваш-api-ключ-anthropic"
 Файл `.streamlit/secrets.toml` добавлен в `.gitignore` и не попадет в репозиторий.
         """)
     else:
-        st.markdown("Задавайте вопросы о работе синхронизатора городов")
+        st.markdown("**Claude Sonnet 4.5**")
+        st.caption("Задавайте вопросы о работе синхронизатора")
 
-        # История чата
-        chat_container = st.container()
+        # История чата с прокруткой
+        chat_container = st.container(height=300)
         with chat_container:
             for msg in st.session_state.chat_history:
                 if msg['role'] == 'user':
@@ -3272,9 +3287,14 @@ ANTHROPIC_API_KEY = "ваш-api-ключ-anthropic"
                     st.markdown(f'<div class="chat-message-assistant">🤖 <strong>Помощник:</strong><br>{msg["content"]}</div>', unsafe_allow_html=True)
 
         # Поле ввода и кнопки
-        user_input = st.text_area("Ваш вопрос:", key="chat_input", height=100, placeholder="Например: Как сопоставить города со справочником HH?")
+        user_input = st.text_area(
+            "Ваш вопрос:",
+            key=f"chat_input_{st.session_state.chat_input_key}",
+            height=80,
+            placeholder="Как сопоставить города со справочником HH?"
+        )
 
-        col1, col2, col3 = st.columns([2, 1, 1])
+        col1, col2 = st.columns([3, 1])
 
         with col1:
             send_button = st.button("📤 Отправить", type="primary", use_container_width=True)
@@ -3282,18 +3302,11 @@ ANTHROPIC_API_KEY = "ваш-api-ключ-anthropic"
         with col2:
             clear_button = st.button("🗑️ Очистить", use_container_width=True)
 
-        with col3:
-            if len(st.session_state.chat_history) > 0:
-                st.caption(f"Сообщений: {len(st.session_state.chat_history)}")
+        if len(st.session_state.chat_history) > 0:
+            st.caption(f"💬 Сообщений: {len(st.session_state.chat_history)}")
 
         if send_button and user_input:
             with st.spinner("Думаю..."):
-                # Добавляем сообщение пользователя
-                st.session_state.chat_history.append({
-                    'role': 'user',
-                    'content': user_input
-                })
-
                 # Вызов Anthropic API
                 try:
                     import anthropic
@@ -3302,7 +3315,7 @@ ANTHROPIC_API_KEY = "ваш-api-ключ-anthropic"
                         api_key=st.session_state.anthropic_api_key
                     )
 
-                    # Системный промпт с контекстом приложения
+                    # Системный промпт с контекстом приложения и фильтрацией вопросов
                     system_prompt = """Ты - AI помощник для приложения "Синхронизатор гео HH.ru".
 
 Приложение помогает пользователям:
@@ -3311,7 +3324,18 @@ ANTHROPIC_API_KEY = "ваш-api-ключ-anthropic"
 - Выбирать города по регионам, округам и часовым поясам
 - Экспортировать данные в Excel
 
+ВАЖНО: Ты отвечаешь ТОЛЬКО на вопросы о работе этого сервиса.
+
+Если пользователь задает вопрос НЕ о работе сервиса (например, о погоде, политике, общих темах и т.д.),
+вежливо откажи и напомни, что ты можешь помочь только с вопросами о синхронизаторе городов HH.ru.
+
 Отвечай кратко, по делу и на русском языке. Помогай пользователям разобраться с функциями приложения."""
+
+                    # Добавляем сообщение пользователя
+                    st.session_state.chat_history.append({
+                        'role': 'user',
+                        'content': user_input
+                    })
 
                     # Формируем историю для API
                     messages = [
@@ -3335,13 +3359,20 @@ ANTHROPIC_API_KEY = "ваш-api-ключ-anthropic"
                         'content': assistant_message
                     })
 
+                    # Увеличиваем ключ для очистки поля ввода
+                    st.session_state.chat_input_key += 1
                     st.rerun()
 
                 except Exception as e:
                     st.error(f"❌ Ошибка при обращении к API: {str(e)}")
+                    # Удаляем последнее сообщение пользователя при ошибке
+                    if st.session_state.chat_history and st.session_state.chat_history[-1]['role'] == 'user':
+                        st.session_state.chat_history.pop()
 
         if clear_button:
             st.session_state.chat_history = []
+            # Увеличиваем ключ для очистки поля ввода
+            st.session_state.chat_input_key += 1
             st.rerun()
 
 st.markdown("---")
