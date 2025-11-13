@@ -522,20 +522,45 @@ st.markdown("""
         box-shadow: 0 2px 12px rgba(234, 51, 36, 0.2);
     }
 </style>
-""", unsafe_allow_html=True)  
+""", unsafe_allow_html=True)
 
-# Инициализация session_state  
-if 'result_df' not in st.session_state:  
-    st.session_state.result_df = None  
-if 'duplicate_count' not in st.session_state:  
-    st.session_state.duplicate_count = 0  
-if 'processed' not in st.session_state:  
-    st.session_state.processed = False  
-if 'manual_selections' not in st.session_state:  
-    st.session_state.manual_selections = {}  
-if 'candidates_cache' not in st.session_state:  
-    st.session_state.candidates_cache = {}  
-if 'search_query' not in st.session_state:  
+# ============================================
+# ФУНКЦИЯ: ПОЛУЧЕНИЕ API КЛЮЧА ANTHROPIC
+# ============================================
+def get_anthropic_api_key():
+    """
+    Получает API ключ из доступных источников в порядке приоритета:
+    1. Streamlit secrets
+    2. Переменная окружения
+    """
+    # Пробуем загрузить из secrets
+    try:
+        key = st.secrets["ANTHROPIC_API_KEY"]
+        if key:
+            return key
+    except:
+        pass
+
+    # Пробуем загрузить из переменной окружения
+    key = os.environ.get("ANTHROPIC_API_KEY")
+    if key:
+        return key
+
+    # Если ключ не найден, возвращаем None
+    return None
+
+# Инициализация session_state
+if 'result_df' not in st.session_state:
+    st.session_state.result_df = None
+if 'duplicate_count' not in st.session_state:
+    st.session_state.duplicate_count = 0
+if 'processed' not in st.session_state:
+    st.session_state.processed = False
+if 'manual_selections' not in st.session_state:
+    st.session_state.manual_selections = {}
+if 'candidates_cache' not in st.session_state:
+    st.session_state.candidates_cache = {}
+if 'search_query' not in st.session_state:
     st.session_state.search_query = ""
 if 'added_cities' not in st.session_state:
     st.session_state.added_cities = []
@@ -543,6 +568,14 @@ if 'original_df' not in st.session_state:
     st.session_state.original_df = None
 if 'export_mode' not in st.session_state:
     st.session_state.export_mode = None
+
+# Инициализация session state для чат-бота
+if 'chat_history' not in st.session_state:
+    st.session_state.chat_history = []
+if 'anthropic_api_key' not in st.session_state:
+    st.session_state.anthropic_api_key = get_anthropic_api_key()
+if 'chat_input_key' not in st.session_state:
+    st.session_state.chat_input_key = 0
 
 # ============================================  
 # СПРАВОЧНИК ФЕДЕРАЛЬНЫХ ОКРУГОВ И РЕГИОНОВ  
@@ -3327,43 +3360,6 @@ if hh_areas is not None:
                 use_container_width=True,
                 key="download_regions_publisher"
             )
-
-st.markdown("---")
-
-# ============================================
-# БЛОК: ЧАТ-БОТ ПОМОЩНИК
-# ============================================
-
-# Функция для получения API ключа с приоритетом
-def get_anthropic_api_key():
-    """
-    Получает API ключ из доступных источников в порядке приоритета:
-    1. Streamlit secrets
-    2. Переменная окружения
-    """
-    # Пробуем загрузить из secrets
-    try:
-        key = st.secrets["ANTHROPIC_API_KEY"]
-        if key:
-            return key
-    except:
-        pass
-
-    # Пробуем загрузить из переменной окружения
-    key = os.environ.get("ANTHROPIC_API_KEY")
-    if key:
-        return key
-
-    # Если ключ не найден, возвращаем None
-    return None
-
-# Инициализация session state для чата
-if 'chat_history' not in st.session_state:
-    st.session_state.chat_history = []
-if 'anthropic_api_key' not in st.session_state:
-    st.session_state.anthropic_api_key = get_anthropic_api_key()
-if 'chat_input_key' not in st.session_state:
-    st.session_state.chat_input_key = 0
 
 st.markdown("---")
 st.markdown(
