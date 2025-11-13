@@ -269,20 +269,25 @@ st.markdown("""
         box-shadow: 0 2px 12px rgba(234, 51, 36, 0.2);
     }
 
-    /* Оранжевая обводка для блоков редактирования с совпадением ≤ 90% */
-    .edit-block .stSelectbox > div > div {
-        border: 2px solid rgb(255, 170, 0) !important;
+    /* Средне-серая обводка для блоков редактирования с совпадением ≤ 90% */
+    div.edit-block .stSelectbox > div > div {
+        border: 2px solid #6c757d !important;
         background: transparent !important;
     }
 
-    .edit-block .stSelectbox:hover > div > div {
-        background: rgba(255, 170, 0, 0.05) !important;
-        box-shadow: 0 2px 12px rgba(255, 170, 0, 0.2) !important;
-        border: 2px solid rgb(255, 170, 0) !important;
+    div.edit-block .stSelectbox > div > div:focus-within {
+        border: 2px solid #6c757d !important;
+        box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.25) !important;
     }
 
-    .edit-block .stSelectbox > div > div > div {
-        border: 2px solid rgb(255, 170, 0) !important;
+    div.edit-block .stSelectbox:hover > div > div {
+        background: rgba(108, 117, 125, 0.05) !important;
+        box-shadow: 0 2px 12px rgba(108, 117, 125, 0.2) !important;
+        border: 2px solid #6c757d !important;
+    }
+
+    div.edit-block [data-baseweb="select"] > div {
+        border-color: #6c757d !important;
     }
 
     .stTextInput > div > div {
@@ -357,28 +362,28 @@ st.markdown("""
         background: #e9ecef;
     }
 
-    /* Slider - трек */
+    /* Slider - простой стиль */
     .stSlider > div > div {
-        background: #dee2e6 !important;  /* Серый фон для неактивной части */
+        background: #dee2e6 !important;
+        height: 4px !important;
     }
 
-    /* Slider - активная часть (прогресс) */
+    /* Slider - активная часть */
     .stSlider > div > div > div {
-        background: linear-gradient(90deg, #ea3324 0%, #c02a1e 100%) !important;
+        background: #ea3324 !important;
     }
 
-    /* Тумблер слайдера - белый с красной обводкой */
+    /* Тумблер слайдера - простой круг */
     .stSlider > div > div > div > div {
         background-color: white !important;
-        border: 3px solid #ea3324 !important;
-        width: 24px !important;
-        height: 24px !important;
+        border: 2px solid #ea3324 !important;
+        height: 20px !important;
     }
 
     .stSlider > div > div > div > div:hover {
         background-color: white !important;
-        box-shadow: 0 0 10px rgba(234, 51, 36, 0.6) !important;
-        border: 3px solid #ea3324 !important;
+        box-shadow: 0 0 8px rgba(234, 51, 36, 0.4) !important;
+        border: 2px solid #ea3324 !important;
     }
 
     /* Вкладки */
@@ -1272,6 +1277,7 @@ st.markdown("---")
 # БЛОК: ПРОВЕРКА ГЕО
 # ============================================
 if hh_areas:
+    st.markdown('<div id="проверка-гео"></div>', unsafe_allow_html=True)
     st.header("🔍 Проверка гео")
 
     col1, col2 = st.columns([3, 1])
@@ -1302,6 +1308,7 @@ st.markdown("---")
 # ============================================
 # БЛОК: СИНХРОНИЗАТОР ГОРОДОВ
 # ============================================
+st.markdown('<div id="синхронизатор-городов"></div>', unsafe_allow_html=True)
 st.header("📤 Синхронизатор городов")
 
 with st.sidebar:
@@ -1339,6 +1346,35 @@ with st.sidebar:
             f'</div>',
             unsafe_allow_html=True
         )
+    st.markdown("---")
+
+    st.markdown("### 🧭 Навигация")
+    st.markdown("""
+    <style>
+    .nav-link {
+        display: block;
+        padding: 0.5rem 1rem;
+        margin: 0.25rem 0;
+        background: #f8f9fa;
+        border-radius: 8px;
+        text-decoration: none;
+        color: #1a1a1a;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        border-left: 3px solid #ea3324;
+    }
+    .nav-link:hover {
+        background: #ea3324;
+        color: white;
+        transform: translateX(5px);
+    }
+    </style>
+
+    <a href="#проверка-гео" class="nav-link">🔍 Проверка гео</a>
+    <a href="#синхронизатор-городов" class="nav-link">📤 Синхронизатор городов</a>
+    <a href="#выбор-регионов-и-городов" class="nav-link">🗺️ Выбор регионов и городов</a>
+    """, unsafe_allow_html=True)
+
     st.markdown("---")
 
     st.markdown("### 📖 Инструкция")
@@ -1720,8 +1756,10 @@ if uploaded_file is not None and hh_areas is not None:
 
                     # Добавляем порядковые номера вместо ID
                     display_df.insert(0, '№', range(1, len(display_df) + 1))
+                    # Сбрасываем индекс чтобы избежать дублирования
+                    display_df = display_df.reset_index(drop=True)
 
-                    st.dataframe(display_df, use_container_width=True, height=400)  
+                    st.dataframe(display_df, use_container_width=True, height=400, hide_index=True)  
               
                     # ИЗМЕНЕНО: Исключаем дубликаты из редактирования
                     editable_rows = result_df_sorted[
@@ -2737,6 +2775,7 @@ st.markdown("---")
 # ============================================
 # БЛОК: ВЫБОР РЕГИОНОВ И ГОРОДОВ
 # ============================================
+st.markdown('<div id="выбор-регионов-и-городов"></div>', unsafe_allow_html=True)
 st.header("🗺️ Выбор регионов и городов")
 
 if hh_areas is not None:
