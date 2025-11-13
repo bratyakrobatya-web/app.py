@@ -3192,43 +3192,49 @@ if 'chat_history' not in st.session_state:
 if 'anthropic_api_key' not in st.session_state:
     st.session_state.anthropic_api_key = get_anthropic_api_key()
 
-# CSS для красной кнопки справа и popover
+# CSS для круглой кнопки чат-бота в правом нижнем углу
 st.markdown("""
 <style>
-/* Красная кнопка-триггер справа для popover */
+/* Круглая кнопка чат-бота в правом нижнем углу */
 [data-testid="stPopover"] {
     position: fixed !important;
-    right: 0 !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
+    right: 20px !important;
+    bottom: 20px !important;
     z-index: 999 !important;
 }
 
 [data-testid="stPopover"] > button {
-    width: 50px !important;
-    height: 150px !important;
+    width: 60px !important;
+    height: 60px !important;
     background: linear-gradient(135deg, #ea3324 0%, #c02a1e 100%) !important;
-    border-radius: 10px 0 0 10px !important;
+    border-radius: 50% !important;
     border: none !important;
-    box-shadow: -2px 0 10px rgba(234, 51, 36, 0.3) !important;
+    box-shadow: 0 4px 12px rgba(234, 51, 36, 0.4) !important;
     transition: all 0.3s ease !important;
-    writing-mode: vertical-rl !important;
     color: white !important;
-    font-weight: bold !important;
-    font-size: 14px !important;
-    letter-spacing: 2px !important;
-    padding: 10px !important;
+    font-size: 28px !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
 }
 
 [data-testid="stPopover"] > button:hover {
-    width: 60px !important;
-    box-shadow: -4px 0 15px rgba(234, 51, 36, 0.5) !important;
+    transform: scale(1.1) !important;
+    box-shadow: 0 6px 20px rgba(234, 51, 36, 0.6) !important;
+}
+
+[data-testid="stPopover"] > button:active {
+    transform: scale(0.95) !important;
 }
 
 /* Popover content styling */
 [data-testid="stPopover"] > div[data-baseweb="popover"] {
-    max-width: 400px !important;
-    max-height: 80vh !important;
+    max-width: 420px !important;
+    max-height: 600px !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
 }
 
 .chat-message-user {
@@ -3257,7 +3263,7 @@ if 'chat_input_key' not in st.session_state:
     st.session_state.chat_input_key = 0
 
 # Чат интерфейс с popover
-with st.popover("💬 AI ПОМОЩНИК", use_container_width=False):
+with st.popover("💬", use_container_width=False):
     # Проверяем наличие API ключа
     if not st.session_state.anthropic_api_key:
         st.warning("⚠️ API ключ Anthropic не настроен")
@@ -3274,11 +3280,12 @@ ANTHROPIC_API_KEY = "ваш-api-ключ-anthropic"
 Файл `.streamlit/secrets.toml` добавлен в `.gitignore` и не попадет в репозиторий.
         """)
     else:
-        st.markdown("**Claude Sonnet 4.5**")
-        st.caption("Задавайте вопросы о работе синхронизатора")
+        st.markdown("### 💬 AI Помощник")
+        st.caption("🤖 Claude Sonnet 4.5 | Вопросы о работе сервиса")
+        st.divider()
 
         # История чата с прокруткой
-        chat_container = st.container(height=300)
+        chat_container = st.container(height=350)
         with chat_container:
             for msg in st.session_state.chat_history:
                 if msg['role'] == 'user':
@@ -3294,13 +3301,13 @@ ANTHROPIC_API_KEY = "ваш-api-ключ-anthropic"
             placeholder="Как сопоставить города со справочником HH?"
         )
 
-        col1, col2 = st.columns([3, 1])
+        col1, col2 = st.columns([2, 1])
 
         with col1:
-            send_button = st.button("📤 Отправить", type="primary", use_container_width=True)
+            send_button = st.button("📤 Отправить", type="primary", use_container_width=True, key="send_btn")
 
         with col2:
-            clear_button = st.button("🗑️ Очистить", use_container_width=True)
+            clear_button = st.button("🗑️", use_container_width=True, key="clear_btn", help="Очистить чат")
 
         if len(st.session_state.chat_history) > 0:
             st.caption(f"💬 Сообщений: {len(st.session_state.chat_history)}")
