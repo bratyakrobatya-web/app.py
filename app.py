@@ -1661,28 +1661,35 @@ if uploaded_file is not None and hh_areas is not None:
                 if 'export_mode' not in st.session_state:
                     st.session_state.export_mode = None
 
-                # CSS для стилизации кнопок как selectbox
+                # CSS для стилизации кнопок ярким красным цветом
                 st.markdown("""
                 <style>
-                /* Стилизация кнопок режима как selectbox */
+                /* Стилизация кнопок режима - яркий красный */
                 div[data-testid="column"] > div > div > button[kind="secondary"],
                 div[data-testid="column"] > div > div > button[kind="primary"] {
                     border-radius: 10px;
-                    border: 2px solid #000000;
-                    background: transparent;
+                    border: 2px solid #ea3324 !important;
+                    background: transparent !important;
                     transition: all 0.3s ease;
                     padding: 15px;
                     font-size: 16px;
                     font-weight: 600;
                     letter-spacing: 0.5px;
+                    color: #ea3324 !important;
                 }
                 div[data-testid="column"] > div > div > button[kind="secondary"]:hover {
-                    background: rgba(0, 0, 0, 0.05);
-                    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+                    background: rgba(234, 51, 36, 0.1) !important;
+                    box-shadow: 0 2px 12px rgba(234, 51, 36, 0.3);
                 }
                 div[data-testid="column"] > div > div > button[kind="primary"] {
-                    background: rgba(0, 0, 0, 0.1);
-                    border-color: #000000;
+                    background: #ea3324 !important;
+                    border-color: #ea3324 !important;
+                    color: white !important;
+                    box-shadow: 0 4px 12px rgba(234, 51, 36, 0.4);
+                }
+                div[data-testid="column"] > div > div > button[kind="primary"]:hover {
+                    background: #d62e1f !important;
+                    box-shadow: 0 4px 16px rgba(234, 51, 36, 0.5);
                 }
                 </style>
                 """, unsafe_allow_html=True)
