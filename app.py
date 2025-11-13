@@ -1,13 +1,24 @@
-import streamlit as st  
-import requests  
-import pandas as pd  
-from rapidfuzz import fuzz, process  
-import io  
+import streamlit as st
+import requests
+import pandas as pd
+from rapidfuzz import fuzz, process
+import io
 import re
 import zipfile
 from datetime import datetime
+import os
 
 # Version: 3.3.2 - Fixed: corrected all indentation in single mode block
+
+# ============================================
+# КОНФИГУРАЦИЯ: API КЛЮЧИ
+# ============================================
+# Для безопасного хранения ключа используется следующий приоритет:
+# 1. Streamlit secrets (.streamlit/secrets.toml)
+# 2. Переменная окружения ANTHROPIC_API_KEY
+#
+# Для настройки создайте файл .streamlit/secrets.toml с содержимым:
+# ANTHROPIC_API_KEY = "ваш-ключ-здесь"
 
 # Настройка страницы  
 st.set_page_config(  
@@ -3146,8 +3157,195 @@ if hh_areas is not None:
                 key="download_regions_publisher"
             )
 
-st.markdown("---")  
-st.markdown(  
-    "Сделано с ❤️ | Данные из API HH.ru",  
-    unsafe_allow_html=True  
+st.markdown("---")
+
+# ============================================
+# БЛОК: ЧАТ-БОТ ПОМОЩНИК
+# ============================================
+
+# Функция для получения API ключа с приоритетом
+def get_anthropic_api_key():
+    """
+    Получает API ключ из доступных источников в порядке приоритета:
+    1. Streamlit secrets
+    2. Переменная окружения
+    """
+    # Пробуем загрузить из secrets
+    try:
+        key = st.secrets["ANTHROPIC_API_KEY"]
+        if key:
+            return key
+    except:
+        pass
+
+    # Пробуем загрузить из переменной окружения
+    key = os.environ.get("ANTHROPIC_API_KEY")
+    if key:
+        return key
+
+    # Если ключ не найден, возвращаем None
+    return None
+
+# Инициализация session state для чата
+if 'chat_history' not in st.session_state:
+    st.session_state.chat_history = []
+if 'anthropic_api_key' not in st.session_state:
+    st.session_state.anthropic_api_key = get_anthropic_api_key()
+
+# CSS для красной кнопки справа
+st.markdown("""
+<style>
+/* Красная кнопка-триггер справа */
+.stButton.chat-trigger-btn button {
+    position: fixed !important;
+    right: 0 !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 50px !important;
+    height: 150px !important;
+    background: linear-gradient(135deg, #ea3324 0%, #c02a1e 100%) !important;
+    border-radius: 10px 0 0 10px !important;
+    border: none !important;
+    box-shadow: -2px 0 10px rgba(234, 51, 36, 0.3) !important;
+    z-index: 999 !important;
+    transition: all 0.3s ease !important;
+    writing-mode: vertical-rl !important;
+    color: white !important;
+    font-weight: bold !important;
+    font-size: 14px !important;
+    letter-spacing: 2px !important;
+}
+
+.stButton.chat-trigger-btn button:hover {
+    width: 60px !important;
+    box-shadow: -4px 0 15px rgba(234, 51, 36, 0.5) !important;
+}
+
+.chat-message-user {
+    background: #e9ecef;
+    padding: 12px 16px;
+    border-radius: 12px 12px 0 12px;
+    margin: 8px 0 8px auto;
+    max-width: 80%;
+    border-left: 3px solid #ea3324;
+}
+
+.chat-message-assistant {
+    background: white;
+    padding: 12px 16px;
+    border-radius: 12px 12px 12px 0;
+    margin: 8px auto 8px 0;
+    max-width: 80%;
+    border-left: 3px solid #4CAF50;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+</style>
+""", unsafe_allow_html=True)
+
+# Чат интерфейс с expander
+with st.expander("💬 AI Помощник (Claude Sonnet 4.5)", expanded=False):
+    # Проверяем наличие API ключа
+    if not st.session_state.anthropic_api_key:
+        st.warning("⚠️ API ключ Anthropic не настроен")
+        st.markdown("""
+### Инструкция по настройке:
+
+1. **Создайте файл** `.streamlit/secrets.toml` в корне проекта
+2. **Добавьте в него** следующее содержимое:
+```toml
+ANTHROPIC_API_KEY = "ваш-api-ключ-anthropic"
+```
+3. **Перезапустите** приложение
+
+Файл `.streamlit/secrets.toml` добавлен в `.gitignore` и не попадет в репозиторий.
+        """)
+    else:
+        st.markdown("Задавайте вопросы о работе синхронизатора городов")
+
+        # История чата
+        chat_container = st.container()
+        with chat_container:
+            for msg in st.session_state.chat_history:
+                if msg['role'] == 'user':
+                    st.markdown(f'<div class="chat-message-user">👤 <strong>Вы:</strong><br>{msg["content"]}</div>', unsafe_allow_html=True)
+                else:
+                    st.markdown(f'<div class="chat-message-assistant">🤖 <strong>Помощник:</strong><br>{msg["content"]}</div>', unsafe_allow_html=True)
+
+        # Поле ввода и кнопки
+        user_input = st.text_area("Ваш вопрос:", key="chat_input", height=100, placeholder="Например: Как сопоставить города со справочником HH?")
+
+        col1, col2, col3 = st.columns([2, 1, 1])
+
+        with col1:
+            send_button = st.button("📤 Отправить", type="primary", use_container_width=True)
+
+        with col2:
+            clear_button = st.button("🗑️ Очистить", use_container_width=True)
+
+        with col3:
+            if len(st.session_state.chat_history) > 0:
+                st.caption(f"Сообщений: {len(st.session_state.chat_history)}")
+
+        if send_button and user_input:
+            with st.spinner("Думаю..."):
+                # Добавляем сообщение пользователя
+                st.session_state.chat_history.append({
+                    'role': 'user',
+                    'content': user_input
+                })
+
+                # Вызов Anthropic API
+                try:
+                    import anthropic
+
+                    client = anthropic.Anthropic(
+                        api_key=st.session_state.anthropic_api_key
+                    )
+
+                    # Системный промпт с контекстом приложения
+                    system_prompt = """Ты - AI помощник для приложения "Синхронизатор гео HH.ru".
+
+Приложение помогает пользователям:
+- Сопоставлять названия городов со справочником HH.ru
+- Синхронизировать данные о городах для публикации вакансий
+- Выбирать города по регионам, округам и часовым поясам
+- Экспортировать данные в Excel
+
+Отвечай кратко, по делу и на русском языке. Помогай пользователям разобраться с функциями приложения."""
+
+                    # Формируем историю для API
+                    messages = [
+                        {"role": msg['role'], "content": msg['content']}
+                        for msg in st.session_state.chat_history
+                    ]
+
+                    # Запрос к Claude
+                    response = client.messages.create(
+                        model="claude-sonnet-4-20250514",
+                        max_tokens=1024,
+                        system=system_prompt,
+                        messages=messages
+                    )
+
+                    assistant_message = response.content[0].text
+
+                    # Добавляем ответ ассистента
+                    st.session_state.chat_history.append({
+                        'role': 'assistant',
+                        'content': assistant_message
+                    })
+
+                    st.rerun()
+
+                except Exception as e:
+                    st.error(f"❌ Ошибка при обращении к API: {str(e)}")
+
+        if clear_button:
+            st.session_state.chat_history = []
+            st.rerun()
+
+st.markdown("---")
+st.markdown(
+    "Сделано с ❤️ | Данные из API HH.ru",
+    unsafe_allow_html=True
 )
