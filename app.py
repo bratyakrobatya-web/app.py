@@ -595,12 +595,33 @@ PREFERRED_MATCHES = {
     'октябрьский': 'Октябрьский (Московская область, Люберецкий район)',
     'советск': 'Советск (Калининградская область)',
     'Кировск (Ленинградская область)': 'Кировск (Ленинградская область)',
-
+    # Новые исключения
+    'звенигород': 'Звенигород (Московская область)',
+    'радужный хмао': 'Радужный (Ханты-Мансийский АО - Югра)',
+    'радужный': 'Радужный (Ханты-Мансийский АО - Югра)',
+    'железногорск курской области': 'Железногорск (Курская область)',
+    'воскресенск': 'Воскресенск (Московская область)',
+    'северск': 'Северск (Томская область)',
+    'егорьевск': 'Егорьевск (Московская область)',
+    'дмитров': 'Дмитров (Московская область)',
 }
 
-# ============================================  
-# ФУНКЦИИ  
-# ============================================  
+# Исключения - названия, которые НЕ должны совпадать (вернуть None)
+EXCLUDED_EXACT_MATCHES = {
+    'ленинградская',  # Точное совпадение с "Ленинградская" = Нет совпадения
+}
+
+# ============================================
+# ФУНКЦИИ
+# ============================================
+def get_russian_cities(hh_areas):
+    """Возвращает список только российских городов из справочника HH"""
+    russia_id = '113'
+    return [
+        city_name for city_name, city_info in hh_areas.items()
+        if city_info.get('root_parent_id', '') == russia_id
+    ]
+
 def normalize_city_name(text):
     """Нормализует название города: ё->е, нижний регистр, убирает лишние пробелы"""
     # Проверяем, что text это строка, иначе возвращаем пустую строку
@@ -998,12 +1019,17 @@ def get_candidates_by_word(client_city, hh_city_names, limit=20):
       
     return candidates[:limit]  
 
-def smart_match_city(client_city, hh_city_names, hh_areas, threshold=85):  
-    """Умное сопоставление города с сохранением кандидатов и учетом предпочтительных совпадений"""  
-      
-    city_part, region_part = extract_city_and_region(client_city)  
-    city_part_lower = normalize_city_name(city_part)  
-    
+def smart_match_city(client_city, hh_city_names, hh_areas, threshold=85):
+    """Умное сопоставление города с сохранением кандидатов и учетом предпочтительных совпадений"""
+
+    city_part, region_part = extract_city_and_region(client_city)
+    city_part_lower = normalize_city_name(city_part)
+
+    # Проверяем исключения - города, которые НЕ должны совпадать
+    if city_part_lower in EXCLUDED_EXACT_MATCHES:
+        word_candidates = get_candidates_by_word(city_part, hh_city_names)
+        return None, word_candidates
+
     # Проверяем предпочтительные совпадения
     if city_part_lower in PREFERRED_MATCHES:
         preferred_match = PREFERRED_MATCHES[city_part_lower]
@@ -1121,7 +1147,8 @@ def smart_match_city(client_city, hh_city_names, hh_areas, threshold=85):
 def match_cities(original_df, hh_areas, threshold=85, sheet_name=None):
     """Сопоставляет города с сохранением кандидатов и всех столбцов"""
     results = []
-    hh_city_names = list(hh_areas.keys())
+    # Используем только российские города
+    hh_city_names = get_russian_cities(hh_areas)
 
     # Определяем названия столбцов
     first_col_name = original_df.columns[0]
@@ -1705,13 +1732,40 @@ if uploaded_file is not None and hh_areas is not None:
                 col5.metric("❌ Не найдено", not_found)  
                 col6.metric("📤 К выгрузке", to_export)  
                   
-                if duplicates > 0:  
-                    st.warning(f"""  
-                    ⚠️ **Найдено {duplicates} дубликатов:**  
-                    - 🔄 По исходному названию: **{dup_original}**  
-                    - 🔄 По результату HH: **{dup_hh}**  
-                    """)  
-            
+                if duplicates > 0:
+                    st.warning(f"""
+                    ⚠️ **Найдено {duplicates} дубликатов:**
+                    - 🔄 По исходному названию: **{dup_original}**
+                    - 🔄 По результату HH: **{dup_hh}**
+                    """)
+
+                # Проверяем наличие гео из других стран
+                russia_id = '113'
+                non_russian_cities = []
+                for idx, row in result_df.iterrows():
+                    geo_name = row['Итоговое гео']
+                    if pd.notna(geo_name) and geo_name in hh_areas:
+                        city_info = hh_areas[geo_name]
+                        if city_info.get('root_parent_id', '') != russia_id:
+                            non_russian_cities.append({
+                                'original': row['Исходное название'],
+                                'matched': geo_name,
+                                'country_id': city_info.get('root_parent_id', 'Unknown')
+                            })
+
+                if non_russian_cities:
+                    st.error(f"""
+                    🌍 **Обнаружено {len(non_russian_cities)} гео из других стран!**
+
+                    Эти города не из России и не должны попадать в выгрузку.
+                    Пожалуйста, проверьте и исправьте совпадения ниже в блоке редактирования.
+                    """)
+
+                    # Показываем список
+                    with st.expander("🔍 Показать гео из других стран"):
+                        for city in non_russian_cities:
+                            st.text(f"• {city['original']} → {city['matched']}")
+
             # РАННЯЯ ОСТАНОВКА ДЛЯ РЕЖИМА SPLIT
             # Если режим split - пропускаем все стандартные блоки и сразу переходим к вакансиям
             if st.session_state.get('has_vacancy_mode', False) and st.session_state.export_mode == "split":
@@ -1796,16 +1850,20 @@ if uploaded_file is not None and hh_areas is not None:
                                 # Если кандидатов нет в кэше, получаем их заново
                                 if not candidates:
                                     city_name = row['Исходное название']
-                                    candidates = get_candidates_by_word(city_name, list(hh_areas.keys()), limit=20)
+                                    # Используем только российские города
+                                    candidates = get_candidates_by_word(city_name, get_russian_cities(hh_areas), limit=20)
 
                                 current_value = row['Итоговое гео']
                                 current_match = row['Совпадение %']
 
-                                # Добавляем текущее значение в начало, если его нет
+                                # Добавляем текущее значение в список, если его нет
                                 if current_value and current_value != row['Исходное название']:
                                     candidate_names = [c[0] for c in candidates]
                                     if current_value not in candidate_names:
-                                        candidates.insert(0, (current_value, current_match))
+                                        candidates.append((current_value, current_match))
+
+                                # Сортируем кандидатов по убыванию процента совпадения
+                                candidates.sort(key=lambda x: x[1], reverse=True)
 
                                 # Формируем список опций с процентами
                                 if candidates:
@@ -2028,16 +2086,20 @@ if uploaded_file is not None and hh_areas is not None:
 
                                     # Если кэша нет, ищем заново (для обратной совместимости)
                                     if not candidates:
-                                        candidates = get_candidates_by_word(city_name, list(hh_areas.keys()), limit=20)
+                                        # Используем только российские города
+                                        candidates = get_candidates_by_word(city_name, get_russian_cities(hh_areas), limit=20)
 
                                     current_value = row['Итоговое гео']
                                     current_match = row['Совпадение %']
 
-                                    # Если есть текущее значение - добавляем в начало
+                                    # Если есть текущее значение - добавляем в список
                                     if current_value and current_value != city_name:
                                         candidate_names = [c[0] for c in candidates]
                                         if current_value not in candidate_names:
-                                            candidates.insert(0, (current_value, current_match))
+                                            candidates.append((current_value, current_match))
+
+                                    # Сортируем кандидатов по убыванию процента совпадения
+                                    candidates.sort(key=lambda x: x[1], reverse=True)
 
                                     # Формируем опции
                                     if candidates:
@@ -2295,16 +2357,20 @@ if uploaded_file is not None and hh_areas is not None:
 
                                             # Если кэша нет, ищем заново (для обратной совместимости)
                                             if not candidates:
-                                                candidates = get_candidates_by_word(city_name, list(hh_areas.keys()), limit=20)
+                                                # Используем только российские города
+                                                candidates = get_candidates_by_word(city_name, get_russian_cities(hh_areas), limit=20)
                                             
-                                            # Если есть текущее значение из сопоставления - добавляем его в начало
+                                            # Если есть текущее значение из сопоставления - добавляем его в список
                                             if current_value and current_value != city_name:
                                                 # Проверяем, есть ли уже это значение в кандидатах
                                                 candidate_names = [c[0] for c in candidates]
                                                 if current_value not in candidate_names:
-                                                    # Добавляем текущее значение в начало списка
-                                                    candidates.insert(0, (current_value, current_match))
-                                            
+                                                    # Добавляем текущее значение в список
+                                                    candidates.append((current_value, current_match))
+
+                                            # Сортируем кандидатов по убыванию процента совпадения
+                                            candidates.sort(key=lambda x: x[1], reverse=True)
+
                                             # Формируем опции - всегда показываем топ кандидатов
                                             if candidates:
                                                 options = ["❌ Нет совпадения"] + [f"{c[0]} ({c[1]:.1f}%)" for c in candidates[:20]]
