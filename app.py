@@ -280,40 +280,6 @@ st.markdown("""
         box-shadow: 0 2px 12px rgba(234, 51, 36, 0.2);
     }
 
-    /* Красная обводка для "Нет совпадения" */
-    div.no-match div.stSelectbox > div > div,
-    div.no-match div.stSelectbox > div > div > div,
-    div.no-match [data-baseweb="select"] > div,
-    div.no-match [data-baseweb="select"] {
-        border-color: #ea3324 !important;
-        border: 2px solid #ea3324 !important;
-        background: transparent !important;
-    }
-
-    /* Оранжевая обводка для городов с совпадением */
-    div.has-match div.stSelectbox > div > div,
-    div.has-match div.stSelectbox > div > div > div,
-    div.has-match [data-baseweb="select"] > div,
-    div.has-match [data-baseweb="select"] {
-        border-color: #FFAA00 !important;
-        border: 2px solid #FFAA00 !important;
-        background: transparent !important;
-    }
-
-    div.no-match div.stSelectbox > div > div:focus-within,
-    div.has-match div.stSelectbox > div > div:focus-within,
-    div.edit-block [data-baseweb="select"]:focus-within > div {
-        border-color: #FF8C00 !important;
-        box-shadow: 0 0 0 0.2rem rgba(255, 140, 0, 0.25) !important;
-    }
-
-    div.edit-block div.stSelectbox:hover > div > div,
-    div.edit-block [data-baseweb="select"]:hover > div {
-        background: rgba(255, 140, 0, 0.05) !important;
-        box-shadow: 0 2px 12px rgba(255, 140, 0, 0.2) !important;
-        border-color: #FF8C00 !important;
-    }
-
     .stTextInput > div > div {
         border-radius: 10px;
         border: 1px solid #dee2e6;
@@ -524,31 +490,6 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# ============================================
-# ФУНКЦИЯ: ПОЛУЧЕНИЕ API КЛЮЧА ANTHROPIC
-# ============================================
-def get_anthropic_api_key():
-    """
-    Получает API ключ из доступных источников в порядке приоритета:
-    1. Streamlit secrets
-    2. Переменная окружения
-    """
-    # Пробуем загрузить из secrets
-    try:
-        key = st.secrets["ANTHROPIC_API_KEY"]
-        if key:
-            return key
-    except:
-        pass
-
-    # Пробуем загрузить из переменной окружения
-    key = os.environ.get("ANTHROPIC_API_KEY")
-    if key:
-        return key
-
-    # Если ключ не найден, возвращаем None
-    return None
-
 # Инициализация session_state
 if 'result_df' not in st.session_state:
     st.session_state.result_df = None
@@ -568,14 +509,6 @@ if 'original_df' not in st.session_state:
     st.session_state.original_df = None
 if 'export_mode' not in st.session_state:
     st.session_state.export_mode = None
-
-# Инициализация session state для чат-бота
-if 'chat_history' not in st.session_state:
-    st.session_state.chat_history = []
-if 'anthropic_api_key' not in st.session_state:
-    st.session_state.anthropic_api_key = get_anthropic_api_key()
-if 'chat_input_key' not in st.session_state:
-    st.session_state.chat_input_key = 0
 
 # ============================================  
 # СПРАВОЧНИК ФЕДЕРАЛЬНЫХ ОКРУГОВ И РЕГИОНОВ  
@@ -1437,160 +1370,6 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # ============================================
-    # БЛОК: ЧАТ-БОТ ПОМОЩНИК
-    # ============================================
-
-    # CSS для выделения expander фирменным цветом
-    st.markdown("""
-    <style>
-    /* Фирменный цвет для заголовка expander чат-бота */
-    div[data-testid="stExpander"] details summary p {
-        color: #ea3324 !important;
-        font-weight: 600 !important;
-    }
-
-    /* Стили сообщений чата */
-    .chat-message-user {
-        background: #e9ecef;
-        padding: 12px 16px;
-        border-radius: 12px 12px 0 12px;
-        margin: 8px 0 8px auto;
-        max-width: 85%;
-        border-left: 3px solid #ea3324;
-    }
-
-    .chat-message-assistant {
-        background: white;
-        padding: 12px 16px;
-        border-radius: 12px 12px 12px 0;
-        margin: 8px auto 8px 0;
-        max-width: 85%;
-        border-left: 3px solid #4CAF50;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    with st.expander("💬 AI Помощник", expanded=False):
-        # Проверяем наличие API ключа
-        if not st.session_state.anthropic_api_key:
-            st.warning("⚠️ API ключ Anthropic не настроен")
-            st.markdown("""
-    ### Инструкция по настройке:
-
-    1. **Создайте файл** `.streamlit/secrets.toml` в корне проекта
-    2. **Добавьте в него** следующее содержимое:
-    ```toml
-    ANTHROPIC_API_KEY = "ваш-api-ключ-anthropic"
-    ```
-    3. **Перезапустите** приложение
-
-    Файл `.streamlit/secrets.toml` добавлен в `.gitignore` и не попадет в репозиторий.
-            """)
-        else:
-            st.caption("🤖 Claude Sonnet 4.5 | Вопросы только о работе сервиса")
-
-            # История чата с прокруткой
-            chat_container = st.container(height=350)
-            with chat_container:
-                for msg in st.session_state.chat_history:
-                    if msg['role'] == 'user':
-                        st.markdown(f'<div class="chat-message-user">👤 <strong>Вы:</strong><br>{msg["content"]}</div>', unsafe_allow_html=True)
-                    else:
-                        st.markdown(f'<div class="chat-message-assistant">🤖 <strong>Помощник:</strong><br>{msg["content"]}</div>', unsafe_allow_html=True)
-
-            # Поле ввода и кнопки
-            user_input = st.text_area(
-                "Ваш вопрос:",
-                key=f"chat_input_{st.session_state.chat_input_key}",
-                height=80,
-                placeholder="Как сопоставить города со справочником HH?"
-            )
-
-            col1, col2 = st.columns([3, 1])
-
-            with col1:
-                send_button = st.button("📤 Отправить", type="primary", use_container_width=True, key="chat_send_btn")
-
-            with col2:
-                clear_button = st.button("🗑️", use_container_width=True, key="chat_clear_btn", help="Очистить чат")
-
-            if len(st.session_state.chat_history) > 0:
-                st.caption(f"💬 Сообщений: {len(st.session_state.chat_history)}")
-
-            if send_button and user_input:
-                with st.spinner("Думаю..."):
-                    # Вызов Anthropic API
-                    try:
-                        import anthropic
-
-                        client = anthropic.Anthropic(
-                            api_key=st.session_state.anthropic_api_key
-                        )
-
-                        # Системный промпт с контекстом приложения и фильтрацией вопросов
-                        system_prompt = """Ты - AI помощник для приложения "Синхронизатор гео HH.ru".
-
-Приложение помогает пользователям:
-- Сопоставлять названия городов со справочником HH.ru
-- Синхронизировать данные о городах для публикации вакансий
-- Выбирать города по регионам, округам и часовым поясам
-- Экспортировать данные в Excel
-
-ВАЖНО: Ты отвечаешь ТОЛЬКО на вопросы о работе этого сервиса.
-
-Если пользователь задает вопрос НЕ о работе сервиса (например, о погоде, политике, общих темах и т.д.),
-вежливо откажи и напомни, что ты можешь помочь только с вопросами о синхронизаторе городов HH.ru.
-
-Отвечай кратко, по делу и на русском языке. Помогай пользователям разобраться с функциями приложения."""
-
-                        # Добавляем сообщение пользователя
-                        st.session_state.chat_history.append({
-                            'role': 'user',
-                            'content': user_input
-                        })
-
-                        # Формируем историю для API
-                        messages = [
-                            {"role": msg['role'], "content": msg['content']}
-                            for msg in st.session_state.chat_history
-                        ]
-
-                        # Запрос к Claude
-                        response = client.messages.create(
-                            model="claude-sonnet-4-20250514",
-                            max_tokens=1024,
-                            system=system_prompt,
-                            messages=messages
-                        )
-
-                        assistant_message = response.content[0].text
-
-                        # Добавляем ответ ассистента
-                        st.session_state.chat_history.append({
-                            'role': 'assistant',
-                            'content': assistant_message
-                        })
-
-                        # Увеличиваем ключ для очистки поля ввода
-                        st.session_state.chat_input_key += 1
-                        st.rerun()
-
-                    except Exception as e:
-                        st.error(f"❌ Ошибка при обращении к API: {str(e)}")
-                        # Удаляем последнее сообщение пользователя при ошибке
-                        if st.session_state.chat_history and st.session_state.chat_history[-1]['role'] == 'user':
-                            st.session_state.chat_history.pop()
-
-            if clear_button:
-                st.session_state.chat_history = []
-                # Увеличиваем ключ для очистки поля ввода
-                st.session_state.chat_input_key += 1
-                st.rerun()
-
-    st.markdown("---")
-
     st.markdown("### 📖 Инструкция")
     st.markdown("""
     **Сценарии использования:**
@@ -2034,14 +1813,11 @@ if uploaded_file is not None and hh_areas is not None:
                                                 default_idx = i + 1
                                                 break
 
-                                # Определяем класс окантовки
+                                # Определяем цвет окантовки
                                 if default_idx == 0:
-                                    border_class = "no-match"  # Красная окантовка
+                                    border_color = "#ea3324"  # Красная для "Нет совпадения"
                                 else:
-                                    border_class = "has-match"  # Оранжевая окантовка
-
-                                # Открываем обертку с классом для окантовки
-                                st.markdown(f'<div class="{border_class}">', unsafe_allow_html=True)
+                                    border_color = "#FFAA00"  # Оранжевая для городов с процентом
 
                                 col1, col2, col3, col4 = st.columns([2, 3, 1, 1])
 
@@ -2057,6 +1833,18 @@ if uploaded_file is not None and hh_areas is not None:
                                         label_visibility="collapsed"
                                     )
 
+                                    # Inject CSS для этого конкретного selectbox
+                                    st.markdown(f"""
+                                    <style>
+                                    div[data-testid="stSelectbox"]:has(select[id*="select_{row_id}"]) > div > div,
+                                    div[data-testid="stSelectbox"]:has(select[id*="select_{row_id}"]) > div > div > div,
+                                    div[data-testid="stSelectbox"]:has(select[id*="select_{row_id}"]) [data-baseweb="select"] > div {{
+                                        border-color: {border_color} !important;
+                                        border: 2px solid {border_color} !important;
+                                    }}
+                                    </style>
+                                    """, unsafe_allow_html=True)
+
                                     if selected == "❌ Нет совпадения":
                                         st.session_state.manual_selections[row_id] = "❌ Нет совпадения"
                                     else:
@@ -2068,9 +1856,6 @@ if uploaded_file is not None and hh_areas is not None:
 
                                 with col4:
                                     st.text(row['Статус'])
-
-                                # Закрываем обертку
-                                st.markdown('</div>', unsafe_allow_html=True)
 
                                 st.markdown("<hr style='margin-top: 5px; margin-bottom: 5px;'>", unsafe_allow_html=True)
 
@@ -2207,9 +1992,6 @@ if uploaded_file is not None and hh_areas is not None:
                                 st.markdown("#### ✏️ Редактирование городов с совпадением ≤ 90%")
                                 st.warning(f"⚠️ Найдено **{len(editable_rows)}** городов для проверки")
 
-                                # Обертка для оранжевой обводки selectbox
-                                st.markdown('<div class="edit-block">', unsafe_allow_html=True)
-
                                 # Для каждого города показываем выбор
                                 for idx, row in editable_rows.iterrows():
                                     row_id = row['row_id']
@@ -2225,19 +2007,19 @@ if uploaded_file is not None and hh_areas is not None:
 
                                     current_value = row['Итоговое гео']
                                     current_match = row['Совпадение %']
-                                    
+
                                     # Если есть текущее значение - добавляем в начало
                                     if current_value and current_value != city_name:
                                         candidate_names = [c[0] for c in candidates]
                                         if current_value not in candidate_names:
                                             candidates.insert(0, (current_value, current_match))
-                                    
+
                                     # Формируем опции
                                     if candidates:
                                         options = ["❌ Нет совпадения"] + [f"{c[0]} ({c[1]:.1f}%)" for c in candidates[:20]]
                                     else:
                                         options = ["❌ Нет совпадения"]
-                                    
+
                                     # Определяем текущий выбор
                                     unique_key = f"select_{sheet_name}_{row_id}_{tab_idx}"
                                     selection_key = (sheet_name, row_id)
@@ -2256,12 +2038,18 @@ if uploaded_file is not None and hh_areas is not None:
                                                 if opt.startswith(current_value) or current_value in opt:
                                                     default_idx = i
                                                     break
-                                    
+
+                                    # Определяем цвет окантовки
+                                    if default_idx == 0:
+                                        border_color = "#ea3324"  # Красная для "Нет совпадения"
+                                    else:
+                                        border_color = "#FFAA00"  # Оранжевая для городов с процентом
+
                                     col1, col2, col3 = st.columns([2, 3, 1])
-                                    
+
                                     with col1:
                                         st.text(city_name)
-                                    
+
                                     with col2:
                                         selected = st.selectbox(
                                             "Выберите город:",
@@ -2270,21 +2058,30 @@ if uploaded_file is not None and hh_areas is not None:
                                             key=unique_key,
                                             label_visibility="collapsed"
                                         )
-                                        
+
+                                        # Inject CSS для этого конкретного selectbox
+                                        st.markdown(f"""
+                                        <style>
+                                        div[data-testid="stSelectbox"]:has(select[id*="{unique_key}"]) > div > div,
+                                        div[data-testid="stSelectbox"]:has(select[id*="{unique_key}"]) > div > div > div,
+                                        div[data-testid="stSelectbox"]:has(select[id*="{unique_key}"]) [data-baseweb="select"] > div {{
+                                            border-color: {border_color} !important;
+                                            border: 2px solid {border_color} !important;
+                                        }}
+                                        </style>
+                                        """, unsafe_allow_html=True)
+
                                         if selected == "❌ Нет совпадения":
                                             st.session_state.manual_selections[selection_key] = "❌ Нет совпадения"
                                         else:
                                             # Извлекаем название без процента
                                             city_match = selected.rsplit(' (', 1)[0]
                                             st.session_state.manual_selections[selection_key] = city_match
-                                    
+
                                     with col3:
                                         st.text(f"{row['Совпадение %']:.1f}%")
 
                                 st.markdown("---")
-
-                                # Закрываем обертку для оранжевой обводки
-                                st.markdown('</div>', unsafe_allow_html=True)
 
                             # Применяем ручные изменения
                             result_df_sheet_final = result_df_sheet.copy()
