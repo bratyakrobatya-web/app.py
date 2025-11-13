@@ -280,17 +280,28 @@ st.markdown("""
         box-shadow: 0 2px 12px rgba(234, 51, 36, 0.2);
     }
 
-    /* Оранжевая обводка для блоков редактирования с совпадением ≤ 90% */
-    div.edit-block div.stSelectbox > div > div,
-    div.edit-block div.stSelectbox > div > div > div,
-    div.edit-block [data-baseweb="select"] > div,
-    div.edit-block [data-baseweb="select"] {
-        border-color: #FF8C00 !important;
-        border: 2px solid #FF8C00 !important;
+    /* Красная обводка для "Нет совпадения" */
+    div.no-match div.stSelectbox > div > div,
+    div.no-match div.stSelectbox > div > div > div,
+    div.no-match [data-baseweb="select"] > div,
+    div.no-match [data-baseweb="select"] {
+        border-color: #ea3324 !important;
+        border: 2px solid #ea3324 !important;
         background: transparent !important;
     }
 
-    div.edit-block div.stSelectbox > div > div:focus-within,
+    /* Оранжевая обводка для городов с совпадением */
+    div.has-match div.stSelectbox > div > div,
+    div.has-match div.stSelectbox > div > div > div,
+    div.has-match [data-baseweb="select"] > div,
+    div.has-match [data-baseweb="select"] {
+        border-color: #FFAA00 !important;
+        border: 2px solid #FFAA00 !important;
+        background: transparent !important;
+    }
+
+    div.no-match div.stSelectbox > div > div:focus-within,
+    div.has-match div.stSelectbox > div > div:focus-within,
     div.edit-block [data-baseweb="select"]:focus-within > div {
         border-color: #FF8C00 !important;
         box-shadow: 0 0 0 0.2rem rgba(255, 140, 0, 0.25) !important;
@@ -1393,6 +1404,160 @@ with st.sidebar:
 
     st.markdown("---")
 
+    # ============================================
+    # БЛОК: ЧАТ-БОТ ПОМОЩНИК
+    # ============================================
+
+    # CSS для выделения expander фирменным цветом
+    st.markdown("""
+    <style>
+    /* Фирменный цвет для заголовка expander чат-бота */
+    div[data-testid="stExpander"] details summary p {
+        color: #ea3324 !important;
+        font-weight: 600 !important;
+    }
+
+    /* Стили сообщений чата */
+    .chat-message-user {
+        background: #e9ecef;
+        padding: 12px 16px;
+        border-radius: 12px 12px 0 12px;
+        margin: 8px 0 8px auto;
+        max-width: 85%;
+        border-left: 3px solid #ea3324;
+    }
+
+    .chat-message-assistant {
+        background: white;
+        padding: 12px 16px;
+        border-radius: 12px 12px 12px 0;
+        margin: 8px auto 8px 0;
+        max-width: 85%;
+        border-left: 3px solid #4CAF50;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    with st.expander("💬 AI Помощник", expanded=False):
+        # Проверяем наличие API ключа
+        if not st.session_state.anthropic_api_key:
+            st.warning("⚠️ API ключ Anthropic не настроен")
+            st.markdown("""
+    ### Инструкция по настройке:
+
+    1. **Создайте файл** `.streamlit/secrets.toml` в корне проекта
+    2. **Добавьте в него** следующее содержимое:
+    ```toml
+    ANTHROPIC_API_KEY = "ваш-api-ключ-anthropic"
+    ```
+    3. **Перезапустите** приложение
+
+    Файл `.streamlit/secrets.toml` добавлен в `.gitignore` и не попадет в репозиторий.
+            """)
+        else:
+            st.caption("🤖 Claude Sonnet 4.5 | Вопросы только о работе сервиса")
+
+            # История чата с прокруткой
+            chat_container = st.container(height=350)
+            with chat_container:
+                for msg in st.session_state.chat_history:
+                    if msg['role'] == 'user':
+                        st.markdown(f'<div class="chat-message-user">👤 <strong>Вы:</strong><br>{msg["content"]}</div>', unsafe_allow_html=True)
+                    else:
+                        st.markdown(f'<div class="chat-message-assistant">🤖 <strong>Помощник:</strong><br>{msg["content"]}</div>', unsafe_allow_html=True)
+
+            # Поле ввода и кнопки
+            user_input = st.text_area(
+                "Ваш вопрос:",
+                key=f"chat_input_{st.session_state.chat_input_key}",
+                height=80,
+                placeholder="Как сопоставить города со справочником HH?"
+            )
+
+            col1, col2 = st.columns([3, 1])
+
+            with col1:
+                send_button = st.button("📤 Отправить", type="primary", use_container_width=True, key="chat_send_btn")
+
+            with col2:
+                clear_button = st.button("🗑️", use_container_width=True, key="chat_clear_btn", help="Очистить чат")
+
+            if len(st.session_state.chat_history) > 0:
+                st.caption(f"💬 Сообщений: {len(st.session_state.chat_history)}")
+
+            if send_button and user_input:
+                with st.spinner("Думаю..."):
+                    # Вызов Anthropic API
+                    try:
+                        import anthropic
+
+                        client = anthropic.Anthropic(
+                            api_key=st.session_state.anthropic_api_key
+                        )
+
+                        # Системный промпт с контекстом приложения и фильтрацией вопросов
+                        system_prompt = """Ты - AI помощник для приложения "Синхронизатор гео HH.ru".
+
+Приложение помогает пользователям:
+- Сопоставлять названия городов со справочником HH.ru
+- Синхронизировать данные о городах для публикации вакансий
+- Выбирать города по регионам, округам и часовым поясам
+- Экспортировать данные в Excel
+
+ВАЖНО: Ты отвечаешь ТОЛЬКО на вопросы о работе этого сервиса.
+
+Если пользователь задает вопрос НЕ о работе сервиса (например, о погоде, политике, общих темах и т.д.),
+вежливо откажи и напомни, что ты можешь помочь только с вопросами о синхронизаторе городов HH.ru.
+
+Отвечай кратко, по делу и на русском языке. Помогай пользователям разобраться с функциями приложения."""
+
+                        # Добавляем сообщение пользователя
+                        st.session_state.chat_history.append({
+                            'role': 'user',
+                            'content': user_input
+                        })
+
+                        # Формируем историю для API
+                        messages = [
+                            {"role": msg['role'], "content": msg['content']}
+                            for msg in st.session_state.chat_history
+                        ]
+
+                        # Запрос к Claude
+                        response = client.messages.create(
+                            model="claude-sonnet-4-20250514",
+                            max_tokens=1024,
+                            system=system_prompt,
+                            messages=messages
+                        )
+
+                        assistant_message = response.content[0].text
+
+                        # Добавляем ответ ассистента
+                        st.session_state.chat_history.append({
+                            'role': 'assistant',
+                            'content': assistant_message
+                        })
+
+                        # Увеличиваем ключ для очистки поля ввода
+                        st.session_state.chat_input_key += 1
+                        st.rerun()
+
+                    except Exception as e:
+                        st.error(f"❌ Ошибка при обращении к API: {str(e)}")
+                        # Удаляем последнее сообщение пользователя при ошибке
+                        if st.session_state.chat_history and st.session_state.chat_history[-1]['role'] == 'user':
+                            st.session_state.chat_history.pop()
+
+            if clear_button:
+                st.session_state.chat_history = []
+                # Увеличиваем ключ для очистки поля ввода
+                st.session_state.chat_input_key += 1
+                st.rerun()
+
+    st.markdown("---")
+
     st.markdown("### 📖 Инструкция")
     st.markdown("""
     **Сценарии использования:**
@@ -1792,59 +1957,65 @@ if uploaded_file is not None and hh_areas is not None:
                         st.subheader("✏️ Редактирование городов с совпадением ≤ 90%")
                         st.info(f"Найдено **{len(editable_rows)}** городов, доступных для редактирования")
 
-                        # Обертка для оранжевой обводки selectbox
-                        st.markdown('<div class="edit-block">', unsafe_allow_html=True)
+                        for idx, row in editable_rows.iterrows():
+                            with st.container():
+                                row_id = row['row_id']
+                                candidates = st.session_state.candidates_cache.get(row_id, [])
 
-                        for idx, row in editable_rows.iterrows():  
-                            with st.container():  
-                                col1, col2, col3, col4 = st.columns([2, 3, 1, 1])  
-                          
-                                with col1:  
-                                    st.markdown(f"**{row['Исходное название']}**")  
-                          
-                                with col2:
-                                    row_id = row['row_id']
-                                    candidates = st.session_state.candidates_cache.get(row_id, [])
+                                # Если кандидатов нет в кэше, получаем их заново
+                                if not candidates:
+                                    city_name = row['Исходное название']
+                                    candidates = get_candidates_by_word(city_name, list(hh_areas.keys()), limit=20)
 
-                                    # Если кандидатов нет в кэше, получаем их заново
-                                    if not candidates:
-                                        city_name = row['Исходное название']
-                                        candidates = get_candidates_by_word(city_name, list(hh_areas.keys()), limit=20)
+                                current_value = row['Итоговое гео']
+                                current_match = row['Совпадение %']
 
-                                    current_value = row['Итоговое гео']
-                                    current_match = row['Совпадение %']
+                                # Добавляем текущее значение в начало, если его нет
+                                if current_value and current_value != row['Исходное название']:
+                                    candidate_names = [c[0] for c in candidates]
+                                    if current_value not in candidate_names:
+                                        candidates.insert(0, (current_value, current_match))
 
-                                    # Добавляем текущее значение в начало, если его нет
-                                    if current_value and current_value != row['Исходное название']:
-                                        candidate_names = [c[0] for c in candidates]
-                                        if current_value not in candidate_names:
-                                            candidates.insert(0, (current_value, current_match))
+                                # Формируем список опций с процентами
+                                if candidates:
+                                    options = ["❌ Нет совпадения"] + [f"{c[0]} ({c[1]:.1f}%)" for c in candidates[:20]]
+                                else:
+                                    options = ["❌ Нет совпадения"]
 
-                                    # Формируем список опций с процентами
-                                    if candidates:
-                                        options = ["❌ Нет совпадения"] + [f"{c[0]} ({c[1]:.1f}%)" for c in candidates[:20]]
-                                    else:
-                                        options = ["❌ Нет совпадения"]
-
-                                    # Определяем выбранный элемент
-                                    if row_id in st.session_state.manual_selections:
-                                        selected_value = st.session_state.manual_selections[row_id]
-                                        if selected_value == "❌ Нет совпадения":
-                                            default_idx = 0
-                                        else:
-                                            default_idx = 0
-                                            for i, c in enumerate(candidates):
-                                                if c[0] == selected_value:
-                                                    default_idx = i + 1
-                                                    break
+                                # Определяем выбранный элемент
+                                if row_id in st.session_state.manual_selections:
+                                    selected_value = st.session_state.manual_selections[row_id]
+                                    if selected_value == "❌ Нет совпадения":
+                                        default_idx = 0
                                     else:
                                         default_idx = 0
-                                        if current_value:
-                                            for i, c in enumerate(candidates):
-                                                if c[0] == current_value:
-                                                    default_idx = i + 1
-                                                    break
+                                        for i, c in enumerate(candidates):
+                                            if c[0] == selected_value:
+                                                default_idx = i + 1
+                                                break
+                                else:
+                                    default_idx = 0
+                                    if current_value:
+                                        for i, c in enumerate(candidates):
+                                            if c[0] == current_value:
+                                                default_idx = i + 1
+                                                break
 
+                                # Определяем класс окантовки
+                                if default_idx == 0:
+                                    border_class = "no-match"  # Красная окантовка
+                                else:
+                                    border_class = "has-match"  # Оранжевая окантовка
+
+                                # Открываем обертку с классом для окантовки
+                                st.markdown(f'<div class="{border_class}">', unsafe_allow_html=True)
+
+                                col1, col2, col3, col4 = st.columns([2, 3, 1, 1])
+
+                                with col1:
+                                    st.markdown(f"**{row['Исходное название']}**")
+
+                                with col2:
                                     selected = st.selectbox(
                                         "Выберите город:",
                                         options=options,
@@ -1857,18 +2028,18 @@ if uploaded_file is not None and hh_areas is not None:
                                         st.session_state.manual_selections[row_id] = "❌ Нет совпадения"
                                     else:
                                         selected_city = selected.rsplit(' (', 1)[0]
-                                        st.session_state.manual_selections[row_id] = selected_city  
-                          
-                                with col3:  
-                                    st.text(f"{row['Совпадение %']}%")  
-                          
-                                with col4:  
-                                    st.text(row['Статус'])  
-                          
-                                st.markdown("<hr style='margin-top: 5px; margin-bottom: 5px;'>", unsafe_allow_html=True)  
-                  
-                        # Закрываем обертку для оранжевой обводки
-                        st.markdown('</div>', unsafe_allow_html=True)
+                                        st.session_state.manual_selections[row_id] = selected_city
+
+                                with col3:
+                                    st.text(f"{row['Совпадение %']}%")
+
+                                with col4:
+                                    st.text(row['Статус'])
+
+                                # Закрываем обертку
+                                st.markdown('</div>', unsafe_allow_html=True)
+
+                                st.markdown("<hr style='margin-top: 5px; margin-bottom: 5px;'>", unsafe_allow_html=True)
 
                         # ============================================
                         # БЛОК: ДОБАВЛЕНИЕ ЛЮБОГО ГОРОДА (только для НЕ split режима)
@@ -3191,197 +3362,8 @@ if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
 if 'anthropic_api_key' not in st.session_state:
     st.session_state.anthropic_api_key = get_anthropic_api_key()
-
-# CSS для sidebar справа с красной полосой-индикатором
-st.markdown("""
-<style>
-/* Перемещаем sidebar справа */
-[data-testid="stSidebar"] {
-    left: auto !important;
-    right: 0 !important;
-}
-
-[data-testid="stSidebar"] > div:first-child {
-    left: auto !important;
-    right: 0 !important;
-}
-
-/* Красная полоса-индикатор на свернутом sidebar */
-[data-testid="stSidebar"][aria-expanded="false"] {
-    width: 8px !important;
-    min-width: 8px !important;
-}
-
-[data-testid="stSidebar"][aria-expanded="false"]::before {
-    content: "";
-    position: absolute;
-    left: 0;
-    top: 0;
-    bottom: 0;
-    width: 8px;
-    background: linear-gradient(135deg, #ea3324 0%, #c02a1e 100%);
-    box-shadow: -2px 0 10px rgba(234, 51, 36, 0.3);
-    z-index: 1;
-}
-
-/* Кнопка открытия/закрытия sidebar справа */
-[data-testid="collapsedControl"] {
-    left: auto !important;
-    right: 0 !important;
-}
-
-/* Стилизация открытого sidebar */
-[data-testid="stSidebar"][aria-expanded="true"] {
-    width: 400px !important;
-    background: #f8f9fa !important;
-}
-
-/* Стили сообщений чата */
-.chat-message-user {
-    background: #e9ecef;
-    padding: 12px 16px;
-    border-radius: 12px 12px 0 12px;
-    margin: 8px 0 8px auto;
-    max-width: 85%;
-    border-left: 3px solid #ea3324;
-}
-
-.chat-message-assistant {
-    background: white;
-    padding: 12px 16px;
-    border-radius: 12px 12px 12px 0;
-    margin: 8px auto 8px 0;
-    max-width: 85%;
-    border-left: 3px solid #4CAF50;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}
-</style>
-""", unsafe_allow_html=True)
-
-# Инициализация ключа для очистки поля ввода
 if 'chat_input_key' not in st.session_state:
     st.session_state.chat_input_key = 0
-
-# Чат интерфейс в sidebar справа
-with st.sidebar:
-    # Проверяем наличие API ключа
-    if not st.session_state.anthropic_api_key:
-        st.warning("⚠️ API ключ Anthropic не настроен")
-        st.markdown("""
-### Инструкция по настройке:
-
-1. **Создайте файл** `.streamlit/secrets.toml` в корне проекта
-2. **Добавьте в него** следующее содержимое:
-```toml
-ANTHROPIC_API_KEY = "ваш-api-ключ-anthropic"
-```
-3. **Перезапустите** приложение
-
-Файл `.streamlit/secrets.toml` добавлен в `.gitignore` и не попадет в репозиторий.
-        """)
-    else:
-        st.markdown("# 💬 AI Помощник")
-        st.caption("🤖 Claude Sonnet 4.5")
-        st.caption("Задавайте вопросы только о работе сервиса")
-        st.divider()
-
-        # История чата с прокруткой
-        chat_container = st.container(height=400)
-        with chat_container:
-            for msg in st.session_state.chat_history:
-                if msg['role'] == 'user':
-                    st.markdown(f'<div class="chat-message-user">👤 <strong>Вы:</strong><br>{msg["content"]}</div>', unsafe_allow_html=True)
-                else:
-                    st.markdown(f'<div class="chat-message-assistant">🤖 <strong>Помощник:</strong><br>{msg["content"]}</div>', unsafe_allow_html=True)
-
-        # Поле ввода и кнопки
-        user_input = st.text_area(
-            "Ваш вопрос:",
-            key=f"chat_input_{st.session_state.chat_input_key}",
-            height=80,
-            placeholder="Как сопоставить города со справочником HH?"
-        )
-
-        col1, col2 = st.columns([3, 1])
-
-        with col1:
-            send_button = st.button("📤 Отправить", type="primary", use_container_width=True, key="sidebar_send_btn")
-
-        with col2:
-            clear_button = st.button("🗑️", use_container_width=True, key="sidebar_clear_btn", help="Очистить чат")
-
-        if len(st.session_state.chat_history) > 0:
-            st.caption(f"💬 Сообщений: {len(st.session_state.chat_history)}")
-
-        if send_button and user_input:
-            with st.spinner("Думаю..."):
-                # Вызов Anthropic API
-                try:
-                    import anthropic
-
-                    client = anthropic.Anthropic(
-                        api_key=st.session_state.anthropic_api_key
-                    )
-
-                    # Системный промпт с контекстом приложения и фильтрацией вопросов
-                    system_prompt = """Ты - AI помощник для приложения "Синхронизатор гео HH.ru".
-
-Приложение помогает пользователям:
-- Сопоставлять названия городов со справочником HH.ru
-- Синхронизировать данные о городах для публикации вакансий
-- Выбирать города по регионам, округам и часовым поясам
-- Экспортировать данные в Excel
-
-ВАЖНО: Ты отвечаешь ТОЛЬКО на вопросы о работе этого сервиса.
-
-Если пользователь задает вопрос НЕ о работе сервиса (например, о погоде, политике, общих темах и т.д.),
-вежливо откажи и напомни, что ты можешь помочь только с вопросами о синхронизаторе городов HH.ru.
-
-Отвечай кратко, по делу и на русском языке. Помогай пользователям разобраться с функциями приложения."""
-
-                    # Добавляем сообщение пользователя
-                    st.session_state.chat_history.append({
-                        'role': 'user',
-                        'content': user_input
-                    })
-
-                    # Формируем историю для API
-                    messages = [
-                        {"role": msg['role'], "content": msg['content']}
-                        for msg in st.session_state.chat_history
-                    ]
-
-                    # Запрос к Claude
-                    response = client.messages.create(
-                        model="claude-sonnet-4-20250514",
-                        max_tokens=1024,
-                        system=system_prompt,
-                        messages=messages
-                    )
-
-                    assistant_message = response.content[0].text
-
-                    # Добавляем ответ ассистента
-                    st.session_state.chat_history.append({
-                        'role': 'assistant',
-                        'content': assistant_message
-                    })
-
-                    # Увеличиваем ключ для очистки поля ввода
-                    st.session_state.chat_input_key += 1
-                    st.rerun()
-
-                except Exception as e:
-                    st.error(f"❌ Ошибка при обращении к API: {str(e)}")
-                    # Удаляем последнее сообщение пользователя при ошибке
-                    if st.session_state.chat_history and st.session_state.chat_history[-1]['role'] == 'user':
-                        st.session_state.chat_history.pop()
-
-        if clear_button:
-            st.session_state.chat_history = []
-            # Увеличиваем ключ для очистки поля ввода
-            st.session_state.chat_input_key += 1
-            st.rerun()
 
 st.markdown("---")
 st.markdown(
