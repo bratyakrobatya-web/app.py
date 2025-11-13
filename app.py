@@ -67,14 +67,14 @@ st.markdown("""
         vertical-align: middle;
     }
 
-    /* Белая галочка в зеленом круге */
+    /* Белая галочка в красном круге */
     .check-circle {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         width: 20px;
         height: 20px;
-        background: #4CAF50;
+        background: #ea3324;
         color: white;
         border-radius: 50%;
         font-weight: bold;
@@ -269,25 +269,27 @@ st.markdown("""
         box-shadow: 0 2px 12px rgba(234, 51, 36, 0.2);
     }
 
-    /* Средне-серая обводка для блоков редактирования с совпадением ≤ 90% */
-    div.edit-block .stSelectbox > div > div {
-        border: 2px solid #6c757d !important;
+    /* Оранжевая обводка для блоков редактирования с совпадением ≤ 90% */
+    div.edit-block div.stSelectbox > div > div,
+    div.edit-block div.stSelectbox > div > div > div,
+    div.edit-block [data-baseweb="select"] > div,
+    div.edit-block [data-baseweb="select"] {
+        border-color: #FF8C00 !important;
+        border: 2px solid #FF8C00 !important;
         background: transparent !important;
     }
 
-    div.edit-block .stSelectbox > div > div:focus-within {
-        border: 2px solid #6c757d !important;
-        box-shadow: 0 0 0 0.2rem rgba(108, 117, 125, 0.25) !important;
+    div.edit-block div.stSelectbox > div > div:focus-within,
+    div.edit-block [data-baseweb="select"]:focus-within > div {
+        border-color: #FF8C00 !important;
+        box-shadow: 0 0 0 0.2rem rgba(255, 140, 0, 0.25) !important;
     }
 
-    div.edit-block .stSelectbox:hover > div > div {
-        background: rgba(108, 117, 125, 0.05) !important;
-        box-shadow: 0 2px 12px rgba(108, 117, 125, 0.2) !important;
-        border: 2px solid #6c757d !important;
-    }
-
-    div.edit-block [data-baseweb="select"] > div {
-        border-color: #6c757d !important;
+    div.edit-block div.stSelectbox:hover > div > div,
+    div.edit-block [data-baseweb="select"]:hover > div {
+        background: rgba(255, 140, 0, 0.05) !important;
+        box-shadow: 0 2px 12px rgba(255, 140, 0, 0.2) !important;
+        border-color: #FF8C00 !important;
     }
 
     .stTextInput > div > div {
@@ -1358,21 +1360,24 @@ with st.sidebar:
         background: #f8f9fa;
         border-radius: 8px;
         text-decoration: none;
-        color: #1a1a1a;
+        color: #1a1a1a !important;
         font-weight: 500;
         transition: all 0.2s ease;
         border-left: 3px solid #ea3324;
     }
+    .nav-link:visited {
+        color: #1a1a1a !important;
+    }
     .nav-link:hover {
         background: #ea3324;
-        color: white;
+        color: white !important;
         transform: translateX(5px);
     }
     </style>
 
-    <a href="#проверка-гео" class="nav-link">🔍 Проверка гео</a>
-    <a href="#синхронизатор-городов" class="nav-link">📤 Синхронизатор городов</a>
-    <a href="#выбор-регионов-и-городов" class="nav-link">🗺️ Выбор регионов и городов</a>
+    <a href="#проверка-гео" class="nav-link">Проверка гео</a>
+    <a href="#синхронизатор-городов" class="nav-link">Синхронизатор городов</a>
+    <a href="#выбор-регионов-и-городов" class="nav-link">Выбор регионов и городов</a>
     """, unsafe_allow_html=True)
 
     st.markdown("---")
@@ -1851,12 +1856,6 @@ if uploaded_file is not None and hh_areas is not None:
                           
                                 st.markdown("<hr style='margin-top: 5px; margin-bottom: 5px;'>", unsafe_allow_html=True)  
                   
-                        if st.session_state.manual_selections:
-                            no_match_count = sum(1 for v in st.session_state.manual_selections.values() if v == "❌ Нет совпадения")
-                            changed_count = len(st.session_state.manual_selections) - no_match_count
-
-                            st.success(f"✅ Внесено изменений: {changed_count} | ❌ Отмечено как 'Нет совпадения': {no_match_count}")
-
                         # Закрываем обертку для оранжевой обводки
                         st.markdown('</div>', unsafe_allow_html=True)
 
@@ -3104,7 +3103,12 @@ if hh_areas is not None:
             st.success(f"✅ Найдено **{city_count}** городов")
 
         # Показываем таблицу на полную ширину
-        st.dataframe(cities_df, use_container_width=True, height=400)
+        # Добавляем порядковые номера вместо ID HH
+        display_cities_df = cities_df.copy()
+        display_cities_df.insert(0, '№', range(1, len(display_cities_df) + 1))
+        display_cities_df = display_cities_df.reset_index(drop=True)
+
+        st.dataframe(display_cities_df, use_container_width=True, height=400, hide_index=True)
 
         # Кнопки для скачивания
         col1, col2 = st.columns(2)
