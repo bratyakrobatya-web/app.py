@@ -271,12 +271,18 @@ st.markdown("""
 
     /* Оранжевая обводка для блоков редактирования с совпадением ≤ 90% */
     .edit-block .stSelectbox > div > div {
-        border: 2px solid #FFAA00 !important;
+        border: 2px solid rgb(255, 170, 0) !important;
+        background: transparent !important;
     }
 
     .edit-block .stSelectbox:hover > div > div {
         background: rgba(255, 170, 0, 0.05) !important;
-        box-shadow: 0 2px 12px rgba(255, 170, 0, 0.2);
+        box-shadow: 0 2px 12px rgba(255, 170, 0, 0.2) !important;
+        border: 2px solid rgb(255, 170, 0) !important;
+    }
+
+    .edit-block .stSelectbox > div > div > div {
+        border: 2px solid rgb(255, 170, 0) !important;
     }
 
     .stTextInput > div > div {
@@ -351,20 +357,28 @@ st.markdown("""
         background: #e9ecef;
     }
 
-    /* Slider */
+    /* Slider - трек */
     .stSlider > div > div {
-        background: linear-gradient(90deg, #ea3324 0%, #c02a1e 100%);
+        background: #dee2e6 !important;  /* Серый фон для неактивной части */
     }
 
-    /* Тумблер слайдера - белый */
+    /* Slider - активная часть (прогресс) */
+    .stSlider > div > div > div {
+        background: linear-gradient(90deg, #ea3324 0%, #c02a1e 100%) !important;
+    }
+
+    /* Тумблер слайдера - белый с красной обводкой */
     .stSlider > div > div > div > div {
         background-color: white !important;
-        border: 2px solid #ea3324 !important;
+        border: 3px solid #ea3324 !important;
+        width: 24px !important;
+        height: 24px !important;
     }
 
     .stSlider > div > div > div > div:hover {
         background-color: white !important;
-        box-shadow: 0 0 8px rgba(234, 51, 36, 0.5) !important;
+        box-shadow: 0 0 10px rgba(234, 51, 36, 0.6) !important;
+        border: 3px solid #ea3324 !important;
     }
 
     /* Вкладки */
@@ -444,18 +458,6 @@ st.markdown("""
         background: linear-gradient(90deg, transparent 0%, #dee2e6 50%, transparent 100%);
     }
 
-    /* Слайдер "Порог совпадения" - без заливки */
-    .stSlider {
-        background: transparent !important;
-    }
-
-    .stSlider > div {
-        background: transparent !important;
-    }
-
-    .stSlider > div > div > div {
-        background: transparent !important;
-    }
 
     /* Кнопка Browse files в File Uploader - красная рамка */
     [data-testid="stFileUploader"] button {
@@ -1605,7 +1607,10 @@ if uploaded_file is not None and hh_areas is not None:
                     ):
                         st.session_state.export_mode = "single"
                         st.rerun()
-                
+
+                # Добавляем текст для визуального увеличения блока
+                st.markdown('<p style="text-align: center; margin-top: 10px; color: rgba(49, 51, 63, 0.6); font-size: 0.9rem;">Выберите режим работы</p>', unsafe_allow_html=True)
+
                 # Показываем выбранный режим (скрыто)
                 # if st.session_state.export_mode == "split":
                 #     st.success("🎯 **Режим разделения по вакансиям активирован**")
@@ -1710,9 +1715,12 @@ if uploaded_file is not None and hh_areas is not None:
                     else:  
                         result_df_filtered = result_df_sorted  
               
-                    display_df = result_df_filtered.copy()  
-                    display_df = display_df.drop(['row_id', 'sort_priority'], axis=1, errors='ignore')  
-              
+                    display_df = result_df_filtered.copy()
+                    display_df = display_df.drop(['row_id', 'sort_priority'], axis=1, errors='ignore')
+
+                    # Добавляем порядковые номера вместо ID
+                    display_df.insert(0, '№', range(1, len(display_df) + 1))
+
                     st.dataframe(display_df, use_container_width=True, height=400)  
               
                     # ИЗМЕНЕНО: Исключаем дубликаты из редактирования
@@ -1730,13 +1738,6 @@ if uploaded_file is not None and hh_areas is not None:
                         st.subheader("✏️ Редактирование городов с совпадением ≤ 90%")
                         st.info(f"Найдено **{len(editable_rows)}** городов, доступных для редактирования")
 
-                        # Получаем список всех городов России для выбора
-                        russia_cities_for_select = []
-                        for city_name, city_info in hh_areas.items():
-                            if city_info.get('root_parent_id') == '113':
-                                russia_cities_for_select.append(city_name)
-                        russia_cities_for_select = sorted(russia_cities_for_select)
-
                         # Обертка для оранжевой обводки selectbox
                         st.markdown('<div class="edit-block">', unsafe_allow_html=True)
 
@@ -1747,77 +1748,62 @@ if uploaded_file is not None and hh_areas is not None:
                                 with col1:  
                                     st.markdown(f"**{row['Исходное название']}**")  
                           
-                                with col2:  
-                                    row_id = row['row_id']  
-                                    candidates = st.session_state.candidates_cache.get(row_id, [])  
-                            
-                                    # ИЗМЕНЕНО: Если нет кандидатов или "не найдено", даем выбор из всего списка
-                                    if not candidates or row['Статус'] == '❌ Не найдено':
-                                        options = ["❌ Нет совпадения"] + russia_cities_for_select
-                                
-                                        current_value = row['Итоговое гео']
-                                
-                                        if row_id in st.session_state.manual_selections:
-                                            selected_value = st.session_state.manual_selections[row_id]
-                                            if selected_value == "❌ Нет совпадения":
-                                                default_idx = 0
-                                            else:
-                                                try:
-                                                    default_idx = options.index(selected_value)
-                                                except ValueError:
-                                                    default_idx = 0
+                                with col2:
+                                    row_id = row['row_id']
+                                    candidates = st.session_state.candidates_cache.get(row_id, [])
+
+                                    # Если кандидатов нет в кэше, получаем их заново
+                                    if not candidates:
+                                        city_name = row['Исходное название']
+                                        candidates = get_candidates_by_word(city_name, list(hh_areas.keys()), limit=20)
+
+                                    current_value = row['Итоговое гео']
+                                    current_match = row['Совпадение %']
+
+                                    # Добавляем текущее значение в начало, если его нет
+                                    if current_value and current_value != row['Исходное название']:
+                                        candidate_names = [c[0] for c in candidates]
+                                        if current_value not in candidate_names:
+                                            candidates.insert(0, (current_value, current_match))
+
+                                    # Формируем список опций с процентами
+                                    if candidates:
+                                        options = ["❌ Нет совпадения"] + [f"{c[0]} ({c[1]:.1f}%)" for c in candidates[:20]]
+                                    else:
+                                        options = ["❌ Нет совпадения"]
+
+                                    # Определяем выбранный элемент
+                                    if row_id in st.session_state.manual_selections:
+                                        selected_value = st.session_state.manual_selections[row_id]
+                                        if selected_value == "❌ Нет совпадения":
+                                            default_idx = 0
                                         else:
                                             default_idx = 0
-                                            if current_value and current_value in options:
-                                                default_idx = options.index(current_value)
-                                
-                                        selected = st.selectbox(
-                                            "Выберите город:",
-                                            options=options,
-                                            index=default_idx,
-                                            key=f"select_{row_id}",
-                                            label_visibility="collapsed"
-                                        )
-                                
-                                        st.session_state.manual_selections[row_id] = selected
-                                
+                                            for i, c in enumerate(candidates):
+                                                if c[0] == selected_value:
+                                                    default_idx = i + 1
+                                                    break
                                     else:
-                                        # Есть кандидаты - показываем их
-                                        options = ["❌ Нет совпадения"] + [f"{c[0]} ({c[1]:.1f}%)" for c in candidates]  
-                                  
-                                        current_value = row['Итоговое гео']  
-                                  
-                                        if row_id in st.session_state.manual_selections:  
-                                            selected_value = st.session_state.manual_selections[row_id]  
-                                            if selected_value == "❌ Нет совпадения":  
-                                                default_idx = 0  
-                                            else:  
-                                                default_idx = 0  
-                                                for i, c in enumerate(candidates):  
-                                                    if c[0] == selected_value:  
-                                                        default_idx = i + 1  
-                                                        break  
-                                        else:  
-                                            default_idx = 0  
-                                            if current_value:  
-                                                for i, c in enumerate(candidates):  
-                                                    if c[0] == current_value:  
-                                                        default_idx = i + 1  
-                                                        break  
-                                  
-                                        selected = st.selectbox(  
-                                            "Выберите город:",  
-                                            options=options,  
-                                            index=default_idx,  
-                                            key=f"select_{row_id}",  
-                                            label_visibility="collapsed"  
-                                        )  
-                                  
-                                        if selected == "❌ Нет совпадения":  
-                                            st.session_state.manual_selections[row_id] = "❌ Нет совпадения"  
-                                        else:  
-                                            selected_city = selected.rsplit(' (', 1)[0]  
-                                            st.session_state.manual_selections[row_id] = selected_city  
+                                        default_idx = 0
+                                        if current_value:
+                                            for i, c in enumerate(candidates):
+                                                if c[0] == current_value:
+                                                    default_idx = i + 1
+                                                    break
+
+                                    selected = st.selectbox(
+                                        "Выберите город:",
+                                        options=options,
+                                        index=default_idx,
+                                        key=f"select_{row_id}",
+                                        label_visibility="collapsed"
+                                    )
+
+                                    if selected == "❌ Нет совпадения":
+                                        st.session_state.manual_selections[row_id] = "❌ Нет совпадения"
+                                    else:
+                                        selected_city = selected.rsplit(' (', 1)[0]
+                                        st.session_state.manual_selections[row_id] = selected_city  
                           
                                 with col3:  
                                     st.text(f"{row['Совпадение %']}%")  
@@ -1951,9 +1937,7 @@ if uploaded_file is not None and hh_areas is not None:
                             sheet_result = st.session_state.sheets_results[sheet_name]
                             result_df_sheet = sheet_result['result_df']
                             original_df_sheet = st.session_state.sheets_data[sheet_name]['df']
-                            
-                            st.info(f"📍 Всего строк: **{len(result_df_sheet)}**")
-                            
+
                             # Блок редактирования городов с совпадением ≤ 90%
                             editable_rows = result_df_sheet[
                                 (result_df_sheet['Совпадение %'] <= 90) & 
@@ -2193,9 +2177,7 @@ if uploaded_file is not None and hh_areas is not None:
                             with tab:
                                 # Фильтруем данные по вакансии
                                 vacancy_df = export_df[export_df[vacancy_col] == vacancy].copy()
-                                
-                                st.info(f"📍 Всего строк: **{len(vacancy_df)}**")
-                                
+
                                 # Показываем таблицу с возможностью редактирования
                                 st.markdown("#### Города для редактирования (совпадение ≤ 90%)")
                                 
