@@ -3152,6 +3152,20 @@ st.markdown("---")
 # БЛОК: ЧАТ-БОТ ПОМОЩНИК
 # ============================================
 
+# Функция для сохранения API ключа в secrets.toml
+def save_api_key_to_secrets(api_key):
+    import os
+    secrets_dir = ".streamlit"
+    secrets_file = os.path.join(secrets_dir, "secrets.toml")
+
+    # Создаем директорию если её нет
+    os.makedirs(secrets_dir, exist_ok=True)
+
+    # Записываем ключ в файл
+    with open(secrets_file, "w") as f:
+        f.write(f'# Anthropic API Key for Claude Chatbot\n')
+        f.write(f'ANTHROPIC_API_KEY = "{api_key}"\n')
+
 # Инициализация session state для чата
 if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
@@ -3160,7 +3174,7 @@ if 'anthropic_api_key' not in st.session_state:
     import os
     api_key = None
     try:
-        api_key = st.secrets.get("ANTHROPIC_API_KEY")
+        api_key = st.secrets["ANTHROPIC_API_KEY"]
     except:
         pass
     if not api_key:
@@ -3224,12 +3238,18 @@ with st.expander("💬 AI Помощник (Claude Sonnet 4.5)", expanded=False)
     # Проверка наличия API ключа
     if not st.session_state.anthropic_api_key:
         st.warning("⚠️ API ключ Anthropic не найден. Введите ключ для использования AI помощника.")
+        st.info("💡 Ключ будет сохранен в файл `.streamlit/secrets.toml` и больше не потребуется вводить его заново.")
         api_key_input = st.text_input("API ключ Anthropic:", type="password", key="api_key_input")
-        if st.button("Сохранить ключ"):
+        if st.button("💾 Сохранить ключ постоянно"):
             if api_key_input:
-                st.session_state.anthropic_api_key = api_key_input
-                st.success("✅ API ключ сохранен!")
-                st.rerun()
+                try:
+                    # Сохраняем ключ в файл secrets.toml
+                    save_api_key_to_secrets(api_key_input)
+                    st.session_state.anthropic_api_key = api_key_input
+                    st.success("✅ API ключ сохранен постоянно в `.streamlit/secrets.toml`")
+                    st.info("🔄 Перезагрузите страницу, чтобы изменения вступили в силу")
+                except Exception as e:
+                    st.error(f"❌ Ошибка при сохранении: {str(e)}")
             else:
                 st.error("Введите API ключ")
     else:
