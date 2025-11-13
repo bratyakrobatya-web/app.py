@@ -1278,9 +1278,9 @@ with st.sidebar:
         from PIL import Image
         logo_image = Image.open("min-hh-red.png")
 
-        # Оптимизируем размер для отображения с высоким качеством
-        # Уменьшаем до 2x от целевого размера для retina дисплеев
-        target_width = 400  # 2x от 200px для четкости на retina
+        # Для максимального качества уменьшаем только если изображение огромное
+        # Оставляем 4x от целевого размера для super retina дисплеев
+        target_width = 800  # 4x от 200px для максимальной четкости
         if logo_image.width > target_width:
             aspect_ratio = logo_image.height / logo_image.width
             new_height = int(target_width * aspect_ratio)
