@@ -38,9 +38,16 @@ st.markdown("""
     .rotating-earth {
         display: inline-block;
         animation: rotate 3s linear infinite;
-        font-size: 1em;
         vertical-align: middle;
         margin-right: 8px;
+        width: 1em;
+        height: 1em;
+    }
+
+    .rotating-earth svg {
+        width: 100%;
+        height: 100%;
+        display: block;
     }
 
     /* Красные круги с цифрами */
@@ -76,7 +83,8 @@ st.markdown("""
 
     /* Адаптация логотипа для sidebar */
     [data-testid="stSidebar"] .rotating-earth {
-        font-size: 0.67em;
+        width: 0.67em;
+        height: 0.67em;
         margin-right: 6px;
     }
 
@@ -1203,19 +1211,29 @@ def match_cities(original_df, hh_areas, threshold=85, sheet_name=None):
 
 # ============================================
 # ИНТЕРФЕЙС
-# ============================================  
+# ============================================
+
+# SVG иконка контурной земли
+GLOBE_ICON = '''<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M12 2C12 2 15 6 15 12C15 18 12 22 12 22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M12 2C12 2 9 6 9 12C9 18 12 22 12 22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M2 12H22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M4 16C4 16 6 15 12 15C18 15 20 16 20 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+<path d="M4 8C4 8 6 9 12 9C18 9 20 8 20 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+</svg>'''
 
 # Загрузка справочника HH
-try:  
-    hh_areas = get_hh_areas()  
-except Exception as e:  
-    st.error(f"❌ Ошибка загрузки справочника: {str(e)}")  
-    hh_areas = None  
+try:
+    hh_areas = get_hh_areas()
+except Exception as e:
+    st.error(f"❌ Ошибка загрузки справочника: {str(e)}")
+    hh_areas = None
 
 # ============================================
 # ГЛАВНЫЙ ЗАГОЛОВОК
 # ============================================
-st.markdown('<h1 style="text-align: left; color: #1a1a1a; margin-bottom: 1rem;"><span class="rotating-earth">🌍</span> Синхронизатор гео HH.ru</h1>', unsafe_allow_html=True)
+st.markdown(f'<h1 style="text-align: left; color: #1a1a1a; margin-bottom: 1rem;"><span class="rotating-earth">{GLOBE_ICON}</span> Синхронизатор гео HH.ru</h1>', unsafe_allow_html=True)
 st.markdown("---")
 
 # ============================================
@@ -1273,9 +1291,9 @@ with st.sidebar:
     except:
         # Fallback если PNG еще не создан
         st.markdown(
-            '<div class="title-container">'
-            '<span class="rotating-earth">🌍</span>'
-            '</div>',
+            f'<div class="title-container">'
+            f'<span class="rotating-earth">{GLOBE_ICON}</span>'
+            f'</div>',
             unsafe_allow_html=True
         )
     st.markdown("---")
