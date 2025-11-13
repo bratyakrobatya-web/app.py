@@ -1277,17 +1277,33 @@ st.markdown("---")
 st.header("📤 Синхронизатор городов")
 
 with st.sidebar:
-    # Логотип - используем прямое чтение файла для обхода кэша
+    # Логотип - используем base64 для полного обхода кэша
     try:
+        import base64
+        from io import BytesIO
         from PIL import Image
+
+        # Читаем изображение
         logo_image = Image.open("min-hh-red.png")
 
-        # Используем полное разрешение исходного изображения БЕЗ уменьшения
-        # Браузер масштабирует с максимальным качеством благодаря большому количеству пикселей
-        # Исходник 4165x1745px обеспечит идеальную четкость при отображении 200px
+        # Конвертируем в base64
+        buffered = BytesIO()
+        logo_image.save(buffered, format="PNG", optimize=False, quality=100)
+        img_str = base64.b64encode(buffered.getvalue()).decode()
 
-        st.image(logo_image, width=200, output_format="PNG")
-    except:
+        # Вставляем через HTML с прямыми стилями для максимального качества
+        st.markdown(
+            f'''<img src="data:image/png;base64,{img_str}"
+            style="width: 200px;
+                   height: auto;
+                   image-rendering: auto;
+                   -ms-interpolation-mode: bicubic;
+                   display: block;
+                   margin-bottom: 10px;
+                   object-fit: contain;" />''',
+            unsafe_allow_html=True
+        )
+    except Exception as e:
         # Fallback если PNG еще не создан
         st.markdown(
             f'<div class="title-container">'
