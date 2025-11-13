@@ -107,6 +107,22 @@ st.markdown("""
         font-family: 'Material Symbols Outlined', 'Material Icons', system-ui !important;
     }
 
+    /* Улучшение качества изображений - плавный рендеринг для логотипов */
+    img {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: auto;
+        -ms-interpolation-mode: bicubic;
+    }
+
+    /* Специально для логотипа в sidebar - максимальное качество */
+    [data-testid="stSidebar"] img {
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: auto;
+        backface-visibility: hidden;
+        transform: translateZ(0);
+        -webkit-font-smoothing: antialiased;
+    }
+
     .block-container {
         padding-top: 2rem;
         padding-bottom: 2rem;
@@ -1243,7 +1259,17 @@ with st.sidebar:
     try:
         from PIL import Image
         logo_image = Image.open("min-hh-red.png")
-        st.image(logo_image, width=200)
+
+        # Оптимизируем размер для отображения с высоким качеством
+        # Уменьшаем до 2x от целевого размера для retina дисплеев
+        target_width = 400  # 2x от 200px для четкости на retina
+        if logo_image.width > target_width:
+            aspect_ratio = logo_image.height / logo_image.width
+            new_height = int(target_width * aspect_ratio)
+            # LANCZOS дает наилучшее качество при уменьшении
+            logo_image = logo_image.resize((target_width, new_height), Image.Resampling.LANCZOS)
+
+        st.image(logo_image, width=200, output_format="PNG")
     except:
         # Fallback если PNG еще не создан
         st.markdown(
