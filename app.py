@@ -3192,57 +3192,57 @@ if 'chat_history' not in st.session_state:
 if 'anthropic_api_key' not in st.session_state:
     st.session_state.anthropic_api_key = get_anthropic_api_key()
 
-# CSS для круглой кнопки чат-бота в правом нижнем углу
+# CSS для sidebar справа с красной полосой-индикатором
 st.markdown("""
 <style>
-/* Круглая кнопка чат-бота в правом нижнем углу */
-[data-testid="stPopover"] {
-    position: fixed !important;
-    right: 20px !important;
-    bottom: 20px !important;
-    z-index: 999 !important;
+/* Перемещаем sidebar справа */
+[data-testid="stSidebar"] {
+    left: auto !important;
+    right: 0 !important;
 }
 
-[data-testid="stPopover"] > button {
-    width: 60px !important;
-    height: 60px !important;
-    background: linear-gradient(135deg, #ea3324 0%, #c02a1e 100%) !important;
-    border-radius: 50% !important;
-    border: none !important;
-    box-shadow: 0 4px 12px rgba(234, 51, 36, 0.4) !important;
-    transition: all 0.3s ease !important;
-    color: white !important;
-    font-size: 28px !important;
-    padding: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    cursor: pointer !important;
+[data-testid="stSidebar"] > div:first-child {
+    left: auto !important;
+    right: 0 !important;
 }
 
-[data-testid="stPopover"] > button:hover {
-    transform: scale(1.1) !important;
-    box-shadow: 0 6px 20px rgba(234, 51, 36, 0.6) !important;
+/* Красная полоса-индикатор на свернутом sidebar */
+[data-testid="stSidebar"][aria-expanded="false"] {
+    width: 8px !important;
+    min-width: 8px !important;
 }
 
-[data-testid="stPopover"] > button:active {
-    transform: scale(0.95) !important;
+[data-testid="stSidebar"][aria-expanded="false"]::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    background: linear-gradient(135deg, #ea3324 0%, #c02a1e 100%);
+    box-shadow: -2px 0 10px rgba(234, 51, 36, 0.3);
+    z-index: 1;
 }
 
-/* Popover content styling */
-[data-testid="stPopover"] > div[data-baseweb="popover"] {
-    max-width: 420px !important;
-    max-height: 600px !important;
-    border-radius: 12px !important;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
+/* Кнопка открытия/закрытия sidebar справа */
+[data-testid="collapsedControl"] {
+    left: auto !important;
+    right: 0 !important;
 }
 
+/* Стилизация открытого sidebar */
+[data-testid="stSidebar"][aria-expanded="true"] {
+    width: 400px !important;
+    background: #f8f9fa !important;
+}
+
+/* Стили сообщений чата */
 .chat-message-user {
     background: #e9ecef;
     padding: 12px 16px;
     border-radius: 12px 12px 0 12px;
     margin: 8px 0 8px auto;
-    max-width: 80%;
+    max-width: 85%;
     border-left: 3px solid #ea3324;
 }
 
@@ -3251,7 +3251,7 @@ st.markdown("""
     padding: 12px 16px;
     border-radius: 12px 12px 12px 0;
     margin: 8px auto 8px 0;
-    max-width: 80%;
+    max-width: 85%;
     border-left: 3px solid #4CAF50;
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
@@ -3262,8 +3262,8 @@ st.markdown("""
 if 'chat_input_key' not in st.session_state:
     st.session_state.chat_input_key = 0
 
-# Чат интерфейс с popover
-with st.popover("💬", use_container_width=False):
+# Чат интерфейс в sidebar справа
+with st.sidebar:
     # Проверяем наличие API ключа
     if not st.session_state.anthropic_api_key:
         st.warning("⚠️ API ключ Anthropic не настроен")
@@ -3280,12 +3280,13 @@ ANTHROPIC_API_KEY = "ваш-api-ключ-anthropic"
 Файл `.streamlit/secrets.toml` добавлен в `.gitignore` и не попадет в репозиторий.
         """)
     else:
-        st.markdown("### 💬 AI Помощник")
-        st.caption("🤖 Claude Sonnet 4.5 | Вопросы о работе сервиса")
+        st.markdown("# 💬 AI Помощник")
+        st.caption("🤖 Claude Sonnet 4.5")
+        st.caption("Задавайте вопросы только о работе сервиса")
         st.divider()
 
         # История чата с прокруткой
-        chat_container = st.container(height=350)
+        chat_container = st.container(height=400)
         with chat_container:
             for msg in st.session_state.chat_history:
                 if msg['role'] == 'user':
@@ -3301,13 +3302,13 @@ ANTHROPIC_API_KEY = "ваш-api-ключ-anthropic"
             placeholder="Как сопоставить города со справочником HH?"
         )
 
-        col1, col2 = st.columns([2, 1])
+        col1, col2 = st.columns([3, 1])
 
         with col1:
-            send_button = st.button("📤 Отправить", type="primary", use_container_width=True, key="send_btn")
+            send_button = st.button("📤 Отправить", type="primary", use_container_width=True, key="sidebar_send_btn")
 
         with col2:
-            clear_button = st.button("🗑️", use_container_width=True, key="clear_btn", help="Очистить чат")
+            clear_button = st.button("🗑️", use_container_width=True, key="sidebar_clear_btn", help="Очистить чат")
 
         if len(st.session_state.chat_history) > 0:
             st.caption(f"💬 Сообщений: {len(st.session_state.chat_history)}")
