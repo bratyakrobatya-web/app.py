@@ -1,13 +1,24 @@
-import streamlit as st  
-import requests  
-import pandas as pd  
-from rapidfuzz import fuzz, process  
-import io  
+import streamlit as st
+import requests
+import pandas as pd
+from rapidfuzz import fuzz, process
+import io
 import re
 import zipfile
 from datetime import datetime
+import os
 
 # Version: 3.3.2 - Fixed: corrected all indentation in single mode block
+
+# ============================================
+# КОНФИГУРАЦИЯ: API КЛЮЧИ
+# ============================================
+# Для безопасного хранения ключа используется следующий приоритет:
+# 1. Streamlit secrets (.streamlit/secrets.toml)
+# 2. Переменная окружения ANTHROPIC_API_KEY
+#
+# Для настройки создайте файл .streamlit/secrets.toml с содержимым:
+# ANTHROPIC_API_KEY = "ваш-ключ-здесь"
 
 # Настройка страницы  
 st.set_page_config(  
@@ -3152,34 +3163,34 @@ st.markdown("---")
 # БЛОК: ЧАТ-БОТ ПОМОЩНИК
 # ============================================
 
-# Функция для сохранения API ключа в secrets.toml
-def save_api_key_to_secrets(api_key):
-    import os
-    secrets_dir = ".streamlit"
-    secrets_file = os.path.join(secrets_dir, "secrets.toml")
+# Функция для получения API ключа с приоритетом
+def get_anthropic_api_key():
+    """
+    Получает API ключ из доступных источников в порядке приоритета:
+    1. Streamlit secrets
+    2. Переменная окружения
+    """
+    # Пробуем загрузить из secrets
+    try:
+        key = st.secrets["ANTHROPIC_API_KEY"]
+        if key:
+            return key
+    except:
+        pass
 
-    # Создаем директорию если её нет
-    os.makedirs(secrets_dir, exist_ok=True)
+    # Пробуем загрузить из переменной окружения
+    key = os.environ.get("ANTHROPIC_API_KEY")
+    if key:
+        return key
 
-    # Записываем ключ в файл
-    with open(secrets_file, "w") as f:
-        f.write(f'# Anthropic API Key for Claude Chatbot\n')
-        f.write(f'ANTHROPIC_API_KEY = "{api_key}"\n')
+    # Если ключ не найден, возвращаем None
+    return None
 
 # Инициализация session state для чата
 if 'chat_history' not in st.session_state:
     st.session_state.chat_history = []
 if 'anthropic_api_key' not in st.session_state:
-    # Получаем API ключ из secrets или переменных окружения
-    import os
-    api_key = None
-    try:
-        api_key = st.secrets["ANTHROPIC_API_KEY"]
-    except:
-        pass
-    if not api_key:
-        api_key = os.environ.get("ANTHROPIC_API_KEY")
-    st.session_state.anthropic_api_key = api_key
+    st.session_state.anthropic_api_key = get_anthropic_api_key()
 
 # CSS для красной кнопки справа
 st.markdown("""
@@ -3233,26 +3244,24 @@ st.markdown("""
 
 # Чат интерфейс с expander
 with st.expander("💬 AI Помощник (Claude Sonnet 4.5)", expanded=False):
-    st.markdown("Задавайте вопросы о работе синхронизатора городов")
-
-    # Проверка наличия API ключа
+    # Проверяем наличие API ключа
     if not st.session_state.anthropic_api_key:
-        st.warning("⚠️ API ключ Anthropic не найден. Введите ключ для использования AI помощника.")
-        st.info("💡 Ключ будет сохранен в файл `.streamlit/secrets.toml` и больше не потребуется вводить его заново.")
-        api_key_input = st.text_input("API ключ Anthropic:", type="password", key="api_key_input")
-        if st.button("💾 Сохранить ключ постоянно"):
-            if api_key_input:
-                try:
-                    # Сохраняем ключ в файл secrets.toml
-                    save_api_key_to_secrets(api_key_input)
-                    st.session_state.anthropic_api_key = api_key_input
-                    st.success("✅ API ключ сохранен постоянно в `.streamlit/secrets.toml`")
-                    st.info("🔄 Перезагрузите страницу, чтобы изменения вступили в силу")
-                except Exception as e:
-                    st.error(f"❌ Ошибка при сохранении: {str(e)}")
-            else:
-                st.error("Введите API ключ")
+        st.warning("⚠️ API ключ Anthropic не настроен")
+        st.markdown("""
+### Инструкция по настройке:
+
+1. **Создайте файл** `.streamlit/secrets.toml` в корне проекта
+2. **Добавьте в него** следующее содержимое:
+```toml
+ANTHROPIC_API_KEY = "ваш-api-ключ-anthropic"
+```
+3. **Перезапустите** приложение
+
+Файл `.streamlit/secrets.toml` добавлен в `.gitignore` и не попадет в репозиторий.
+        """)
     else:
+        st.markdown("Задавайте вопросы о работе синхронизатора городов")
+
         # История чата
         chat_container = st.container()
         with chat_container:
