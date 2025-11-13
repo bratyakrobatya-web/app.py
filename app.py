@@ -67,6 +67,22 @@ st.markdown("""
         vertical-align: middle;
     }
 
+    /* Белая галочка в зеленом круге */
+    .check-circle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 20px;
+        height: 20px;
+        background: #4CAF50;
+        color: white;
+        border-radius: 50%;
+        font-weight: bold;
+        font-size: 14px;
+        margin-right: 8px;
+        vertical-align: middle;
+    }
+
     .main-title {
         display: inline-block;
         font-size: 3em;
@@ -251,6 +267,16 @@ st.markdown("""
     .stSelectbox:hover > div > div {
         background: rgba(234, 51, 36, 0.05) !important;
         box-shadow: 0 2px 12px rgba(234, 51, 36, 0.2);
+    }
+
+    /* Оранжевая обводка для блоков редактирования с совпадением ≤ 90% */
+    .edit-block .stSelectbox > div > div {
+        border: 2px solid #FFAA00 !important;
+    }
+
+    .edit-block .stSelectbox:hover > div > div {
+        background: rgba(255, 170, 0, 0.05) !important;
+        box-shadow: 0 2px 12px rgba(255, 170, 0, 0.2);
     }
 
     .stTextInput > div > div {
@@ -1699,18 +1725,21 @@ if uploaded_file is not None and hh_areas is not None:
                     if len(editable_rows) > 0:
                         editable_rows = editable_rows.sort_values('Совпадение %', ascending=True)  
               
-                    if len(editable_rows) > 0:  
-                        st.markdown("---")  
-                        st.subheader("✏️ Редактирование городов с совпадением ≤ 90%")  
-                        st.info(f"Найдено **{len(editable_rows)}** городов, доступных для редактирования")  
-                  
+                    if len(editable_rows) > 0:
+                        st.markdown("---")
+                        st.subheader("✏️ Редактирование городов с совпадением ≤ 90%")
+                        st.info(f"Найдено **{len(editable_rows)}** городов, доступных для редактирования")
+
                         # Получаем список всех городов России для выбора
                         russia_cities_for_select = []
                         for city_name, city_info in hh_areas.items():
                             if city_info.get('root_parent_id') == '113':
                                 russia_cities_for_select.append(city_name)
                         russia_cities_for_select = sorted(russia_cities_for_select)
-                
+
+                        # Обертка для оранжевой обводки selectbox
+                        st.markdown('<div class="edit-block">', unsafe_allow_html=True)
+
                         for idx, row in editable_rows.iterrows():  
                             with st.container():  
                                 col1, col2, col3, col4 = st.columns([2, 3, 1, 1])  
@@ -1798,18 +1827,20 @@ if uploaded_file is not None and hh_areas is not None:
                           
                                 st.markdown("<hr style='margin-top: 5px; margin-bottom: 5px;'>", unsafe_allow_html=True)  
                   
-                        if st.session_state.manual_selections:  
-                            no_match_count = sum(1 for v in st.session_state.manual_selections.values() if v == "❌ Нет совпадения")  
-                            changed_count = len(st.session_state.manual_selections) - no_match_count  
-                      
-                            st.success(f"✅ Внесено изменений: {changed_count} | ❌ Отмечено как 'Нет совпадения': {no_match_count}")  
-                
+                        if st.session_state.manual_selections:
+                            no_match_count = sum(1 for v in st.session_state.manual_selections.values() if v == "❌ Нет совпадения")
+                            changed_count = len(st.session_state.manual_selections) - no_match_count
+
+                            st.success(f"✅ Внесено изменений: {changed_count} | ❌ Отмечено как 'Нет совпадения': {no_match_count}")
+
+                        # Закрываем обертку для оранжевой обводки
+                        st.markdown('</div>', unsafe_allow_html=True)
+
                         # ============================================
                         # БЛОК: ДОБАВЛЕНИЕ ЛЮБОГО ГОРОДА (только для НЕ split режима)
                         # ============================================
                         st.markdown("---")
                         st.subheader("➕ Добавить дополнительные города")
-                        st.info("Добавленные города будут использовать значения из последней строки исходного файла")
                 
                         # Селектор на половину ширины экрана
                         col_selector = st.columns([1, 1])
@@ -1939,7 +1970,10 @@ if uploaded_file is not None and hh_areas is not None:
 
                                 st.markdown("#### ✏️ Редактирование городов с совпадением ≤ 90%")
                                 st.warning(f"⚠️ Найдено **{len(editable_rows)}** городов для проверки")
-                                
+
+                                # Обертка для оранжевой обводки selectbox
+                                st.markdown('<div class="edit-block">', unsafe_allow_html=True)
+
                                 # Для каждого города показываем выбор
                                 for idx, row in editable_rows.iterrows():
                                     row_id = row['row_id']
@@ -2010,9 +2044,12 @@ if uploaded_file is not None and hh_areas is not None:
                                     
                                     with col3:
                                         st.text(f"{row['Совпадение %']:.1f}%")
-                                
+
                                 st.markdown("---")
-                            
+
+                                # Закрываем обертку для оранжевой обводки
+                                st.markdown('</div>', unsafe_allow_html=True)
+
                             # Применяем ручные изменения
                             result_df_sheet_final = result_df_sheet.copy()
                             for selection_key, new_value in st.session_state.manual_selections.items():
@@ -2683,9 +2720,8 @@ if uploaded_file is not None and hh_areas is not None:
                         key='download_publisher'  
                     )
                     
-                    st.caption("✅ Первый столбец заменен на итоговое гео")
-                    st.caption("✅ Остальные столбцы из исходного файла")
-                    st.caption("✅ Исключены не найденные и дубликаты")
+                    st.markdown('<p style="font-size: 0.875rem; color: rgba(49, 51, 63, 0.6);"><span class="check-circle">✓</span>Остальные столбцы из исходного файла</p>', unsafe_allow_html=True)
+                    st.markdown('<p style="font-size: 0.875rem; color: rgba(49, 51, 63, 0.6);"><span class="check-circle">✓</span>Исключены не найденные и дубликаты</p>', unsafe_allow_html=True)
                     if st.session_state.added_cities:
                         st.caption(f"✅ Добавлено городов: {len(st.session_state.added_cities)}")
                   
