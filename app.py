@@ -57,7 +57,9 @@ st.markdown("""
     @font-face {
         font-family: 'hhsans-Regular';
         src: url('hhsans-Regular.woff2') format('woff2'),
-             url('hhsans-Regular.ttf') format('truetype');
+             url('hhsans-Regular.woff') format('woff'),
+             url('hhsans-Regular.ttf') format('truetype'),
+             url('hhsans-Regular.otf') format('opentype');
         font-weight: normal;
         font-style: normal;
         font-display: swap;
