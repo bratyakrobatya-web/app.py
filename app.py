@@ -266,25 +266,30 @@ st.markdown("""
         box-shadow: 0 0 0 3px rgba(234, 51, 36, 0.2) !important;
     }
 
-    /* Черная окантовка для блока редактирования городов */
+    /* Черная окантовка для блока редактирования городов - ПЕРЕКРЫВАЕТ глобальный красный стиль */
     .edit-cities-block div[data-baseweb="select"] > div,
     .edit-cities-block .stSelectbox > div > div,
     .edit-cities-block .stSelectbox > div > div > div,
     .edit-cities-block [data-testid="stSelectbox"] > div > div {
         border: 2px solid #000000 !important;
-        border-radius: 10px;
+        border-color: #000000 !important;
+        border-radius: 10px !important;
+        background: transparent !important;
+        transition: all 0.3s ease !important;
     }
 
     .edit-cities-block div[data-baseweb="select"] > div:hover,
     .edit-cities-block .stSelectbox:hover > div > div,
     .edit-cities-block [data-testid="stSelectbox"]:hover > div > div {
         background: rgba(0, 0, 0, 0.05) !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+        border-color: #000000 !important;
     }
 
     .edit-cities-block div[data-baseweb="select"] > div:focus-within,
     .edit-cities-block .stSelectbox > div > div:focus-within,
     .edit-cities-block [data-testid="stSelectbox"] > div > div:focus-within {
+        border: 2px solid #000000 !important;
         border-color: #000000 !important;
         box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1) !important;
     }
