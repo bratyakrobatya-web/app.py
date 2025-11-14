@@ -1,5 +1,0 @@
-[server]
-maxUploadSize = 200
-
-# theme ПОЛНОСТЬЮ ОТКЛЮЧЕНА - все стили управляются через CSS в app.py
-# Никаких цветов из config.toml!

@@ -576,51 +576,94 @@ st.markdown("""
 </style>
 
 <script>
-// JAVASCRIPT для прямого поиска и стилизации кнопок режима работы
-function styleAmberButtons() {
-    // Ждем пока DOM загрузится
-    setTimeout(function() {
+// СУПЕР АГРЕССИВНЫЙ JAVASCRIPT для стилизации кнопок режима работы
+(function() {
+    'use strict';
+
+    function applyAmberStyles(button) {
+        // Добавляем класс
+        button.classList.add('amber-mode-button');
+
+        // Применяем стили через cssText (БОЛЕЕ АГРЕССИВНО)
+        const amberStyles = `
+            width: 100% !important;
+            height: 140px !important;
+            min-height: 140px !important;
+            max-height: 140px !important;
+            padding: 50px 70px !important;
+            font-size: 27px !important;
+            font-weight: 800 !important;
+            letter-spacing: 2px !important;
+            text-align: center !important;
+            line-height: normal !important;
+            border: 5px solid #FFAA00 !important;
+            background: rgba(255, 170, 0, 0.15) !important;
+            color: #FFAA00 !important;
+            box-shadow: 0 8px 16px rgba(255, 170, 0, 0.3) !important;
+            border-radius: 12px !important;
+            transition: all 0.3s ease !important;
+        `;
+
+        // Применяем через cssText
+        button.style.cssText += amberStyles;
+
+        // Также применяем через setAttribute для максимальной надежности
+        button.setAttribute('style', button.getAttribute('style') + amberStyles);
+
+        // Помечаем кнопку как обработанную
+        button.setAttribute('data-amber-styled', 'true');
+
+        console.log('✅ Янтарные стили применены к кнопке:', button.textContent);
+    }
+
+    function styleAmberButtons() {
         // Находим ВСЕ кнопки
-        const allButtons = document.querySelectorAll('button');
+        const allButtons = document.querySelectorAll('button:not([data-amber-styled="true"])');
+        let found = false;
 
         allButtons.forEach(function(button) {
             const buttonText = button.textContent || button.innerText || '';
 
             // Если кнопка содержит текст "РАЗДЕЛЕНИЕ" или "ЕДИНЫМ"
             if (buttonText.includes('РАЗДЕЛЕНИЕ') || buttonText.includes('ЕДИНЫМ')) {
-                // Добавляем класс для стилизации
-                button.classList.add('amber-mode-button');
-
-                // Применяем стили НАПРЯМУЮ через JavaScript
-                button.style.width = '100%';
-                button.style.height = '140px';
-                button.style.minHeight = '140px';
-                button.style.maxHeight = '140px';
-                button.style.padding = '50px 70px';
-                button.style.fontSize = '27px';
-                button.style.fontWeight = '800';
-                button.style.letterSpacing = '2px';
-                button.style.textAlign = 'center';
-                button.style.border = '5px solid #FFAA00';
-                button.style.background = 'rgba(255, 170, 0, 0.15)';
-                button.style.color = '#FFAA00';
-                button.style.boxShadow = '0 8px 16px rgba(255, 170, 0, 0.3)';
-                button.style.borderRadius = '12px';
-                button.style.transition = 'all 0.3s ease';
+                applyAmberStyles(button);
+                found = true;
             }
         });
-    }, 100);
-}
 
-// Запускаем при загрузке страницы
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', styleAmberButtons);
-} else {
+        if (found) {
+            console.log('🎯 Найдены и стилизованы кнопки режима работы');
+        }
+    }
+
+    // Запускаем сразу
     styleAmberButtons();
-}
 
-// Запускаем периодически для обработки динамически добавленных кнопок
-setInterval(styleAmberButtons, 500);
+    // MutationObserver для отслеживания изменений DOM
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.addedNodes.length) {
+                styleAmberButtons();
+            }
+        });
+    });
+
+    // Наблюдаем за изменениями в body
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
+    });
+
+    // Дополнительно запускаем периодически
+    setInterval(styleAmberButtons, 1000);
+
+    // Запускаем при загрузке
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', styleAmberButtons);
+    }
+
+    console.log('🚀 Скрипт стилизации янтарных кнопок запущен');
+})();
 </script>
 """, unsafe_allow_html=True)
 
