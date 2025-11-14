@@ -534,7 +534,7 @@ st.markdown("""
         min-height: 140px !important;
         max-height: 140px !important;
         padding: 50px 70px !important;
-        font-size: 27px !important;
+        font-size: 35px !important;
         font-weight: 800 !important;
         letter-spacing: 2px !important;
         text-align: center !important;
