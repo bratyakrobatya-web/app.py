@@ -37,14 +37,13 @@ st.markdown("""
         /* Изящный красно-белый градиент для кнопок (меньше белого) */
         --gradient-main: linear-gradient(145deg, #ffcbc3 0%, #ff6b5a 40%, #f4301f 100%);
 
+        /* Черно-красный градиент для селекторов */
+        --gradient-selector: linear-gradient(145deg, #1a1a1a 0%, #8b2a1f 40%, #f4301f 100%);
+
         /* Цвета для UI элементов (красный) */
         --ui-color: #f4301f;
         --ui-shadow: rgba(244, 48, 31, 0.4);
         --ui-shadow-hover: rgba(244, 48, 31, 0.6);
-
-        /* Цвета для селекторов (оранжевый - остается без изменений) */
-        --selector-color: #F97316;
-        --selector-shadow: rgba(249, 115, 22, 0.4);
 
         /* Цвета для кнопок (красный) */
         --primary-color: #f4301f;
@@ -303,27 +302,43 @@ st.markdown("""
         font-weight: 500;
     }
 
-    /* Inputs - Selectbox с градиентной окантовкой (красный по умолчанию) */
+    /* Inputs - Selectbox с черно-красным градиентом */
     div[data-baseweb="select"] > div,
     .stSelectbox > div > div,
     [data-testid="stSelectbox"] > div > div {
-        border: 2px solid var(--ui-color) !important;
+        border: 2px solid transparent !important;
         border-radius: 10px;
-        background: transparent !important;
+        background: var(--gradient-selector) !important;
+        background-clip: padding-box !important;
+        position: relative;
         transition: all 0.3s ease !important;
+    }
+
+    /* Внутренний фон для селекторов */
+    div[data-baseweb="select"] > div::before,
+    .stSelectbox > div > div::before,
+    [data-testid="stSelectbox"] > div > div::before {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        right: 2px;
+        bottom: 2px;
+        background: white;
+        border-radius: 8px;
+        z-index: -1;
     }
 
     div[data-baseweb="select"] > div:hover,
     .stSelectbox:hover > div > div,
     [data-testid="stSelectbox"]:hover > div > div {
-        background: rgba(244, 48, 31, 0.05) !important;
-        box-shadow: 0 2px 12px var(--ui-shadow);
+        box-shadow: 0 4px 16px var(--ui-shadow);
+        filter: brightness(1.1);
     }
 
     div[data-baseweb="select"] > div:focus-within,
     .stSelectbox > div > div:focus-within,
     [data-testid="stSelectbox"] > div > div:focus-within {
-        border-color: var(--ui-color) !important;
         box-shadow: 0 0 0 3px var(--ui-shadow) !important;
     }
 
@@ -535,89 +550,7 @@ st.markdown("""
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
-    /* =============================================== */
-    /* ИСКЛЮЧЕНИЕ: Оранжевая окантовка для блока редактирования городов ≤90% */
-    /* =============================================== */
-    /* Эти стили ДОЛЖНЫ быть в самом конце, чтобы перекрыть все глобальные красные стили */
-    .edit-cities-block div[data-baseweb="select"] > div,
-    .edit-cities-block .stSelectbox > div > div,
-    .edit-cities-block .stSelectbox > div > div > div,
-    .edit-cities-block [data-testid="stSelectbox"] > div > div {
-        border: 2px solid var(--selector-color) !important;
-        border-color: var(--selector-color) !important;
-        border-radius: 10px !important;
-        background: transparent !important;
-        transition: all 0.3s ease !important;
-    }
-
-    .edit-cities-block div[data-baseweb="select"] > div:hover,
-    .edit-cities-block .stSelectbox:hover > div > div,
-    .edit-cities-block [data-testid="stSelectbox"]:hover > div > div {
-        background: rgba(249, 115, 22, 0.05) !important;
-        box-shadow: 0 2px 8px var(--selector-shadow) !important;
-        border-color: var(--selector-color) !important;
-    }
-
-    .edit-cities-block div[data-baseweb="select"] > div:focus-within,
-    .edit-cities-block .stSelectbox > div > div:focus-within,
-    .edit-cities-block [data-testid="stSelectbox"] > div > div:focus-within {
-        border: 2px solid var(--selector-color) !important;
-        border-color: var(--selector-color) !important;
-        box-shadow: 0 0 0 3px var(--selector-shadow) !important;
-    }
 </style>
-
-<script>
-// JavaScript для принудительного применения оранжевых стилей к селекторам редактирования ≤90%
-const applyOrangeBordersToEditBlock = () => {
-    // Находим все селекторы внутри блока редактирования
-    const editBlock = document.querySelector('.edit-cities-block');
-    if (!editBlock) return;
-
-    const selectors = editBlock.querySelectorAll('[data-baseweb="select"] > div, [data-testid="stSelectbox"] > div > div');
-
-    selectors.forEach(selector => {
-        // Принудительно применяем оранжевые стили
-        selector.style.setProperty('border', '2px solid #F97316', 'important');
-        selector.style.setProperty('border-color', '#F97316', 'important');
-        selector.style.setProperty('border-radius', '10px', 'important');
-
-        // Добавляем обработчики для hover
-        selector.addEventListener('mouseenter', function() {
-            this.style.setProperty('background', 'rgba(249, 115, 22, 0.05)', 'important');
-            this.style.setProperty('box-shadow', '0 2px 8px rgba(249, 115, 22, 0.4)', 'important');
-            this.style.setProperty('border-color', '#F97316', 'important');
-        });
-
-        selector.addEventListener('mouseleave', function() {
-            this.style.setProperty('background', 'transparent', 'important');
-            this.style.setProperty('border-color', '#F97316', 'important');
-        });
-
-        // Обработчик для focus
-        selector.addEventListener('focusin', function() {
-            this.style.setProperty('border', '2px solid #F97316', 'important');
-            this.style.setProperty('border-color', '#F97316', 'important');
-            this.style.setProperty('box-shadow', '0 0 0 3px rgba(249, 115, 22, 0.4)', 'important');
-        });
-
-        selector.addEventListener('focusout', function() {
-            this.style.setProperty('box-shadow', 'none', 'important');
-        });
-    });
-};
-
-// Запускаем функцию при загрузке и изменениях DOM
-document.addEventListener('DOMContentLoaded', applyOrangeBordersToEditBlock);
-setTimeout(applyOrangeBordersToEditBlock, 100);
-setTimeout(applyOrangeBordersToEditBlock, 500);
-setTimeout(applyOrangeBordersToEditBlock, 1000);
-setTimeout(applyOrangeBordersToEditBlock, 2000);
-
-// Наблюдаем за изменениями DOM
-const observer = new MutationObserver(applyOrangeBordersToEditBlock);
-observer.observe(document.body, { childList: true, subtree: true });
-</script>
 """, unsafe_allow_html=True)
 
 # Инициализация session_state
@@ -1498,7 +1431,7 @@ if hh_areas:
             st.info(f"**Регион:** {city_info['parent']}")
 
     # КНОПКА ВЫГРУЗКИ ВСЕХ ГОРОДОВ
-    st.markdown("###")
+    st.markdown("")
     if st.button("🌍 Выгрузить ВСЕ города из справочника", type="secondary", use_container_width=False, key="export_all_cities_btn"):
         with st.spinner("Формирую полный список..."):
             all_cities_df = get_all_cities(hh_areas)
