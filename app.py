@@ -63,16 +63,6 @@ st.markdown("""
         font-display: swap;
     }
 
-    /* Подключение шрифта hhsans Medium для кнопок */
-    @font-face {
-        font-family: 'hhsans-Medium';
-        src: url('hhsans-Medium.woff2') format('woff2'),
-             url('hhsans-Medium.ttf') format('truetype');
-        font-weight: 500;
-        font-style: normal;
-        font-display: swap;
-    }
-
     /* Анимация для логотипа */
     @keyframes rotate {
         from { transform: rotate(0deg); }
@@ -106,7 +96,7 @@ st.markdown("""
         color: var(--ui-color);
         border: 2px solid var(--ui-color);
         border-radius: 50%;
-        font-weight: bold;
+        font-weight: normal;
         font-size: 16px;
         margin-right: 8px;
         vertical-align: middle;
@@ -122,7 +112,7 @@ st.markdown("""
         background: var(--ui-color);
         color: white;
         border-radius: 50%;
-        font-weight: bold;
+        font-weight: normal;
         font-size: 14px;
         margin-right: 8px;
         vertical-align: middle;
@@ -131,7 +121,7 @@ st.markdown("""
     .main-title {
         display: inline-block;
         font-size: 3em;
-        font-weight: bold;
+        font-weight: normal;
         vertical-align: middle;
         margin: 0;
         color: var(--ui-color);
@@ -205,14 +195,14 @@ st.markdown("""
 
     /* Заголовки */
     h1 {
-        font-weight: 700;
+        font-weight: normal;
         color: #1a1a1a;
         margin-bottom: 0.5rem;
         font-size: 2.5rem;
     }
 
     h2 {
-        font-weight: 600;
+        font-weight: normal;
         color: #2d2d2d;
         margin-top: 2rem;
         margin-bottom: 1rem;
@@ -220,7 +210,7 @@ st.markdown("""
     }
 
     h3 {
-        font-weight: 500;
+        font-weight: normal;
         color: #4a4a4a;
         font-size: 1.3rem;
     }
@@ -233,8 +223,8 @@ st.markdown("""
     .stButton>button {
         border-radius: 20px !important;
         padding: 10px 20px !important;
-        font-family: 'hhsans-Medium', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
-        font-weight: 500 !important;
+        font-family: 'hhsans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        font-weight: normal !important;
         font-size: 14px !important;
         background: var(--button-color) !important;
         border: none !important;
@@ -244,11 +234,11 @@ st.markdown("""
         cursor: pointer !important;
     }
 
-    /* Текст внутри кнопок - Medium шрифт */
+    /* Текст внутри кнопок - Regular шрифт */
     .stButton>button, .stButton>button span, .stButton>button p,
     .stButton>button div, .stButton>button * {
-        font-family: 'hhsans-Medium', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
-        font-weight: 500 !important;
+        font-family: 'hhsans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        font-weight: normal !important;
     }
 
     .stButton>button:hover {
@@ -267,8 +257,8 @@ st.markdown("""
     .stDownloadButton>button {
         border-radius: 20px !important;
         padding: 10px 20px !important;
-        font-family: 'hhsans-Medium', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
-        font-weight: 500 !important;
+        font-family: 'hhsans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        font-weight: normal !important;
         font-size: 14px !important;
         background: var(--button-color) !important;
         border: none !important;
@@ -278,11 +268,11 @@ st.markdown("""
         cursor: pointer !important;
     }
 
-    /* Текст внутри download кнопок - Medium шрифт */
+    /* Текст внутри download кнопок - Regular шрифт */
     .stDownloadButton>button, .stDownloadButton>button span, .stDownloadButton>button p,
     .stDownloadButton>button div, .stDownloadButton>button * {
-        font-family: 'hhsans-Medium', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
-        font-weight: 500 !important;
+        font-family: 'hhsans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        font-weight: normal !important;
     }
 
     .stDownloadButton>button:hover {
@@ -301,8 +291,8 @@ st.markdown("""
     .stTabs [data-baseweb="tab-list"] button {
         padding: 10px 20px !important;
         font-size: 14px !important;
-        font-family: 'hhsans-Medium', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
-        font-weight: 500 !important;
+        font-family: 'hhsans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        font-weight: normal !important;
     }
 
     /* File Uploader */
@@ -329,7 +319,7 @@ st.markdown("""
 
     .uploadedFileName {
         color: var(--ui-color);
-        font-weight: 500;
+        font-weight: normal;
     }
 
     /* Inputs - Selectbox с черной окантовкой */
@@ -430,7 +420,7 @@ st.markdown("""
     .streamlit-expanderHeader {
         background: #f8f9fa;
         border-radius: 10px;
-        font-weight: 500;
+        font-weight: normal;
         border: 1px solid #e9ecef;
     }
 
@@ -472,7 +462,7 @@ st.markdown("""
         height: 60px;
         padding: 0px 24px;
         border-radius: 10px 10px 0 0;
-        font-weight: 500;
+        font-weight: normal;
         background: #f8f9fa;
         border: 1px solid #dee2e6;
         border-bottom: none;
@@ -550,7 +540,7 @@ st.markdown("""
         color: white !important;
         border-radius: 20px !important;
         padding: 10px 20px !important;
-        font-weight: 500 !important;
+        font-weight: normal !important;
         font-size: 14px !important;
         transition: all 0.3s ease !important;
         cursor: pointer !important;
@@ -1746,7 +1736,7 @@ with st.sidebar:
         border-radius: 8px;
         text-decoration: none !important;
         color: #1a1a1a !important;
-        font-weight: 500;
+        font-weight: normal;
         transition: all 0.3s ease;
         border-left: 3px solid var(--ui-color);
     }
