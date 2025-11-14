@@ -1714,31 +1714,46 @@ if uploaded_file is not None and hh_areas is not None:
                     st.session_state.export_mode = None
 
                 # ИНЛАЙН СТИЛИ ДЛЯ КНОПОК РЕЖИМА - ПРЯМО ЗДЕСЬ
-                st.markdown("""
+                # Используем JavaScript чтобы пометить выбранную кнопку
+                selected_mode = st.session_state.export_mode
+                st.markdown(f"""
                 <style>
-                /* АГРЕССИВНЫЕ СТИЛИ ДЛЯ КНОПОК С КЛЮЧАМИ mode_split и mode_single */
+                /* АГРЕССИВНЫЕ ЯНТАРНЫЕ СТИЛИ ДЛЯ КНОПОК РЕЖИМА РАБОТЫ */
+                /* Убираем зависимость от config.toml primaryColor */
                 button[data-testid*="baseButton"][aria-label*="РАЗДЕЛЕНИЕ"],
-                button[data-testid*="baseButton"][aria-label*="ЕДИНЫМ"],
-                [data-testid="column"] button[data-testid*="baseButton"] {
+                button[data-testid*="baseButton"][aria-label*="ЕДИНЫМ"] {{
                     width: 100% !important;
                     height: 140px !important;
                     min-height: 140px !important;
+                    max-height: 140px !important;
                     padding: 50px 70px !important;
                     font-size: 27px !important;
                     font-weight: 800 !important;
                     letter-spacing: 2px !important;
+                    text-align: center !important;
                     border: 5px solid #FFAA00 !important;
                     background: rgba(255, 170, 0, 0.15) !important;
                     color: #FFAA00 !important;
                     box-shadow: 0 8px 16px rgba(255, 170, 0, 0.3) !important;
                     border-radius: 12px !important;
-                }
+                    transition: all 0.3s ease !important;
+                }}
 
                 button[data-testid*="baseButton"][aria-label*="РАЗДЕЛЕНИЕ"]:hover,
-                button[data-testid*="baseButton"][aria-label*="ЕДИНЫМ"]:hover {
+                button[data-testid*="baseButton"][aria-label*="ЕДИНЫМ"]:hover {{
                     background: rgba(255, 170, 0, 0.25) !important;
                     transform: translateY(-4px) !important;
-                }
+                    box-shadow: 0 12px 24px rgba(255, 170, 0, 0.45) !important;
+                }}
+
+                /* Выбранная кнопка - полностью янтарная */
+                {"button[data-testid*='baseButton'][aria-label*='РАЗДЕЛЕНИЕ']" if selected_mode == "split" else ""}
+                {"button[data-testid*='baseButton'][aria-label*='ЕДИНЫМ']" if selected_mode == "single" else ""} {{
+                    background: #FFAA00 !important;
+                    color: white !important;
+                    border-color: #FFAA00 !important;
+                    box-shadow: 0 10px 28px rgba(255, 170, 0, 0.65) !important;
+                }}
                 </style>
                 """, unsafe_allow_html=True)
 
@@ -1747,10 +1762,10 @@ if uploaded_file is not None and hh_areas is not None:
 
                 with col1:
                     selected_split = st.session_state.export_mode == "split"
+                    # НЕ ИСПОЛЬЗУЕМ type - чтобы избежать config.toml primaryColor!
                     if st.button(
                         "РАЗДЕЛЕНИЕ ПО ВАКАНСИЯМ",
                         use_container_width=True,
-                        type="primary" if selected_split else "secondary",
                         key="mode_split"
                     ):
                         st.session_state.export_mode = "split"
@@ -1758,10 +1773,10 @@ if uploaded_file is not None and hh_areas is not None:
 
                 with col2:
                     selected_single = st.session_state.export_mode == "single"
+                    # НЕ ИСПОЛЬЗУЕМ type - чтобы избежать config.toml primaryColor!
                     if st.button(
                         "ЕДИНЫМ ФАЙЛОМ",
                         use_container_width=True,
-                        type="primary" if selected_single else "secondary",
                         key="mode_single"
                     ):
                         st.session_state.export_mode = "single"
