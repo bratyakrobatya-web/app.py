@@ -34,18 +34,19 @@ st.markdown("""
     /* CSS ПЕРЕМЕННЫЕ ДЛЯ ГРАДИЕНТА */
     /* =============================================== */
     :root {
-        --gradient-main: radial-gradient(at 95% 5%, #FF4500 0%, transparent 60%),
-                         radial-gradient(at 10% 90%, #4B0082 0%, transparent 55%),
-                         radial-gradient(at 25% 40%, #C6A4F8 0%, transparent 65%),
-                         #B22222;
+        --gradient-main: radial-gradient(at 50% 50%, #4B0082 0%, transparent 70%),
+                         radial-gradient(at 20% 80%, #6A0DAD 0%, transparent 65%),
+                         radial-gradient(at 80% 20%, #9370DB 0%, transparent 60%),
+                         radial-gradient(at 10% 30%, #C6A4F8 0%, transparent 50%),
+                         #5B0097;
 
-        --primary-color: #B22222;
-        --primary-light: #FF4500;
-        --primary-dark: #4B0082;
+        --primary-color: #4B0082;
+        --primary-light: #9370DB;
+        --primary-dark: #2E0854;
         --primary-accent: #C6A4F8;
 
-        --shadow-primary: rgba(178, 34, 34, 0.3);
-        --shadow-hover: rgba(178, 34, 34, 0.5);
+        --shadow-primary: rgba(75, 0, 130, 0.3);
+        --shadow-hover: rgba(75, 0, 130, 0.5);
     }
 
     /* Подключение шрифта hhsans Regular */
@@ -258,6 +259,21 @@ st.markdown("""
     .stDownloadButton>button:active {
         transform: translateY(0px) !important;
         box-shadow: 0 2px 8px var(--shadow-primary) !important;
+    }
+
+    /* ИСКЛЮЧЕНИЕ: Кнопка "Выгрузить ВСЕ города" БЕЗ градиента */
+    button[data-testid*="export_all_cities_btn"],
+    div[data-testid*="export_all_cities_btn"] button {
+        background: transparent !important;
+        border: 2px solid var(--primary-color) !important;
+        color: var(--primary-color) !important;
+    }
+
+    button[data-testid*="export_all_cities_btn"]:hover,
+    div[data-testid*="export_all_cities_btn"] button:hover {
+        background: rgba(75, 0, 130, 0.1) !important;
+        border: 2px solid var(--primary-color) !important;
+        color: var(--primary-color) !important;
     }
 
     /* File Uploader */
@@ -3047,7 +3063,7 @@ if hh_areas is not None:
     all_cities_full = get_all_cities(hh_areas)
 
     # КНОПКА ВЫГРУЗКИ ВСЕХ ГОРОДОВ (ПЕРЕД ФИЛЬТРАМИ)
-    if st.button("🌍 Выгрузить ВСЕ города из справочника", type="secondary", use_container_width=False):
+    if st.button("🌍 Выгрузить ВСЕ города из справочника", type="secondary", use_container_width=False, key="export_all_cities_btn"):
         with st.spinner("Формирую полный список..."):
             all_cities_df = get_all_cities(hh_areas)
             if not all_cities_df.empty:
