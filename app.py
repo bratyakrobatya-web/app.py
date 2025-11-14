@@ -363,7 +363,7 @@ st.markdown("""
     }
 
     /* MultiSelect с черной окантовкой */
-    .stMultiSelect > div > div {
+    .stMultiSelect > div:first-child > div:first-child {
         position: relative;
         border: 2px solid #1a1a1a !important;
         border-radius: 10px !important;
@@ -372,9 +372,14 @@ st.markdown("""
         cursor: pointer !important;
     }
 
-    .stMultiSelect > div > div:hover {
+    .stMultiSelect > div:first-child > div:first-child:hover {
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
         filter: brightness(1.02);
+    }
+
+    /* Убираем border со всех вложенных элементов */
+    .stMultiSelect > div > div > div {
+        border: none !important;
     }
 
     /* Информационные блоки - С ГРАДИЕНТОМ */
