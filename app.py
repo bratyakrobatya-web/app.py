@@ -37,8 +37,8 @@ st.markdown("""
         /* Красно-белый градиент для кнопок */
         --gradient-main: linear-gradient(145deg, #f4301f 0%, #ff6b5a 60%, #ffcbc3 100%);
 
-        /* Бело-красный градиент для селекторов */
-        --gradient-selector: linear-gradient(145deg, #ffffff 0%, #ff8575 60%, #f4301f 100%);
+        /* Красно-белый градиент для селекторов */
+        --gradient-selector: linear-gradient(145deg, #f4301f 0%, #ff8575 60%, #ffffff 100%);
 
         /* Цвета для UI элементов (красный) */
         --ui-color: #f4301f;
@@ -249,6 +249,13 @@ st.markdown("""
         color: white !important;
     }
 
+    /* Текст внутри кнопок - Medium шрифт */
+    .stButton>button, .stButton>button span, .stButton>button p,
+    .stButton>button div, .stButton>button * {
+        font-family: 'hhsans-Medium', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        font-weight: 500 !important;
+    }
+
     .stButton>button:hover {
         transform: translateY(-2px) !important;
         box-shadow: var(--shadow-glow-hover) !important;
@@ -272,6 +279,13 @@ st.markdown("""
         transition: all 0.3s ease !important;
         box-shadow: var(--shadow-glow) !important;
         color: white !important;
+    }
+
+    /* Текст внутри download кнопок - Medium шрифт */
+    .stDownloadButton>button, .stDownloadButton>button span, .stDownloadButton>button p,
+    .stDownloadButton>button div, .stDownloadButton>button * {
+        font-family: 'hhsans-Medium', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        font-weight: 500 !important;
     }
 
     .stDownloadButton>button:hover {
@@ -497,10 +511,13 @@ st.markdown("""
         border: 1px solid #f0f0f0;
     }
 
-    /* Прогресс бар с градиентом */
-    .stProgress > div > div {
-        background: var(--ui-color);
-        border-radius: 10px;
+    /* Прогресс бар - базовый черный цвет вместо оранжевого */
+    .stProgress > div > div > div > div {
+        background-color: #1a1a1a !important;
+    }
+
+    .stProgress [data-testid="stProgressBar"] > div > div {
+        background-color: #1a1a1a !important;
     }
 
     /* Divider */
@@ -557,13 +574,19 @@ st.markdown("""
         background-color: #d42817 !important;
     }
 
-    /* Прогресс бар - красный цвет */
-    .stProgress > div > div > div {
-        background-color: var(--ui-color) !important;
+    /* Глобальные стили для ссылок - черный цвет вместо оранжевого */
+    a {
+        color: #1a1a1a !important;
+        text-decoration: none;
     }
 
-    .stProgress [role="progressbar"] {
-        background-color: var(--ui-color) !important;
+    a:hover {
+        color: #000000 !important;
+        text-decoration: none !important;
+    }
+
+    a:visited {
+        color: #1a1a1a !important;
     }
 
 </style>
