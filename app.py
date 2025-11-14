@@ -34,29 +34,21 @@ st.markdown("""
     /* CSS ПЕРЕМЕННЫЕ ДЛЯ ГРАДИЕНТА */
     /* =============================================== */
     :root {
-        /* Диагональный линейный градиент с мягкими переходами через промежуточные цвета */
-        --gradient-main: linear-gradient(145deg, #7E57C2 0%, #A855F7 25%, #E91E63 50%, #EC4899 75%, #FF9800 100%);
+        /* Огненный градиент 8.1 (Классический огненный) */
+        --gradient-main: linear-gradient(145deg, #FBBF24 0%, #F97316 50%, #DC2626 100%);
 
-        /* Радиальный градиент для эффекта свечения/глубины */
-        --gradient-radial: radial-gradient(circle at center, rgba(255,255,255,0.15) 0%, #A855F7 40%, #E91E63 70%, #FF9800 100%);
-
-        /* Градиент для фона с эффектом объемности */
-        --gradient-soft: radial-gradient(circle at 30% 30%, rgba(168, 85, 247, 0.3) 0%, transparent 50%),
-                         radial-gradient(circle at 70% 70%, rgba(233, 30, 99, 0.3) 0%, transparent 50%),
-                         linear-gradient(145deg, #7E57C2 0%, #E91E63 50%, #FF9800 100%);
-
-        --primary-color: #7E57C2;
-        --primary-light: #A855F7;
-        --primary-mid: #E91E63;
-        --primary-dark: #5B3A8F;
-        --primary-accent: #EC4899;
+        --primary-color: #F97316;
+        --primary-light: #FBBF24;
+        --primary-mid: #DC2626;
+        --primary-dark: #B91C1C;
+        --primary-accent: #F97316;
         --primary-orange: #FF9800;
 
-        /* Тени для эффекта "глубокого неона" */
-        --shadow-primary: rgba(233, 30, 99, 0.4);
-        --shadow-hover: rgba(233, 30, 99, 0.6);
-        --shadow-glow: 0 4px 15px rgba(233, 30, 99, 0.4);
-        --shadow-glow-hover: 0 6px 25px rgba(233, 30, 99, 0.6);
+        /* Тени для эффекта "глубокого неона" с оранжевым */
+        --shadow-primary: rgba(249, 115, 22, 0.4);
+        --shadow-hover: rgba(249, 115, 22, 0.6);
+        --shadow-glow: 0 6px 20px rgba(249, 115, 22, 0.5);
+        --shadow-glow-hover: 0 8px 30px rgba(249, 115, 22, 0.7);
     }
 
     /* Подключение шрифта hhsans Regular */
@@ -284,21 +276,6 @@ st.markdown("""
         background: rgba(126, 87, 194, 0.1) !important;
         border: 2px solid var(--primary-color) !important;
         color: var(--primary-color) !important;
-    }
-
-    /* Градиент для заголовков H1 и H2 */
-    h1, .main-title {
-        background: var(--gradient-main);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-    }
-
-    h2 {
-        background: var(--gradient-main);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
     }
 
     /* File Uploader */
@@ -3452,261 +3429,6 @@ if hh_areas is not None:
                 use_container_width=True,
                 key="download_regions_publisher"
             )
-
-st.markdown("---")
-
-# ============================================
-# ТЕСТОВАЯ СЕКЦИЯ: 10 вариантов градиентов
-# ============================================
-st.markdown("### 🎨 Тестовые градиенты (выберите лучший)")
-st.markdown("""
-<style>
-/* Градиент 1: Текущий (Фиолетовый-Розовый-Оранжевый) */
-.gradient-1 {
-    background: linear-gradient(145deg, #7E57C2 0%, #A855F7 25%, #E91E63 50%, #EC4899 75%, #FF9800 100%) !important;
-    border-radius: 8px !important;
-    padding: 0.6rem 2rem !important;
-    border: none !important;
-    box-shadow: 0 4px 15px rgba(233, 30, 99, 0.4) !important;
-}
-
-/* Градиент 2: Красный-Бирюзовый-Персиковый (экспериментальный) */
-.gradient-2 {
-    background: radial-gradient(at 80% 20%, #FF6B6B 0%, transparent 50%),
-                radial-gradient(at 20% 80%, #4DD0E1 0%, transparent 50%),
-                radial-gradient(at 50% 90%, #FFD1A6 0%, transparent 50%),
-                linear-gradient(135deg, #FF6B6B 0%, #4DD0E1 50%, #FFD1A6 100%) !important;
-    border-radius: 8px !important;
-    padding: 0.6rem 2rem !important;
-    border: none !important;
-    box-shadow: 0 4px 15px rgba(77, 208, 225, 0.4) !important;
-}
-
-/* Градиент 3: Синий-Зеленый-Желтый */
-.gradient-3 {
-    background: linear-gradient(145deg, #3B82F6 0%, #10B981 50%, #FBBF24 100%) !important;
-    border-radius: 8px !important;
-    padding: 0.6rem 2rem !important;
-    border: none !important;
-    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4) !important;
-}
-
-/* Градиент 4: Фиолетовый-Красный */
-.gradient-4 {
-    background: linear-gradient(145deg, #8B5CF6 0%, #EC4899 50%, #EF4444 100%) !important;
-    border-radius: 8px !important;
-    padding: 0.6rem 2rem !important;
-    border: none !important;
-    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4) !important;
-}
-
-/* Градиент 5: Розовый-Фиолетовый-Синий */
-.gradient-5 {
-    background: linear-gradient(145deg, #F472B6 0%, #A78BFA 50%, #60A5FA 100%) !important;
-    border-radius: 8px !important;
-    padding: 0.6rem 2rem !important;
-    border: none !important;
-    box-shadow: 0 4px 15px rgba(167, 139, 250, 0.4) !important;
-}
-
-/* Градиент 6: Оранжевый-Красный-Розовый */
-.gradient-6 {
-    background: linear-gradient(145deg, #FB923C 0%, #F87171 50%, #FB7185 100%) !important;
-    border-radius: 8px !important;
-    padding: 0.6rem 2rem !important;
-    border: none !important;
-    box-shadow: 0 4px 15px rgba(248, 113, 113, 0.4) !important;
-}
-
-/* Градиент 7: Зеленый-Бирюзовый-Синий */
-.gradient-7 {
-    background: linear-gradient(145deg, #10B981 0%, #14B8A6 50%, #3B82F6 100%) !important;
-    border-radius: 8px !important;
-    padding: 0.6rem 2rem !important;
-    border: none !important;
-    box-shadow: 0 4px 15px rgba(20, 184, 166, 0.4) !important;
-}
-
-/* Градиент 8: Желтый-Оранжевый-Красный (Огненный) */
-.gradient-8 {
-    background: linear-gradient(145deg, #FBBF24 0%, #F97316 50%, #DC2626 100%) !important;
-    border-radius: 8px !important;
-    padding: 0.6rem 2rem !important;
-    border: none !important;
-    box-shadow: 0 4px 15px rgba(249, 115, 22, 0.4) !important;
-}
-
-/* Градиент 9: Фиолетовый-Синий-Бирюзовый */
-.gradient-9 {
-    background: linear-gradient(145deg, #7C3AED 0%, #2563EB 50%, #06B6D4 100%) !important;
-    border-radius: 8px !important;
-    padding: 0.6rem 2rem !important;
-    border: none !important;
-    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4) !important;
-}
-
-/* Градиент 10: Красно-Бирюзовый-Персиковый (альтернативный) */
-.gradient-10 {
-    background: radial-gradient(circle at 30% 30%, #FF6B6B 0%, transparent 60%),
-                radial-gradient(circle at 70% 70%, #4DD0E1 0%, transparent 60%),
-                linear-gradient(135deg, #FF6B6B 0%, #FFD1A6 50%, #4DD0E1 100%) !important;
-    border-radius: 8px !important;
-    padding: 0.6rem 2rem !important;
-    border: none !important;
-    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4) !important;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# Создаем 10 кнопок в 2 ряда по 5 кнопок
-col1, col2, col3, col4, col5 = st.columns(5)
-
-with col1:
-    st.markdown('<button class="gradient-1">1</button>', unsafe_allow_html=True)
-with col2:
-    st.markdown('<button class="gradient-2">2</button>', unsafe_allow_html=True)
-with col3:
-    st.markdown('<button class="gradient-3">3</button>', unsafe_allow_html=True)
-with col4:
-    st.markdown('<button class="gradient-4">4</button>', unsafe_allow_html=True)
-with col5:
-    st.markdown('<button class="gradient-5">5</button>', unsafe_allow_html=True)
-
-col6, col7, col8, col9, col10 = st.columns(5)
-
-with col6:
-    st.markdown('<button class="gradient-6">6</button>', unsafe_allow_html=True)
-with col7:
-    st.markdown('<button class="gradient-7">7</button>', unsafe_allow_html=True)
-with col8:
-    st.markdown('<button class="gradient-8">8</button>', unsafe_allow_html=True)
-with col9:
-    st.markdown('<button class="gradient-9">9</button>', unsafe_allow_html=True)
-with col10:
-    st.markdown('<button class="gradient-10">10</button>', unsafe_allow_html=True)
-
-st.markdown("---")
-
-# ============================================
-# 5 ВАРИАЦИЙ ГРАДИЕНТА 8 (ОГНЕННЫЙ)
-# ============================================
-st.markdown("### 🔥 5 вариаций огненного градиента (8)")
-st.markdown("""
-<style>
-.gradient-8-1, .gradient-8-2, .gradient-8-3, .gradient-8-4, .gradient-8-5 {
-    width: 100% !important;
-    padding: 1.2rem 3rem !important;
-    font-size: 1.2rem !important;
-    font-weight: 600 !important;
-    border-radius: 12px !important;
-    border: none !important;
-    color: white !important;
-    cursor: pointer !important;
-    transition: all 0.3s ease !important;
-    display: block !important;
-    margin-bottom: 1rem !important;
-}
-
-/* Вариация 1: Классический огненный (145deg) */
-.gradient-8-1 {
-    background: linear-gradient(145deg, #FBBF24 0%, #F97316 50%, #DC2626 100%) !important;
-    box-shadow: 0 6px 20px rgba(249, 115, 22, 0.5) !important;
-}
-
-/* Вариация 2: Огненный с розовым (135deg) */
-.gradient-8-2 {
-    background: linear-gradient(135deg, #FCD34D 0%, #FB923C 30%, #F87171 70%, #DC2626 100%) !important;
-    box-shadow: 0 6px 20px rgba(251, 146, 60, 0.5) !important;
-}
-
-/* Вариация 3: Вертикальный огненный (180deg) */
-.gradient-8-3 {
-    background: linear-gradient(180deg, #FEF3C7 0%, #FBBF24 25%, #F97316 60%, #DC2626 100%) !important;
-    box-shadow: 0 6px 20px rgba(220, 38, 38, 0.5) !important;
-}
-
-/* Вариация 4: Радиальный огненный */
-.gradient-8-4 {
-    background: radial-gradient(circle at 30% 30%, #FBBF24 0%, transparent 60%),
-                radial-gradient(circle at 70% 70%, #DC2626 0%, transparent 60%),
-                linear-gradient(145deg, #F97316 0%, #DC2626 100%) !important;
-    box-shadow: 0 6px 20px rgba(249, 115, 22, 0.6) !important;
-}
-
-/* Вариация 5: Мягкий огненный (90deg) */
-.gradient-8-5 {
-    background: linear-gradient(90deg, #FDE68A 0%, #FBBF24 20%, #FB923C 50%, #F87171 80%, #DC2626 100%) !important;
-    box-shadow: 0 6px 20px rgba(220, 38, 38, 0.4) !important;
-}
-
-.gradient-6-1, .gradient-6-2, .gradient-6-3, .gradient-6-4, .gradient-6-5 {
-    width: 100% !important;
-    padding: 1.2rem 3rem !important;
-    font-size: 1.2rem !important;
-    font-weight: 600 !important;
-    border-radius: 12px !important;
-    border: none !important;
-    color: white !important;
-    cursor: pointer !important;
-    transition: all 0.3s ease !important;
-    display: block !important;
-    margin-bottom: 1rem !important;
-}
-
-/* Вариация 1: Классический оранжево-красно-розовый (145deg) */
-.gradient-6-1 {
-    background: linear-gradient(145deg, #FB923C 0%, #F87171 50%, #FB7185 100%) !important;
-    box-shadow: 0 6px 20px rgba(248, 113, 113, 0.5) !important;
-}
-
-/* Вариация 2: Яркий коралловый (135deg) */
-.gradient-6-2 {
-    background: linear-gradient(135deg, #FDBA74 0%, #FB923C 30%, #F87171 70%, #FB7185 100%) !important;
-    box-shadow: 0 6px 20px rgba(251, 113, 133, 0.5) !important;
-}
-
-/* Вариация 3: Вертикальный закат (180deg) */
-.gradient-6-3 {
-    background: linear-gradient(180deg, #FED7AA 0%, #FB923C 30%, #F87171 60%, #FB7185 100%) !important;
-    box-shadow: 0 6px 20px rgba(248, 113, 113, 0.6) !important;
-}
-
-/* Вариация 4: Радиальный закат */
-.gradient-6-4 {
-    background: radial-gradient(circle at 40% 40%, #FB923C 0%, transparent 55%),
-                radial-gradient(circle at 60% 60%, #FB7185 0%, transparent 55%),
-                linear-gradient(145deg, #F87171 0%, #FB7185 100%) !important;
-    box-shadow: 0 6px 20px rgba(251, 146, 60, 0.6) !important;
-}
-
-/* Вариация 5: Горизонтальный персиковый (90deg) */
-.gradient-6-5 {
-    background: linear-gradient(90deg, #FED7AA 0%, #FDBA74 20%, #FB923C 40%, #F87171 70%, #FB7185 100%) !important;
-    box-shadow: 0 6px 20px rgba(251, 113, 133, 0.4) !important;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# 5 вариаций градиента 8
-st.markdown('<button class="gradient-8-1">Вариация 8.1 - Классический огненный (145°)</button>', unsafe_allow_html=True)
-st.markdown('<button class="gradient-8-2">Вариация 8.2 - Огненный с розовым (135°)</button>', unsafe_allow_html=True)
-st.markdown('<button class="gradient-8-3">Вариация 8.3 - Вертикальный огненный (180°)</button>', unsafe_allow_html=True)
-st.markdown('<button class="gradient-8-4">Вариация 8.4 - Радиальный огненный</button>', unsafe_allow_html=True)
-st.markdown('<button class="gradient-8-5">Вариация 8.5 - Мягкий огненный (90°)</button>', unsafe_allow_html=True)
-
-st.markdown("---")
-
-# ============================================
-# 5 ВАРИАЦИЙ ГРАДИЕНТА 6 (ОРАНЖЕВО-КРАСНО-РОЗОВЫЙ)
-# ============================================
-st.markdown("### 🌅 5 вариаций градиента 6 (Оранжево-Красно-Розовый)")
-
-# 5 вариаций градиента 6
-st.markdown('<button class="gradient-6-1">Вариация 6.1 - Классический закат (145°)</button>', unsafe_allow_html=True)
-st.markdown('<button class="gradient-6-2">Вариация 6.2 - Яркий коралловый (135°)</button>', unsafe_allow_html=True)
-st.markdown('<button class="gradient-6-3">Вариация 6.3 - Вертикальный закат (180°)</button>', unsafe_allow_html=True)
-st.markdown('<button class="gradient-6-4">Вариация 6.4 - Радиальный закат</button>', unsafe_allow_html=True)
-st.markdown('<button class="gradient-6-5">Вариация 6.5 - Горизонтальный персиковый (90°)</button>', unsafe_allow_html=True)
 
 st.markdown("---")
 st.markdown(
