@@ -563,16 +563,6 @@ st.markdown("""
         box-shadow: var(--shadow-glow) !important;
     }
 
-    /* Селектор MultiSelect - с мягким градиентом */
-    [data-testid="stMultiSelect"] {
-        border-radius: 20px;
-    }
-
-    [data-testid="stMultiSelect"]:hover > div {
-        background: rgba(0, 0, 0, 0.02) !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
     /* Теги в мультиселекте - красный цвет вместо оранжевого */
     [data-testid="stMultiSelect"] span[data-baseweb="tag"] {
         background-color: var(--ui-color) !important;
@@ -1833,39 +1823,44 @@ with st.sidebar:
     if hh_areas:
         st.success(f"✅ Справочник HH загружен: **{len(hh_areas)}** городов")
 
-# Выбор режима работы
-st.subheader("🎯 Выбор режима работы")
-mode_tab1, mode_tab2 = st.tabs(["Обработка одного файла", "Объединение двух файлов"])
-
 # ============================================
-# РЕЖИМ 1: ОБРАБОТКА ОДНОГО ФАЙЛА
+# ЗАГРУЗКА И ОБРАБОТКА ФАЙЛОВ
 # ============================================
-with mode_tab1:
-    st.subheader("📁 Загрузка файла")
-    uploaded_file = st.file_uploader(
-        "Выберите файл с городами",
-        type=['xlsx', 'csv'],
-        help="Поддерживаются форматы: Excel (.xlsx) и CSV",
-        key="single_file_uploader"
-    )
+st.subheader("📁 Загрузка файлов")
+uploaded_files = st.file_uploader(
+    "Выберите один или несколько файлов с городами",
+    type=['xlsx', 'csv'],
+    help="Поддерживаются форматы: Excel (.xlsx) и CSV. Можно загрузить несколько файлов одновременно",
+    accept_multiple_files=True,
+    key="files_uploader"
+)
 
-if uploaded_file is not None and hh_areas is not None:  
-    st.markdown("---")  
-      
-    try:  
-        # Определяем тип файла и читаем все вкладки
-        if uploaded_file.name.endswith('.csv'):
-            # CSV - одна вкладка
-            df = pd.read_csv(uploaded_file, header=None)
-            sheets_data = {'Sheet1': df}
-        else:
-            # Excel - читаем все вкладки
-            excel_file = pd.ExcelFile(uploaded_file)
-            sheets_data = {}
-            for sheet_name in excel_file.sheet_names:
-                df_sheet = pd.read_excel(excel_file, sheet_name=sheet_name, header=None)
-                if len(df_sheet) > 0:  # Только непустые вкладки
-                    sheets_data[sheet_name] = df_sheet
+if uploaded_files and hh_areas is not None:
+    st.markdown("---")
+
+    try:
+        # Обрабатываем все загруженные файлы
+        sheets_data = {}
+        file_counter = 1
+
+        for uploaded_file in uploaded_files:
+            # Определяем тип файла и читаем все вкладки
+            if uploaded_file.name.endswith('.csv'):
+                # CSV - одна вкладка
+                df = pd.read_csv(uploaded_file, header=None)
+                # Если несколько файлов, добавляем префикс к имени
+                sheet_key = f"Файл{file_counter}_Sheet1" if len(uploaded_files) > 1 else "Sheet1"
+                sheets_data[sheet_key] = df
+            else:
+                # Excel - читаем все вкладки
+                excel_file = pd.ExcelFile(uploaded_file)
+                for sheet_name in excel_file.sheet_names:
+                    df_sheet = pd.read_excel(excel_file, sheet_name=sheet_name, header=None)
+                    if len(df_sheet) > 0:  # Только непустые вкладки
+                        # Если несколько файлов, добавляем префикс к имени вкладки
+                        sheet_key = f"Файл{file_counter}_{sheet_name}" if len(uploaded_files) > 1 else sheet_name
+                        sheets_data[sheet_key] = df_sheet
+            file_counter += 1
         
         # Анализируем структуру файла
         st.session_state.sheets_data = {}
@@ -1921,10 +1916,12 @@ if uploaded_file is not None and hh_areas is not None:
                 if sheets_with_vacancy_column:
                     st.session_state.sheet_mode = 'both'
                     
-                st.info(f"📄 Загружено **{len(sheets_data)}** вкладок | 🎯 **Обнаружен режим работы с вкладками**")
+                files_info = f" из **{len(uploaded_files)}** файлов" if len(uploaded_files) > 1 else ""
+                st.info(f"📄 Загружено **{len(sheets_data)}** вкладок{files_info} | 🎯 **Обнаружен режим работы с вкладками**")
             else:
                 st.session_state.sheet_mode = None
-                st.info(f"📄 Загружено **{len(sheets_data)}** вкладок")
+                files_info = f" из **{len(uploaded_files)}** файлов" if len(uploaded_files) > 1 else ""
+                st.info(f"📄 Загружено **{len(sheets_data)}** вкладок{files_info}")
         else:
             # Одна вкладка - проверяем столбец "Вакансия"
             first_sheet_data = list(st.session_state.sheets_data.values())[0]
@@ -3265,291 +3262,6 @@ if uploaded_file is not None and hh_areas is not None:
         st.error(f"❌ Ошибка обработки файла: {str(e)}")
         import traceback
         st.code(traceback.format_exc())
-
-# ============================================
-# РЕЖИМ 2: ОБЪЕДИНЕНИЕ ДВУХ ФАЙЛОВ
-# ============================================
-with mode_tab2:
-    st.subheader("🔗 Объединение двух файлов с удалением дублей")
-    st.info("📋 Загрузите два файла с городами. Система объединит их и удалит дубликаты, используя интеллектуальное сопоставление с HH.ru")
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.markdown("#### 📄 Первый файл")
-        uploaded_file_1 = st.file_uploader(
-            "Выберите первый файл",
-            type=['xlsx', 'csv'],
-            help="Поддерживаются форматы: Excel (.xlsx) и CSV",
-            key="merge_file_1_uploader"
-        )
-        if uploaded_file_1:
-            st.success(f"✅ Загружен: {uploaded_file_1.name}")
-
-    with col2:
-        st.markdown("#### 📄 Второй файл")
-        uploaded_file_2 = st.file_uploader(
-            "Выберите второй файл",
-            type=['xlsx', 'csv'],
-            help="Поддерживаются форматы: Excel (.xlsx) и CSV",
-            key="merge_file_2_uploader"
-        )
-        if uploaded_file_2:
-            st.success(f"✅ Загружен: {uploaded_file_2.name}")
-
-    if uploaded_file_1 is not None and uploaded_file_2 is not None and hh_areas is not None:
-        st.markdown("---")
-
-        if st.button("🔗 Объединить файлы", type="primary", use_container_width=True, key="merge_files_btn"):
-            with st.spinner("Обрабатываю файлы..."):
-                try:
-                    # Читаем первый файл
-                    if uploaded_file_1.name.endswith('.csv'):
-                        df1 = pd.read_csv(uploaded_file_1, header=None)
-                    else:
-                        df1 = pd.read_excel(uploaded_file_1, header=None)
-
-                    # Читаем второй файл
-                    if uploaded_file_2.name.endswith('.csv'):
-                        df2 = pd.read_csv(uploaded_file_2, header=None)
-                    else:
-                        df2 = pd.read_excel(uploaded_file_2, header=None)
-
-                    # Объединяем файлы
-                    merged_df, stats = merge_cities_files(df1, df2, hh_areas, threshold)
-
-                    # Сохраняем результат в session_state
-                    st.session_state.merged_result = merged_df
-                    st.session_state.merge_stats = stats
-
-                    st.success("✅ Файлы успешно объединены!")
-
-                except Exception as e:
-                    st.error(f"❌ Ошибка при объединении файлов: {str(e)}")
-                    import traceback
-                    st.code(traceback.format_exc())
-
-        # Показываем результаты, если они есть
-        if 'merged_result' in st.session_state and st.session_state.merged_result is not None:
-            st.markdown("---")
-            st.subheader("📊 Результаты объединения")
-
-            stats = st.session_state.merge_stats
-            merged_df = st.session_state.merged_result
-
-            # Статистика
-            col1, col2, col3, col4, col5 = st.columns(5)
-
-            col1.metric("Файл 1", stats['total_from_file1'])
-            col2.metric("Файл 2", stats['total_from_file2'])
-            col3.metric("🗑️ Дублей удалено", stats['duplicates_removed'])
-            col4.metric("✨ Уникальных", stats['unique_cities'])
-            col5.metric("📦 Итого", stats['merged_total'])
-
-            # Показываем таблицу
-            st.markdown("---")
-            st.subheader("📋 Объединенная таблица")
-
-            # Добавляем нумерацию
-            display_df = merged_df.copy()
-            display_df.insert(0, '№', range(1, len(display_df) + 1))
-
-            st.dataframe(display_df, use_container_width=True, height=400, hide_index=True)
-
-            # БЛОК: РЕДАКТИРОВАНИЕ ГОРОДОВ С СОВПАДЕНИЕМ ≤ 90%
-            # Фильтруем города для редактирования
-            editable_rows = merged_df[
-                (merged_df['Совпадение %'] <= 90) &
-                (merged_df['Итоговое гео'].notna())
-            ].copy()
-
-            # Сортируем: сначала "Нет совпадения", затем по возрастанию процента
-            if len(editable_rows) > 0:
-                # Создаем приоритет: 0 для "Нет совпадения", 1 для остальных
-                editable_rows['_sort_priority'] = editable_rows['Статус'].apply(
-                    lambda x: 0 if '❌ Не найдено' in str(x) else 1
-                )
-                editable_rows = editable_rows.sort_values(
-                    ['_sort_priority', 'Совпадение %'],
-                    ascending=[True, True]
-                )
-                editable_rows = editable_rows.drop(columns=['_sort_priority'])
-
-            if len(editable_rows) > 0:
-                st.markdown("---")
-                st.subheader("✏️ Редактирование городов с совпадением ≤ 90%")
-                st.info(f"Найдено **{len(editable_rows)}** городов, доступных для редактирования")
-
-                # Инициализируем manual_selections если нет
-                if 'manual_selections_merge' not in st.session_state:
-                    st.session_state.manual_selections_merge = {}
-
-                # Обертка для черной окантовки
-                st.markdown('<div class="edit-cities-block">', unsafe_allow_html=True)
-
-                for idx, row in editable_rows.iterrows():
-                    with st.container():
-                        # Используем индекс как row_id
-                        row_id = f"merge_{idx}"
-                        city_name = row['Исходное название']
-
-                        # Получаем кандидатов для этого города
-                        candidates = get_candidates_by_word(city_name, get_russian_cities(hh_areas), limit=20)
-
-                        current_value = row['Итоговое гео']
-                        current_match = row['Совпадение %']
-
-                        # Добавляем текущее значение в список, если его нет
-                        if current_value and current_value != city_name:
-                            candidate_names = [c[0] for c in candidates]
-                            if current_value not in candidate_names:
-                                candidates.append((current_value, current_match))
-
-                        # Сортируем кандидатов по убыванию процента совпадения
-                        candidates.sort(key=lambda x: x[1], reverse=True)
-
-                        # Формируем список опций с процентами
-                        if candidates:
-                            options = ["❌ Нет совпадения"] + [f"{c[0]} ({c[1]:.1f}%)" for c in candidates[:20]]
-                        else:
-                            options = ["❌ Нет совпадения"]
-
-                        # Определяем выбранный элемент
-                        if row_id in st.session_state.manual_selections_merge:
-                            selected_value = st.session_state.manual_selections_merge[row_id]
-                            if selected_value == "❌ Нет совпадения":
-                                default_idx = 0
-                            else:
-                                default_idx = 0
-                                for i, c in enumerate(candidates):
-                                    if c[0] == selected_value:
-                                        default_idx = i + 1
-                                        break
-                        else:
-                            default_idx = 0
-                            if current_value:
-                                for i, c in enumerate(candidates):
-                                    if c[0] == current_value:
-                                        default_idx = i + 1
-                                        break
-
-                        # Определяем цвет окантовки
-                        border_color = "#ea3324"
-
-                        col1, col2, col3, col4 = st.columns([2, 3, 1, 1])
-
-                        with col1:
-                            st.markdown(f"**{city_name}**")
-
-                        with col2:
-                            selected = st.selectbox(
-                                "Выберите город:",
-                                options=options,
-                                index=default_idx,
-                                key=f"select_{row_id}",
-                                label_visibility="collapsed"
-                            )
-
-                            # Inject CSS для этого конкретного selectbox
-                            st.markdown(f"""
-                            <style>
-                            div[data-testid="stSelectbox"]:has(select[id*="select_{row_id}"]) > div > div,
-                            div[data-testid="stSelectbox"]:has(select[id*="select_{row_id}"]) > div > div > div,
-                            div[data-testid="stSelectbox"]:has(select[id*="select_{row_id}"]) [data-baseweb="select"] > div {{
-                                border-color: {border_color} !important;
-                                border: 2px solid {border_color} !important;
-                            }}
-                            </style>
-                            """, unsafe_allow_html=True)
-
-                            if selected == "❌ Нет совпадения":
-                                st.session_state.manual_selections_merge[row_id] = "❌ Нет совпадения"
-                                # Обновляем DataFrame
-                                merged_df.at[idx, 'Итоговое гео'] = None
-                                merged_df.at[idx, 'ID HH'] = None
-                                merged_df.at[idx, 'Регион'] = None
-                                merged_df.at[idx, 'Совпадение %'] = 0
-                                merged_df.at[idx, 'Статус'] = '❌ Не найдено'
-                            else:
-                                selected_city = selected.rsplit(' (', 1)[0]
-                                st.session_state.manual_selections_merge[row_id] = selected_city
-                                # Обновляем DataFrame
-                                if selected_city in hh_areas:
-                                    hh_info = hh_areas[selected_city]
-                                    merged_df.at[idx, 'Итоговое гео'] = hh_info['name']
-                                    merged_df.at[idx, 'ID HH'] = hh_info['id']
-                                    merged_df.at[idx, 'Регион'] = hh_info['parent']
-                                    # Пересчитываем процент
-                                    score = fuzz.WRatio(normalize_city_name(city_name), normalize_city_name(hh_info['name']))
-                                    merged_df.at[idx, 'Совпадение %'] = round(score, 1)
-                                    merged_df.at[idx, 'Статус'] = '✅ Точное' if score >= 95 else '⚠️ Похожее'
-
-                        with col3:
-                            st.text(f"{row['Совпадение %']}%")
-
-                        with col4:
-                            st.text(row['Статус'])
-
-                        st.markdown("<hr style='margin-top: 5px; margin-bottom: 5px;'>", unsafe_allow_html=True)
-
-                # Закрываем обертку для черной окантовки
-                st.markdown('</div>', unsafe_allow_html=True)
-
-                # Обновляем результат в session_state
-                st.session_state.merged_result = merged_df
-
-            # Кнопки скачивания
-            st.markdown("---")
-            st.subheader("💾 Скачать результаты")
-
-            col1, col2 = st.columns(2)
-
-            with col1:
-                # Скачать основной файл (без дублей)
-                output = io.BytesIO()
-                with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                    # Убираем столбец "Источник" для чистоты
-                    export_df = merged_df.drop(columns=['Источник'], errors='ignore')
-                    export_df.to_excel(writer, index=False, sheet_name='Объединенные города')
-                output.seek(0)
-
-                st.download_button(
-                    label=f"📥 Скачать объединенный файл ({len(merged_df)} городов)",
-                    data=output,
-                    file_name=f"merged_cities_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True,
-                    type="primary"
-                )
-
-            with col2:
-                # Скачать детальный отчет
-                output_detail = io.BytesIO()
-                with pd.ExcelWriter(output_detail, engine='openpyxl') as writer:
-                    merged_df.to_excel(writer, index=False, sheet_name='Детальный отчет')
-                output_detail.seek(0)
-
-                st.download_button(
-                    label=f"📊 Скачать детальный отчет",
-                    data=output_detail,
-                    file_name=f"merged_cities_detailed_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                    use_container_width=True
-                )
-
-            # Показываем распределение по источникам
-            st.markdown("---")
-            st.subheader("📈 Распределение по источникам")
-
-            source_counts = merged_df['Источник'].value_counts()
-
-            col1, col2 = st.columns(2)
-            with col1:
-                st.metric("📄 Из первого файла", source_counts.get('Файл 1', 0))
-            with col2:
-                st.metric("📄 Из второго файла", source_counts.get('Файл 2', 0))
-
-st.markdown("---")
 
 # ============================================
 # БЛОК: ВЫБОР РЕГИОНОВ И ГОРОДОВ
