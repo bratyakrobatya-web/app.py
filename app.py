@@ -190,8 +190,8 @@ st.markdown("""
         font-size: 1.3rem;
     }
 
-    /* Кнопки */
-    .stButton>button {
+    /* Кнопки - ГЛОБАЛЬНЫЙ СТИЛЬ ОТКЛЮЧЕН */
+    /* .stButton>button {
         border-radius: 10px;
         padding: 0.6rem 2rem;
         font-weight: 500;
@@ -205,7 +205,7 @@ st.markdown("""
         transform: translateY(-2px);
         box-shadow: 0 4px 16px rgba(234, 51, 36, 0.5);
         background: linear-gradient(135deg, #ff4539 0%, #ea3324 100%);
-    }
+    } */
 
     /* Кнопка secondary - стиль как у expander */
     .stButton button[kind="secondary"] {
@@ -214,6 +214,9 @@ st.markdown("""
         color: #1a1a1a !important;
         font-weight: 500;
         box-shadow: none !important;
+        border-radius: 10px;
+        padding: 0.6rem 2rem;
+        transition: all 0.3s ease;
     }
 
     .stButton button[kind="secondary"]:hover {
@@ -222,21 +225,40 @@ st.markdown("""
         box-shadow: none !important;
     }
 
+    /* Кнопка primary - КРАСНЫЙ СТИЛЬ */
+    .stButton button[kind="primary"] {
+        border-radius: 10px !important;
+        padding: 0.6rem 2rem !important;
+        font-weight: 500 !important;
+        border: none !important;
+        background: linear-gradient(135deg, #ea3324 0%, #c02a1e 100%) !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 2px 8px rgba(234, 51, 36, 0.3) !important;
+        color: white !important;
+    }
+
+    .stButton button[kind="primary"]:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 16px rgba(234, 51, 36, 0.5) !important;
+        background: linear-gradient(135deg, #ff4539 0%, #ea3324 100%) !important;
+    }
+
+    /* Download кнопки - КРАСНЫЙ СТИЛЬ */
     .stDownloadButton>button {
-        border-radius: 10px;
-        padding: 0.6rem 2rem;
-        font-weight: 500;
-        background: linear-gradient(135deg, #ea3324 0%, #c02a1e 100%);
-        border: none;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 8px rgba(234, 51, 36, 0.3);
+        border-radius: 10px !important;
+        padding: 0.6rem 2rem !important;
+        font-weight: 500 !important;
+        background: linear-gradient(135deg, #ea3324 0%, #c02a1e 100%) !important;
+        border: none !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 2px 8px rgba(234, 51, 36, 0.3) !important;
         color: white !important;
     }
 
     .stDownloadButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(234, 51, 36, 0.5);
-        background: linear-gradient(135deg, #ff4539 0%, #ea3324 100%);
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 16px rgba(234, 51, 36, 0.5) !important;
+        background: linear-gradient(135deg, #ff4539 0%, #ea3324 100%) !important;
         color: white !important;
     }
 
@@ -324,17 +346,17 @@ st.markdown("""
         border: 1px solid #dee2e6;
     }
 
-    /* Информационные блоки */
+    /* Информационные блоки - ВСЕ КРАСНЫЕ */
     .stInfo {
-        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
-        border-left: 5px solid #2196f3;
+        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%) !important;
+        border-left: 5px solid #ea3324 !important;
         border-radius: 10px;
         padding: 1rem;
     }
 
     .stSuccess {
-        background: rgba(76, 175, 80, 0.1);
-        border: 2px solid rgba(76, 175, 80, 0.4);
+        background: rgba(234, 51, 36, 0.1) !important;
+        border: 2px solid rgba(234, 51, 36, 0.4) !important;
         border-radius: 10px;
         padding: 1rem;
         color: #1a1a1a !important;
@@ -349,15 +371,15 @@ st.markdown("""
     }
 
     .stWarning {
-        background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
-        border-left: 5px solid #ff9800;
+        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%) !important;
+        border-left: 5px solid #ea3324 !important;
         border-radius: 10px;
         padding: 1rem;
     }
 
     .stError {
-        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
-        border-left: 5px solid #f44336;
+        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%) !important;
+        border-left: 5px solid #ea3324 !important;
         border-radius: 10px;
         padding: 1rem;
     }
@@ -523,12 +545,11 @@ st.markdown("""
     }
 
     /* =============================================== */
-    /* СТИЛИ ДЛЯ КНОПОК ВЫБОРА РЕЖИМА РАБОТЫ - АГРЕССИВНАЯ СТИЛИЗАЦИЯ */
+    /* СТИЛИ ДЛЯ КНОПОК ВЫБОРА РЕЖИМА РАБОТЫ - ЯНТАРНЫЕ КНОПКИ */
     /* =============================================== */
 
-    /* Максимально агрессивные стили для кнопок режима */
-    div[data-testid="column"]:has(button[key="mode_split"]) button,
-    div[data-testid="column"]:has(button[key="mode_single"]) button {
+    /* Максимально агрессивные стили для кнопок режима - БЕЗ :has() */
+    .mode-buttons-container .stButton button {
         width: 100% !important;
         height: 140px !important;
         min-height: 140px !important;
@@ -547,8 +568,7 @@ st.markdown("""
         position: relative !important;
     }
 
-    div[data-testid="column"]:has(button[key="mode_split"]) button::after,
-    div[data-testid="column"]:has(button[key="mode_single"]) button::after {
+    .mode-buttons-container .stButton button::after {
         content: '';
         position: absolute;
         bottom: 25px;
@@ -560,36 +580,31 @@ st.markdown("""
         opacity: 0.35;
     }
 
-    div[data-testid="column"]:has(button[key="mode_split"]) button:hover,
-    div[data-testid="column"]:has(button[key="mode_single"]) button:hover {
+    .mode-buttons-container .stButton button:hover {
         background: rgba(255, 170, 0, 0.25) !important;
         transform: translateY(-4px) !important;
         box-shadow: 0 12px 24px rgba(255, 170, 0, 0.45) !important;
     }
 
-    /* Выбранная кнопка (primary) */
-    div[data-testid="column"]:has(button[key="mode_split"]) button[kind="primary"],
-    div[data-testid="column"]:has(button[key="mode_single"]) button[kind="primary"] {
+    /* Выбранная кнопка (primary) - полностью янтарная */
+    .mode-buttons-container .stButton button[kind="primary"] {
         background: #FFAA00 !important;
         color: white !important;
         border-color: #FFAA00 !important;
         box-shadow: 0 10px 28px rgba(255, 170, 0, 0.65) !important;
     }
 
-    div[data-testid="column"]:has(button[key="mode_split"]) button[kind="primary"]:hover,
-    div[data-testid="column"]:has(button[key="mode_single"]) button[kind="primary"]:hover {
+    .mode-buttons-container .stButton button[kind="primary"]:hover {
         background: #E69500 !important;
         box-shadow: 0 14px 32px rgba(255, 170, 0, 0.75) !important;
     }
 
-    div[data-testid="column"]:has(button[key="mode_split"]) button[kind="primary"]::after,
-    div[data-testid="column"]:has(button[key="mode_single"]) button[kind="primary"]::after {
+    .mode-buttons-container .stButton button[kind="primary"]::after {
         opacity: 0.6;
     }
 
-    /* Переопределяем secondary */
-    div[data-testid="column"]:has(button[key="mode_split"]) button[kind="secondary"],
-    div[data-testid="column"]:has(button[key="mode_single"]) button[kind="secondary"] {
+    /* Неактивная кнопка (secondary) - прозрачная с янтарной рамкой */
+    .mode-buttons-container .stButton button[kind="secondary"] {
         background: rgba(255, 170, 0, 0.15) !important;
         border: 5px solid #FFAA00 !important;
         color: #FFAA00 !important;
@@ -1757,6 +1772,9 @@ if uploaded_file is not None and hh_areas is not None:
                 if 'export_mode' not in st.session_state:
                     st.session_state.export_mode = None
 
+                # Обертка для кнопок режима с кастомным классом
+                st.markdown('<div class="mode-buttons-container">', unsafe_allow_html=True)
+
                 # Обычные Streamlit кнопки с агрессивной CSS стилизацией
                 col1, col2 = st.columns(2)
 
@@ -1781,6 +1799,8 @@ if uploaded_file is not None and hh_areas is not None:
                     ):
                         st.session_state.export_mode = "single"
                         st.rerun()
+
+                st.markdown('</div>', unsafe_allow_html=True)
 
                 # Добавляем текст со стрелочкой вверх
                 st.markdown('<p style="text-align: center; margin-top: 10px; color: rgba(49, 51, 63, 0.6); font-size: 0.9rem;"><span style="color: #ea3324; font-size: 1.2rem;">↑</span> Выберите режим работы</p>', unsafe_allow_html=True)
