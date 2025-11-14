@@ -549,72 +549,9 @@ st.markdown("""
     }
 
     /* =============================================== */
-    /* СТИЛИ ДЛЯ КНОПОК ВЫБОРА РЕЖИМА РАБОТЫ - ЯНТАРНЫЕ КНОПКИ */
+    /* СТИЛИ ДЛЯ КНОПОК РЕЖИМА РАБОТЫ ПЕРЕНЕСЕНЫ INLINE */
+    /* (см. код около строки 1780 - inline стили перед кнопками) */
     /* =============================================== */
-
-    /* Максимально агрессивные стили для кнопок режима - БЕЗ :has() */
-    .mode-buttons-container .stButton button {
-        width: 100% !important;
-        height: 140px !important;
-        min-height: 140px !important;
-        max-height: 140px !important;
-        padding: 50px 70px !important;
-        font-size: 27px !important;
-        font-weight: 800 !important;
-        letter-spacing: 2px !important;
-        text-align: center !important;
-        border-radius: 12px !important;
-        border: 5px solid #FFAA00 !important;
-        background: rgba(255, 170, 0, 0.15) !important;
-        color: #FFAA00 !important;
-        transition: all 0.3s ease !important;
-        box-shadow: 0 8px 16px rgba(255, 170, 0, 0.3) !important;
-        position: relative !important;
-    }
-
-    .mode-buttons-container .stButton button::after {
-        content: '';
-        position: absolute;
-        bottom: 25px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 60px;
-        height: 3px;
-        background: currentColor;
-        opacity: 0.35;
-    }
-
-    .mode-buttons-container .stButton button:hover {
-        background: rgba(255, 170, 0, 0.25) !important;
-        transform: translateY(-4px) !important;
-        box-shadow: 0 12px 24px rgba(255, 170, 0, 0.45) !important;
-    }
-
-    /* Выбранная кнопка (primary) - полностью янтарная */
-    .mode-buttons-container .stButton button[kind="primary"] {
-        background: #FFAA00 !important;
-        color: white !important;
-        border-color: #FFAA00 !important;
-        box-shadow: 0 10px 28px rgba(255, 170, 0, 0.65) !important;
-    }
-
-    .mode-buttons-container .stButton button[kind="primary"]:hover {
-        background: #E69500 !important;
-        box-shadow: 0 14px 32px rgba(255, 170, 0, 0.75) !important;
-    }
-
-    .mode-buttons-container .stButton button[kind="primary"]::after {
-        opacity: 0.6;
-    }
-
-    /* Неактивная кнопка (secondary) - прозрачная с янтарной рамкой */
-    .mode-buttons-container .stButton button[kind="secondary"] {
-        background: rgba(255, 170, 0, 0.15) !important;
-        border: 5px solid #FFAA00 !important;
-        color: #FFAA00 !important;
-        font-weight: 800 !important;
-        box-shadow: 0 8px 16px rgba(255, 170, 0, 0.3) !important;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -1776,8 +1713,34 @@ if uploaded_file is not None and hh_areas is not None:
                 if 'export_mode' not in st.session_state:
                     st.session_state.export_mode = None
 
-                # Обертка для кнопок режима с кастомным классом
-                st.markdown('<div class="mode-buttons-container">', unsafe_allow_html=True)
+                # ИНЛАЙН СТИЛИ ДЛЯ КНОПОК РЕЖИМА - ПРЯМО ЗДЕСЬ
+                st.markdown("""
+                <style>
+                /* АГРЕССИВНЫЕ СТИЛИ ДЛЯ КНОПОК С КЛЮЧАМИ mode_split и mode_single */
+                button[data-testid*="baseButton"][aria-label*="РАЗДЕЛЕНИЕ"],
+                button[data-testid*="baseButton"][aria-label*="ЕДИНЫМ"],
+                [data-testid="column"] button[data-testid*="baseButton"] {
+                    width: 100% !important;
+                    height: 140px !important;
+                    min-height: 140px !important;
+                    padding: 50px 70px !important;
+                    font-size: 27px !important;
+                    font-weight: 800 !important;
+                    letter-spacing: 2px !important;
+                    border: 5px solid #FFAA00 !important;
+                    background: rgba(255, 170, 0, 0.15) !important;
+                    color: #FFAA00 !important;
+                    box-shadow: 0 8px 16px rgba(255, 170, 0, 0.3) !important;
+                    border-radius: 12px !important;
+                }
+
+                button[data-testid*="baseButton"][aria-label*="РАЗДЕЛЕНИЕ"]:hover,
+                button[data-testid*="baseButton"][aria-label*="ЕДИНЫМ"]:hover {
+                    background: rgba(255, 170, 0, 0.25) !important;
+                    transform: translateY(-4px) !important;
+                }
+                </style>
+                """, unsafe_allow_html=True)
 
                 # Обычные Streamlit кнопки с агрессивной CSS стилизацией
                 col1, col2 = st.columns(2)
@@ -1803,8 +1766,6 @@ if uploaded_file is not None and hh_areas is not None:
                     ):
                         st.session_state.export_mode = "single"
                         st.rerun()
-
-                st.markdown('</div>', unsafe_allow_html=True)
 
                 # Добавляем текст со стрелочкой вверх
                 st.markdown('<p style="text-align: center; margin-top: 10px; color: rgba(49, 51, 63, 0.6); font-size: 0.9rem;"><span style="color: #ea3324; font-size: 1.2rem;">↑</span> Выберите режим работы</p>', unsafe_allow_html=True)
