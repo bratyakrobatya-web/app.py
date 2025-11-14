@@ -500,6 +500,75 @@ st.markdown("""
         background: rgba(234, 51, 36, 0.05) !important;
         box-shadow: 0 2px 12px rgba(234, 51, 36, 0.2);
     }
+
+    /* =============================================== */
+    /* СТИЛИ ДЛЯ РАДИО-КНОПОК ВЫБОРА РЕЖИМА РАБОТЫ */
+    /* =============================================== */
+
+    /* Горизонтальное расположение радио-кнопок */
+    div.mode-selection-radio div.row-widget.stRadio > div,
+    div.mode-selection-radio .stRadio > div {
+        flex-direction: row !important;
+        align-items: stretch !important;
+        gap: 15px !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+    }
+
+    /* Увеличенные кнопки режима работы */
+    div.mode-selection-radio div.row-widget.stRadio > div[role="radiogroup"] > label[data-baseweb="radio"] {
+        background-color: rgba(234, 51, 36, 0.15) !important;
+        border: 3px solid #ea3324 !important;
+        border-radius: 10px !important;
+        padding: 30px 50px !important;
+        margin: 5px !important;
+        font-size: 20px !important;
+        font-weight: 700 !important;
+        cursor: pointer !important;
+        transition: all 0.3s ease !important;
+        min-width: 300px !important;
+        text-align: center !important;
+        box-shadow: 0 4px 8px rgba(234, 51, 36, 0.2) !important;
+        color: #ea3324 !important;
+        letter-spacing: 1px !important;
+        min-height: 90px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    /* Активная (выбранная) кнопка режима */
+    div.mode-selection-radio div.row-widget.stRadio > div[role="radiogroup"] > label[data-baseweb="radio"][aria-checked="true"] {
+        background-color: #ea3324 !important;
+        color: white !important;
+        border-color: #ea3324 !important;
+        font-weight: 700 !important;
+        box-shadow: 0 6px 20px rgba(234, 51, 36, 0.5) !important;
+    }
+
+    /* Hover эффект для кнопок режима */
+    div.mode-selection-radio div.row-widget.stRadio > div[role="radiogroup"] > label[data-baseweb="radio"]:hover {
+        background-color: rgba(234, 51, 36, 0.25) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 16px rgba(234, 51, 36, 0.4) !important;
+    }
+
+    div.mode-selection-radio div.row-widget.stRadio > div[role="radiogroup"] > label[data-baseweb="radio"][aria-checked="true"]:hover {
+        background-color: #d62e1f !important;
+        box-shadow: 0 8px 24px rgba(234, 51, 36, 0.6) !important;
+    }
+
+    /* Скрытие стандартного радио-индикатора */
+    div.mode-selection-radio div.row-widget.stRadio > div[role="radiogroup"] > label[data-baseweb="radio"] > div:first-child {
+        display: none !important;
+    }
+
+    /* Увеличение текста в радио-кнопках */
+    div.mode-selection-radio div.row-widget.stRadio > div[role="radiogroup"] > label > div:last-child {
+        font-size: 20px !important;
+        font-weight: 700 !important;
+        text-align: center !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -1661,75 +1730,33 @@ if uploaded_file is not None and hh_areas is not None:
                 if 'export_mode' not in st.session_state:
                     st.session_state.export_mode = None
 
-                # CSS для стилизации кнопок ярким красным цветом
-                st.markdown("""
-                <style>
-                /* Стилизация кнопок режима - яркий красный, большие */
-                div.mode-buttons-container .stButton > button {
-                    border-radius: 10px !important;
-                    border: 3px solid #ea3324 !important;
-                    background: rgba(234, 51, 36, 0.15) !important;
-                    transition: all 0.3s ease !important;
-                    padding: 25px 20px !important;
-                    font-size: 18px !important;
-                    font-weight: 700 !important;
-                    letter-spacing: 1px !important;
-                    color: #ea3324 !important;
-                    min-height: 80px !important;
-                    width: 100% !important;
-                }
+                # Wrapper для радио-кнопок режима
+                st.markdown('<div class="mode-selection-radio">', unsafe_allow_html=True)
 
-                div.mode-buttons-container .stButton > button:hover {
-                    background: rgba(234, 51, 36, 0.25) !important;
-                    box-shadow: 0 4px 16px rgba(234, 51, 36, 0.4) !important;
-                    transform: translateY(-2px) !important;
-                }
+                # Используем radio вместо кнопок для лучшей стилизации
+                mode_options = ["РАЗДЕЛЕНИЕ ПО ВАКАНСИЯМ", "ЕДИНЫМ ФАЙЛОМ"]
+                current_index = 0 if st.session_state.export_mode == "split" else (1 if st.session_state.export_mode == "single" else None)
 
-                /* Выбранная кнопка (primary) */
-                div.mode-buttons-container .stButton > button[kind="primary"],
-                div.mode-buttons-container .stButton > button[data-baseweb="button"][kind="primary"] {
-                    background: #ea3324 !important;
-                    border-color: #ea3324 !important;
-                    color: white !important;
-                    box-shadow: 0 6px 20px rgba(234, 51, 36, 0.5) !important;
-                }
+                selected_mode = st.radio(
+                    "Выберите режим работы:",
+                    options=mode_options,
+                    index=current_index,
+                    key="mode_radio_selection",
+                    horizontal=True,
+                    label_visibility="collapsed"
+                )
 
-                div.mode-buttons-container .stButton > button[kind="primary"]:hover,
-                div.mode-buttons-container .stButton > button[data-baseweb="button"][kind="primary"]:hover {
-                    background: #d62e1f !important;
-                    box-shadow: 0 8px 24px rgba(234, 51, 36, 0.6) !important;
-                    transform: translateY(-2px) !important;
-                }
-                </style>
-                """, unsafe_allow_html=True)
-
-                # Wrapper для кнопок режима
-                st.markdown('<div class="mode-buttons-container">', unsafe_allow_html=True)
-                col1, col2 = st.columns(2)
-
-                with col1:
-                    selected_split = st.session_state.export_mode == "split"
-                    if st.button(
-                        "РАЗДЕЛЕНИЕ ПО ВАКАНСИЯМ",
-                        use_container_width=True,
-                        type="primary" if selected_split else "secondary",
-                        key="mode_split"
-                    ):
+                # Обновляем session_state на основе выбора
+                if selected_mode == "РАЗДЕЛЕНИЕ ПО ВАКАНСИЯМ":
+                    if st.session_state.export_mode != "split":
                         st.session_state.export_mode = "split"
                         st.rerun()
-
-                with col2:
-                    selected_single = st.session_state.export_mode == "single"
-                    if st.button(
-                        "ЕДИНЫМ ФАЙЛОМ",
-                        use_container_width=True,
-                        type="primary" if selected_single else "secondary",
-                        key="mode_single"
-                    ):
+                elif selected_mode == "ЕДИНЫМ ФАЙЛОМ":
+                    if st.session_state.export_mode != "single":
                         st.session_state.export_mode = "single"
                         st.rerun()
 
-                # Закрываем wrapper для кнопок
+                # Закрываем wrapper
                 st.markdown('</div>', unsafe_allow_html=True)
 
                 # Добавляем текст со стрелочкой вверх
