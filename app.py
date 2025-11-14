@@ -297,6 +297,14 @@ st.markdown("""
         box-shadow: none !important;
     }
 
+    /* Tab кнопки - размер как обычные кнопки */
+    .stTabs [data-baseweb="tab-list"] button {
+        padding: 10px 20px !important;
+        font-size: 14px !important;
+        font-family: 'hhsans-Medium', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        font-weight: 500 !important;
+    }
+
     /* File Uploader */
     [data-testid="stFileUploader"] {
         background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
@@ -324,52 +332,49 @@ st.markdown("""
         font-weight: 500;
     }
 
-    /* Inputs - Selectbox простые без градиента */
+    /* Inputs - Selectbox с черной окантовкой */
     div[data-baseweb="select"] > div,
     .stSelectbox > div > div,
     [data-testid="stSelectbox"] > div > div {
         position: relative;
-        border: 1px solid #dee2e6 !important;
-        border-radius: 20px !important;
+        border: 2px solid #1a1a1a !important;
+        border-radius: 10px !important;
         background: white !important;
         transition: all 0.3s ease !important;
         cursor: pointer !important;
-        padding: 10px 20px !important;
     }
 
     div[data-baseweb="select"] > div:hover,
     .stSelectbox:hover > div > div,
     [data-testid="stSelectbox"]:hover > div > div {
-        border-color: var(--ui-color) !important;
-        box-shadow: 0 2px 8px rgba(244, 48, 31, 0.15);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        filter: brightness(1.02);
     }
 
     div[data-baseweb="select"] > div:focus-within,
     .stSelectbox > div > div:focus-within,
     [data-testid="stSelectbox"] > div > div:focus-within {
-        border-color: var(--ui-color) !important;
-        box-shadow: 0 0 0 3px rgba(244, 48, 31, 0.15) !important;
+        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1) !important;
     }
 
     .stTextInput > div > div {
-        border-radius: 20px;
+        border-radius: 10px;
         border: 1px solid #dee2e6;
     }
 
-    /* MultiSelect простой без градиента */
+    /* MultiSelect с черной окантовкой */
     .stMultiSelect > div > div {
         position: relative;
-        border: 1px solid #dee2e6 !important;
-        border-radius: 20px !important;
+        border: 2px solid #1a1a1a !important;
+        border-radius: 10px !important;
         background: white !important;
         transition: all 0.3s ease !important;
         cursor: pointer !important;
-        padding: 10px 20px !important;
     }
 
     .stMultiSelect > div > div:hover {
-        border-color: var(--ui-color) !important;
-        box-shadow: 0 2px 8px rgba(244, 48, 31, 0.15);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        filter: brightness(1.02);
     }
 
     /* Информационные блоки - С ГРАДИЕНТОМ */
@@ -1830,7 +1835,7 @@ with st.sidebar:
 
 # Выбор режима работы
 st.subheader("🎯 Выбор режима работы")
-mode_tab1, mode_tab2 = st.tabs(["📁 Обработка одного файла", "🔗 Объединение двух файлов"])
+mode_tab1, mode_tab2 = st.tabs(["Обработка одного файла", "Объединение двух файлов"])
 
 # ============================================
 # РЕЖИМ 1: ОБРАБОТКА ОДНОГО ФАЙЛА
