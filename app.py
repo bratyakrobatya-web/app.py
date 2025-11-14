@@ -530,7 +530,7 @@ st.markdown("""
     div[data-testid="column"]:has(button[key="mode_split"]) button,
     div[data-testid="column"]:has(button[key="mode_single"]) button {
         width: 100%;
-        height: 140px;
+        height: 200px;
         min-height: 140px;
         max-height: 140px;
         padding: 50px 70px;
