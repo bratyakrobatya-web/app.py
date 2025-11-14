@@ -30,6 +30,24 @@ st.set_page_config(
 # Кастомный CSS для современного дизайна
 st.markdown("""
 <style>
+    /* =============================================== */
+    /* CSS ПЕРЕМЕННЫЕ ДЛЯ ГРАДИЕНТА */
+    /* =============================================== */
+    :root {
+        --gradient-main: radial-gradient(at 95% 5%, #FF4500 0%, transparent 60%),
+                         radial-gradient(at 10% 90%, #4B0082 0%, transparent 55%),
+                         radial-gradient(at 25% 40%, #C6A4F8 0%, transparent 65%),
+                         #B22222;
+
+        --primary-color: #B22222;
+        --primary-light: #FF4500;
+        --primary-dark: #4B0082;
+        --primary-accent: #C6A4F8;
+
+        --shadow-primary: rgba(178, 34, 34, 0.3);
+        --shadow-hover: rgba(178, 34, 34, 0.5);
+    }
+
     /* Подключение шрифта hhsans Regular */
     @font-face {
         font-family: 'hhsans';
@@ -61,7 +79,7 @@ st.markdown("""
         display: block;
     }
 
-    /* Красные круги с цифрами */
+    /* Круги с цифрами с градиентом */
     .step-number {
         display: inline-flex;
         align-items: center;
@@ -69,8 +87,8 @@ st.markdown("""
         width: 32px;
         height: 32px;
         background: transparent;
-        color: #ea3324;
-        border: 2px solid #ea3324;
+        color: var(--primary-color);
+        border: 2px solid var(--primary-color);
         border-radius: 50%;
         font-weight: bold;
         font-size: 16px;
@@ -78,14 +96,14 @@ st.markdown("""
         vertical-align: middle;
     }
 
-    /* Белая галочка в красном круге */
+    /* Белая галочка в круге с градиентом */
     .check-circle {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         width: 20px;
         height: 20px;
-        background: #ea3324;
+        background: var(--gradient-main);
         color: white;
         border-radius: 50%;
         font-weight: bold;
@@ -196,22 +214,22 @@ st.markdown("""
 
     /* Простые стили без специальных селекторов */
 
-    /* Download кнопки - КРАСНЫЙ СТИЛЬ */
+    /* Download кнопки - ГРАДИЕНТНЫЙ СТИЛЬ */
     .stDownloadButton>button {
         border-radius: 10px !important;
         padding: 0.6rem 2rem !important;
         font-weight: 500 !important;
-        background: linear-gradient(135deg, #ea3324 0%, #c02a1e 100%) !important;
+        background: var(--gradient-main) !important;
         border: none !important;
         transition: all 0.3s ease !important;
-        box-shadow: 0 2px 8px rgba(234, 51, 36, 0.3) !important;
+        box-shadow: 0 2px 8px var(--shadow-primary) !important;
         color: white !important;
     }
 
     .stDownloadButton>button:hover {
         transform: translateY(-2px) !important;
-        box-shadow: 0 4px 16px rgba(234, 51, 36, 0.5) !important;
-        background: linear-gradient(135deg, #ff4539 0%, #ea3324 100%) !important;
+        box-shadow: 0 4px 16px var(--shadow-hover) !important;
+        filter: brightness(1.1) !important;
         color: white !important;
     }
 
@@ -225,7 +243,7 @@ st.markdown("""
     }
 
     [data-testid="stFileUploader"]:hover {
-        border-color: #ea3324;
+        border-color: var(--primary-color);
         background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
     }
 
@@ -238,15 +256,15 @@ st.markdown("""
 
 
     .uploadedFileName {
-        color: #ea3324;
+        color: var(--primary-color);
         font-weight: 500;
     }
 
-    /* Inputs - Selectbox с красной окантовкой */
+    /* Inputs - Selectbox с градиентной окантовкой */
     div[data-baseweb="select"] > div,
     .stSelectbox > div > div,
     [data-testid="stSelectbox"] > div > div {
-        border: 2px solid #ea3324 !important;
+        border: 2px solid var(--primary-color) !important;
         border-radius: 10px;
         background: transparent !important;
         transition: all 0.3s ease !important;
@@ -255,15 +273,15 @@ st.markdown("""
     div[data-baseweb="select"] > div:hover,
     .stSelectbox:hover > div > div,
     [data-testid="stSelectbox"]:hover > div > div {
-        background: rgba(234, 51, 36, 0.05) !important;
-        box-shadow: 0 2px 12px rgba(234, 51, 36, 0.2);
+        background: rgba(178, 34, 34, 0.05) !important;
+        box-shadow: 0 2px 12px var(--shadow-primary);
     }
 
     div[data-baseweb="select"] > div:focus-within,
     .stSelectbox > div > div:focus-within,
     [data-testid="stSelectbox"] > div > div:focus-within {
-        border-color: #ea3324 !important;
-        box-shadow: 0 0 0 3px rgba(234, 51, 36, 0.2) !important;
+        border-color: var(--primary-color) !important;
+        box-shadow: 0 0 0 3px var(--shadow-primary) !important;
     }
 
     .stTextInput > div > div {
@@ -276,17 +294,17 @@ st.markdown("""
         border: 1px solid #dee2e6;
     }
 
-    /* Информационные блоки - ВСЕ КРАСНЫЕ */
+    /* Информационные блоки - С ГРАДИЕНТОМ */
     .stInfo {
-        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%) !important;
-        border-left: 5px solid #ea3324 !important;
+        background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%) !important;
+        border-left: 5px solid var(--primary-color) !important;
         border-radius: 10px;
         padding: 1rem;
     }
 
     .stSuccess {
-        background: rgba(234, 51, 36, 0.1) !important;
-        border: 2px solid rgba(234, 51, 36, 0.4) !important;
+        background: rgba(178, 34, 34, 0.1) !important;
+        border: 2px solid var(--primary-color) !important;
         border-radius: 10px;
         padding: 1rem;
         color: #1a1a1a !important;
@@ -301,15 +319,15 @@ st.markdown("""
     }
 
     .stWarning {
-        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%) !important;
-        border-left: 5px solid #ea3324 !important;
+        background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%) !important;
+        border-left: 5px solid var(--primary-color) !important;
         border-radius: 10px;
         padding: 1rem;
     }
 
     .stError {
-        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%) !important;
-        border-left: 5px solid #ea3324 !important;
+        background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%) !important;
+        border-left: 5px solid var(--primary-color) !important;
         border-radius: 10px;
         padding: 1rem;
     }
@@ -323,7 +341,7 @@ st.markdown("""
     [data-testid="stSidebar"] h1 {
         font-size: 1.5rem;
         padding-bottom: 1rem;
-        border-bottom: 2px solid #ea3324;
+        border-bottom: 2px solid var(--primary-color);
     }
 
     /* Expander */
@@ -344,22 +362,22 @@ st.markdown("""
         height: 4px !important;
     }
 
-    /* Slider - активная часть */
+    /* Slider - активная часть с градиентом */
     .stSlider > div > div > div {
-        background: #ea3324 !important;
+        background: var(--gradient-main) !important;
     }
 
     /* Тумблер слайдера - простой круг */
     .stSlider > div > div > div > div {
         background-color: white !important;
-        border: 2px solid #ea3324 !important;
+        border: 2px solid var(--primary-color) !important;
         height: 20px !important;
     }
 
     .stSlider > div > div > div > div:hover {
         background-color: white !important;
-        box-shadow: 0 0 8px rgba(234, 51, 36, 0.4) !important;
-        border: 2px solid #ea3324 !important;
+        box-shadow: 0 0 8px var(--shadow-primary) !important;
+        border: 2px solid var(--primary-color) !important;
     }
 
     /* Вкладки */
@@ -381,9 +399,9 @@ st.markdown("""
     }
 
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #ea3324 0%, #c02a1e 100%);
+        background: var(--gradient-main);
         color: white;
-        border-bottom: 2px solid #ea3324;
+        border-bottom: 2px solid var(--primary-color);
     }
 
     .stTabs [data-baseweb="tab"]:hover {
@@ -391,7 +409,7 @@ st.markdown("""
     }
 
     .stTabs [aria-selected="true"]:hover {
-        background: linear-gradient(135deg, #c02a1e 0%, #ea3324 100%);
+        filter: brightness(1.1);
     }
 
     /* DataFrame */
@@ -425,9 +443,9 @@ st.markdown("""
         border: 1px solid #f0f0f0;
     }
 
-    /* Прогресс бар */
+    /* Прогресс бар с градиентом */
     .stProgress > div > div {
-        background: linear-gradient(90deg, #ea3324 0%, #c02a1e 100%);
+        background: var(--gradient-main);
         border-radius: 10px;
     }
 
@@ -440,11 +458,11 @@ st.markdown("""
     }
 
 
-    /* Кнопка Browse files в File Uploader - красная рамка */
+    /* Кнопка Browse files в File Uploader - градиентная рамка */
     [data-testid="stFileUploader"] button {
         background: transparent !important;
-        border: 2px solid #ea3324 !important;
-        color: #ea3324 !important;
+        border: 2px solid var(--primary-color) !important;
+        color: var(--primary-color) !important;
         border-radius: 10px;
         padding: 0.5rem 1.5rem;
         font-weight: 500;
@@ -452,9 +470,9 @@ st.markdown("""
     }
 
     [data-testid="stFileUploader"] button:hover {
-        background: rgba(234, 51, 36, 0.1) !important;
+        background: rgba(178, 34, 34, 0.1) !important;
         transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(234, 51, 36, 0.3) !important;
+        box-shadow: 0 4px 16px var(--shadow-primary) !important;
     }
 
     /* Селектор MultiSelect - БЕЗ красной рамки (одинарная рамка) */
@@ -1748,7 +1766,7 @@ if uploaded_file is not None and hh_areas is not None:
                         st.rerun()
 
                 # Добавляем текст со стрелочкой вверх
-                st.markdown('<p style="text-align: center; margin-top: 10px; color: rgba(49, 51, 63, 0.6); font-size: 0.9rem;"><span style="color: #ea3324; font-size: 1.2rem;">↑</span> Выберите режим работы</p>', unsafe_allow_html=True)
+                st.markdown('<p style="text-align: center; margin-top: 10px; color: rgba(49, 51, 63, 0.6); font-size: 0.9rem;"><span style="color: #B22222; font-size: 1.2rem;">↑</span> Выберите режим работы</p>', unsafe_allow_html=True)
 
                 # Показываем выбранный режим (скрыто)
                 # if st.session_state.export_mode == "split":
