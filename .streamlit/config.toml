@@ -3,7 +3,7 @@ primaryColor = "#F97316"
 backgroundColor = "#ffffff"
 secondaryBackgroundColor = "#f8f9fa"
 textColor = "#1a1a1a"
-font = "hhsans-Regular"
+font = "sans serif"
 
 [server]
 maxUploadSize = 200
