@@ -34,9 +34,9 @@ st.markdown("""
     /* CSS ПЕРЕМЕННЫЕ ДЛЯ ГРАДИЕНТА */
     /* =============================================== */
     :root {
-        /* Мягкий розово-красный градиент для кнопок */
-        --gradient-main: linear-gradient(135deg, #FF6B9D 0%, #FF0000 100%);
-        --gradient-main-hover: linear-gradient(135deg, #FF5757 0%, #D32F2F 100%);
+        /* Мягкий красно-розовый градиент для кнопок (обратный) */
+        --gradient-main: linear-gradient(135deg, #FF0000 0%, #FF6B9D 100%);
+        --gradient-main-hover: linear-gradient(135deg, #D32F2F 0%, #FF5757 100%);
 
         /* Мягкий розово-красный градиент для селекторов (окантовка) */
         --gradient-selector: linear-gradient(90deg,
@@ -246,10 +246,10 @@ st.markdown("""
     /* Все обычные кнопки (включая primary и secondary) - МЯГКИЙ ГРАДИЕНТ */
     .stButton>button {
         border-radius: 20px !important;
-        padding: 14px 24px !important;
+        padding: 10px 20px !important;
         font-family: 'hhsans-Medium', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
         font-weight: 500 !important;
-        font-size: 16px !important;
+        font-size: 14px !important;
         background: var(--gradient-main) !important;
         border: none !important;
         transition: all 0.3s ease !important;
@@ -280,10 +280,10 @@ st.markdown("""
     /* Download кнопки - МЯГКИЙ ГРАДИЕНТ */
     .stDownloadButton>button {
         border-radius: 20px !important;
-        padding: 14px 24px !important;
+        padding: 10px 20px !important;
         font-family: 'hhsans-Medium', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
         font-weight: 500 !important;
-        font-size: 16px !important;
+        font-size: 14px !important;
         background: var(--gradient-main) !important;
         border: none !important;
         transition: all 0.3s ease !important;
@@ -343,29 +343,19 @@ st.markdown("""
     .stSelectbox > div > div,
     [data-testid="stSelectbox"] > div > div {
         position: relative;
-        padding: 1.5px !important;
+        border: 2px solid transparent !important;
         border-radius: 20px !important;
-        background: var(--gradient-selector) !important;
+        background: linear-gradient(white, white) padding-box,
+                    var(--gradient-selector) border-box !important;
         transition: all 0.3s ease !important;
         cursor: pointer !important;
-    }
-
-    /* Внутренний белый фон селектора */
-    div[data-baseweb="select"] > div > div,
-    .stSelectbox > div > div > div,
-    [data-testid="stSelectbox"] > div > div > div {
-        background: white !important;
-        border-radius: 18px !important;
         padding: 14px 20px !important;
-        font-size: 15px !important;
-        color: #333 !important;
     }
 
     div[data-baseweb="select"] > div:hover,
     .stSelectbox:hover > div > div,
     [data-testid="stSelectbox"]:hover > div > div {
         transform: translateX(4px);
-        padding: 2px !important;
         box-shadow: 0 4px 16px rgba(255, 107, 157, 0.25);
     }
 
@@ -383,17 +373,16 @@ st.markdown("""
     /* MultiSelect с мягким розово-красным градиентом на окантовке */
     .stMultiSelect > div > div {
         position: relative;
-        padding: 1.5px !important;
+        border: 2px solid transparent !important;
         border-radius: 20px !important;
-        background: var(--gradient-selector) !important;
+        background: linear-gradient(white, white) padding-box,
+                    var(--gradient-selector) border-box !important;
         transition: all 0.3s ease !important;
         cursor: pointer !important;
-        border: none !important;
     }
 
     .stMultiSelect > div > div:hover {
         transform: translateX(4px);
-        padding: 2px !important;
         box-shadow: 0 4px 16px rgba(255, 107, 157, 0.25);
     }
 
@@ -570,9 +559,9 @@ st.markdown("""
         border: none !important;
         color: white !important;
         border-radius: 20px !important;
-        padding: 14px 24px !important;
+        padding: 10px 20px !important;
         font-weight: 500 !important;
-        font-size: 16px !important;
+        font-size: 14px !important;
         transition: all 0.3s ease !important;
         cursor: pointer !important;
     }
@@ -3375,6 +3364,148 @@ with mode_tab2:
             display_df.insert(0, '№', range(1, len(display_df) + 1))
 
             st.dataframe(display_df, use_container_width=True, height=400, hide_index=True)
+
+            # БЛОК: РЕДАКТИРОВАНИЕ ГОРОДОВ С СОВПАДЕНИЕМ ≤ 90%
+            # Фильтруем города для редактирования
+            editable_rows = merged_df[
+                (merged_df['Совпадение %'] <= 90) &
+                (merged_df['Итоговое гео'].notna())
+            ].copy()
+
+            # Сортируем: сначала "Нет совпадения", затем по возрастанию процента
+            if len(editable_rows) > 0:
+                # Создаем приоритет: 0 для "Нет совпадения", 1 для остальных
+                editable_rows['_sort_priority'] = editable_rows['Статус'].apply(
+                    lambda x: 0 if '❌ Не найдено' in str(x) else 1
+                )
+                editable_rows = editable_rows.sort_values(
+                    ['_sort_priority', 'Совпадение %'],
+                    ascending=[True, True]
+                )
+                editable_rows = editable_rows.drop(columns=['_sort_priority'])
+
+            if len(editable_rows) > 0:
+                st.markdown("---")
+                st.subheader("✏️ Редактирование городов с совпадением ≤ 90%")
+                st.info(f"Найдено **{len(editable_rows)}** городов, доступных для редактирования")
+
+                # Инициализируем manual_selections если нет
+                if 'manual_selections_merge' not in st.session_state:
+                    st.session_state.manual_selections_merge = {}
+
+                # Обертка для черной окантовки
+                st.markdown('<div class="edit-cities-block">', unsafe_allow_html=True)
+
+                for idx, row in editable_rows.iterrows():
+                    with st.container():
+                        # Используем индекс как row_id
+                        row_id = f"merge_{idx}"
+                        city_name = row['Исходное название']
+
+                        # Получаем кандидатов для этого города
+                        candidates = get_candidates_by_word(city_name, get_russian_cities(hh_areas), limit=20)
+
+                        current_value = row['Итоговое гео']
+                        current_match = row['Совпадение %']
+
+                        # Добавляем текущее значение в список, если его нет
+                        if current_value and current_value != city_name:
+                            candidate_names = [c[0] for c in candidates]
+                            if current_value not in candidate_names:
+                                candidates.append((current_value, current_match))
+
+                        # Сортируем кандидатов по убыванию процента совпадения
+                        candidates.sort(key=lambda x: x[1], reverse=True)
+
+                        # Формируем список опций с процентами
+                        if candidates:
+                            options = ["❌ Нет совпадения"] + [f"{c[0]} ({c[1]:.1f}%)" for c in candidates[:20]]
+                        else:
+                            options = ["❌ Нет совпадения"]
+
+                        # Определяем выбранный элемент
+                        if row_id in st.session_state.manual_selections_merge:
+                            selected_value = st.session_state.manual_selections_merge[row_id]
+                            if selected_value == "❌ Нет совпадения":
+                                default_idx = 0
+                            else:
+                                default_idx = 0
+                                for i, c in enumerate(candidates):
+                                    if c[0] == selected_value:
+                                        default_idx = i + 1
+                                        break
+                        else:
+                            default_idx = 0
+                            if current_value:
+                                for i, c in enumerate(candidates):
+                                    if c[0] == current_value:
+                                        default_idx = i + 1
+                                        break
+
+                        # Определяем цвет окантовки
+                        border_color = "#ea3324"
+
+                        col1, col2, col3, col4 = st.columns([2, 3, 1, 1])
+
+                        with col1:
+                            st.markdown(f"**{city_name}**")
+
+                        with col2:
+                            selected = st.selectbox(
+                                "Выберите город:",
+                                options=options,
+                                index=default_idx,
+                                key=f"select_{row_id}",
+                                label_visibility="collapsed"
+                            )
+
+                            # Inject CSS для этого конкретного selectbox
+                            st.markdown(f"""
+                            <style>
+                            div[data-testid="stSelectbox"]:has(select[id*="select_{row_id}"]) > div > div,
+                            div[data-testid="stSelectbox"]:has(select[id*="select_{row_id}"]) > div > div > div,
+                            div[data-testid="stSelectbox"]:has(select[id*="select_{row_id}"]) [data-baseweb="select"] > div {{
+                                border-color: {border_color} !important;
+                                border: 2px solid {border_color} !important;
+                            }}
+                            </style>
+                            """, unsafe_allow_html=True)
+
+                            if selected == "❌ Нет совпадения":
+                                st.session_state.manual_selections_merge[row_id] = "❌ Нет совпадения"
+                                # Обновляем DataFrame
+                                merged_df.at[idx, 'Итоговое гео'] = None
+                                merged_df.at[idx, 'ID HH'] = None
+                                merged_df.at[idx, 'Регион'] = None
+                                merged_df.at[idx, 'Совпадение %'] = 0
+                                merged_df.at[idx, 'Статус'] = '❌ Не найдено'
+                            else:
+                                selected_city = selected.rsplit(' (', 1)[0]
+                                st.session_state.manual_selections_merge[row_id] = selected_city
+                                # Обновляем DataFrame
+                                if selected_city in hh_areas:
+                                    hh_info = hh_areas[selected_city]
+                                    merged_df.at[idx, 'Итоговое гео'] = hh_info['name']
+                                    merged_df.at[idx, 'ID HH'] = hh_info['id']
+                                    merged_df.at[idx, 'Регион'] = hh_info['parent']
+                                    # Пересчитываем процент
+                                    score = fuzz.WRatio(normalize_city_name(city_name), normalize_city_name(hh_info['name']))
+                                    merged_df.at[idx, 'Совпадение %'] = round(score, 1)
+                                    merged_df.at[idx, 'Статус'] = '✅ Точное' if score >= 95 else '⚠️ Похожее'
+
+                        with col3:
+                            st.text(f"{row['Совпадение %']}%")
+
+                        with col4:
+                            st.text(row['Статус'])
+
+                        st.markdown("<hr style='margin-top: 5px; margin-bottom: 5px;'>", unsafe_allow_html=True)
+
+                # Закрываем обертку для черной окантовки
+                st.markdown('</div>', unsafe_allow_html=True)
+
+                # Обновляем результат в session_state
+                st.session_state.merged_result = merged_df
 
             # Кнопки скачивания
             st.markdown("---")
