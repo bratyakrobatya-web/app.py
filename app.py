@@ -206,7 +206,7 @@ st.markdown("""
         color: #1a1a1a;
         margin-bottom: 0.5rem;
         font-size: 33px;
-        letter-spacing: 1px;
+        letter-spacing: 5px;
     }
 
     h2 {
@@ -216,7 +216,7 @@ st.markdown("""
         margin-top: 2rem;
         margin-bottom: 1rem;
         font-size: 23px;
-        letter-spacing: 1px;
+        letter-spacing: 5px;
     }
 
     h3 {
@@ -224,7 +224,7 @@ st.markdown("""
         font-weight: normal;
         color: #4a4a4a;
         font-size: 16px;
-        letter-spacing: 1px;
+        letter-spacing: 5px;
     }
 
     /* =============================================== */
