@@ -191,50 +191,10 @@ st.markdown("""
     }
 
     /* =============================================== */
-    /* ГЛОБАЛЬНЫЕ СТИЛИ ДЛЯ ОБЫЧНЫХ КНОПОК (primaryColor отключен в config.toml) */
+    /* СТИЛИ КНОПОК - УПРАВЛЯЮТСЯ ЧЕРЕЗ config.toml */
     /* =============================================== */
 
-    /* ВСЕ кнопки по умолчанию - КРАСНЫЕ (исключая кнопки режима работы) */
-    .stButton button:not([aria-label*="РАЗДЕЛЕНИЕ"]):not([aria-label*="ЕДИНЫМ"]),
-    button[kind="primary"]:not([aria-label*="РАЗДЕЛЕНИЕ"]):not([aria-label*="ЕДИНЫМ"]),
-    button[data-testid*="baseButton"][kind="primary"]:not([aria-label*="РАЗДЕЛЕНИЕ"]):not([aria-label*="ЕДИНЫМ"]) {
-        border-radius: 10px !important;
-        padding: 0.6rem 2rem !important;
-        font-weight: 500 !important;
-        border: none !important;
-        background: linear-gradient(135deg, #ea3324 0%, #c02a1e 100%) !important;
-        transition: all 0.3s ease !important;
-        box-shadow: 0 2px 8px rgba(234, 51, 36, 0.3) !important;
-        color: white !important;
-    }
-
-    .stButton button:not([aria-label*="РАЗДЕЛЕНИЕ"]):not([aria-label*="ЕДИНЫМ"]):hover,
-    button[kind="primary"]:not([aria-label*="РАЗДЕЛЕНИЕ"]):not([aria-label*="ЕДИНЫМ"]):hover,
-    button[data-testid*="baseButton"][kind="primary"]:not([aria-label*="РАЗДЕЛЕНИЕ"]):not([aria-label*="ЕДИНЫМ"]):hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 4px 16px rgba(234, 51, 36, 0.5) !important;
-        background: linear-gradient(135deg, #ff4539 0%, #ea3324 100%) !important;
-    }
-
-    /* Secondary кнопки - СЕРЫЕ (исключая кнопки режима работы) */
-    button[kind="secondary"]:not([aria-label*="РАЗДЕЛЕНИЕ"]):not([aria-label*="ЕДИНЫМ"]),
-    button[data-testid*="baseButton"][kind="secondary"]:not([aria-label*="РАЗДЕЛЕНИЕ"]):not([aria-label*="ЕДИНЫМ"]) {
-        background: #f8f9fa !important;
-        border: 1px solid #e9ecef !important;
-        color: #1a1a1a !important;
-        font-weight: 500 !important;
-        box-shadow: none !important;
-        border-radius: 10px !important;
-        padding: 0.6rem 2rem !important;
-        transition: all 0.3s ease !important;
-    }
-
-    button[kind="secondary"]:not([aria-label*="РАЗДЕЛЕНИЕ"]):not([aria-label*="ЕДИНЫМ"]):hover,
-    button[data-testid*="baseButton"][kind="secondary"]:not([aria-label*="РАЗДЕЛЕНИЕ"]):not([aria-label*="ЕДИНЫМ"]):hover {
-        background: #e9ecef !important;
-        transform: none !important;
-        box-shadow: none !important;
-    }
+    /* Простые стили без специальных селекторов */
 
     /* Download кнопки - КРАСНЫЙ СТИЛЬ */
     .stDownloadButton>button {
@@ -538,133 +498,9 @@ st.markdown("""
     }
 
     /* =============================================== */
-    /* СТИЛИ ДЛЯ КНОПОК РЕЖИМА РАБОТЫ - ЯНТАРНЫЕ */
+    /* КНОПКИ РЕЖИМА РАБОТЫ - БЕЗ СПЕЦИАЛЬНОЙ СТИЛИЗАЦИИ */
     /* =============================================== */
-
-    /* Класс для янтарных кнопок режима работы */
-    .amber-mode-button {
-        width: 100% !important;
-        height: 140px !important;
-        min-height: 140px !important;
-        max-height: 140px !important;
-        padding: 50px 70px !important;
-        font-size: 27px !important;
-        font-weight: 800 !important;
-        letter-spacing: 2px !important;
-        text-align: center !important;
-        line-height: normal !important;
-        border: 5px solid #FFAA00 !important;
-        background: rgba(255, 170, 0, 0.15) !important;
-        color: #FFAA00 !important;
-        box-shadow: 0 8px 16px rgba(255, 170, 0, 0.3) !important;
-        border-radius: 12px !important;
-        transition: all 0.3s ease !important;
-    }
-
-    .amber-mode-button:hover {
-        background: rgba(255, 170, 0, 0.25) !important;
-        transform: translateY(-4px) !important;
-        box-shadow: 0 12px 24px rgba(255, 170, 0, 0.45) !important;
-    }
-
-    .amber-mode-button.selected {
-        background: #FFAA00 !important;
-        color: white !important;
-        border-color: #FFAA00 !important;
-        box-shadow: 0 10px 28px rgba(255, 170, 0, 0.65) !important;
-    }
 </style>
-
-<script>
-// СУПЕР АГРЕССИВНЫЙ JAVASCRIPT для стилизации кнопок режима работы
-(function() {
-    'use strict';
-
-    function applyAmberStyles(button) {
-        // Добавляем класс
-        button.classList.add('amber-mode-button');
-
-        // Применяем стили через cssText (БОЛЕЕ АГРЕССИВНО)
-        const amberStyles = `
-            width: 100% !important;
-            height: 140px !important;
-            min-height: 140px !important;
-            max-height: 140px !important;
-            padding: 50px 70px !important;
-            font-size: 27px !important;
-            font-weight: 800 !important;
-            letter-spacing: 2px !important;
-            text-align: center !important;
-            line-height: normal !important;
-            border: 5px solid #FFAA00 !important;
-            background: rgba(255, 170, 0, 0.15) !important;
-            color: #FFAA00 !important;
-            box-shadow: 0 8px 16px rgba(255, 170, 0, 0.3) !important;
-            border-radius: 12px !important;
-            transition: all 0.3s ease !important;
-        `;
-
-        // Применяем через cssText
-        button.style.cssText += amberStyles;
-
-        // Также применяем через setAttribute для максимальной надежности
-        button.setAttribute('style', button.getAttribute('style') + amberStyles);
-
-        // Помечаем кнопку как обработанную
-        button.setAttribute('data-amber-styled', 'true');
-
-        console.log('✅ Янтарные стили применены к кнопке:', button.textContent);
-    }
-
-    function styleAmberButtons() {
-        // Находим ВСЕ кнопки
-        const allButtons = document.querySelectorAll('button:not([data-amber-styled="true"])');
-        let found = false;
-
-        allButtons.forEach(function(button) {
-            const buttonText = button.textContent || button.innerText || '';
-
-            // Если кнопка содержит текст "РАЗДЕЛЕНИЕ" или "ЕДИНЫМ"
-            if (buttonText.includes('РАЗДЕЛЕНИЕ') || buttonText.includes('ЕДИНЫМ')) {
-                applyAmberStyles(button);
-                found = true;
-            }
-        });
-
-        if (found) {
-            console.log('🎯 Найдены и стилизованы кнопки режима работы');
-        }
-    }
-
-    // Запускаем сразу
-    styleAmberButtons();
-
-    // MutationObserver для отслеживания изменений DOM
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.addedNodes.length) {
-                styleAmberButtons();
-            }
-        });
-    });
-
-    // Наблюдаем за изменениями в body
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
-
-    // Дополнительно запускаем периодически
-    setInterval(styleAmberButtons, 1000);
-
-    // Запускаем при загрузке
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', styleAmberButtons);
-    }
-
-    console.log('🚀 Скрипт стилизации янтарных кнопок запущен');
-})();
-</script>
 """, unsafe_allow_html=True)
 
 # Инициализация session_state
