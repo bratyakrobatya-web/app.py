@@ -146,7 +146,7 @@ st.markdown("""
 
     /* Базовые стили */
     html, body, [class*="css"] {
-        font-family: 'hhsans-Regular', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        font-family: 'hhsans-Regular' !important;
         font-size: 14px;
     }
 
@@ -156,7 +156,7 @@ st.markdown("""
     .stTextArea textarea, .stNumberInput input,
     [data-testid="stFileUploader"], .uploadedFileName,
     p, div, label, h1, h2, h3, h4, h5, h6 {
-        font-family: 'hhsans-Regular', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        font-family: 'hhsans-Regular' !important;
     }
 
     /* Исключаем иконочные шрифты из глобального применения */
@@ -198,7 +198,7 @@ st.markdown("""
         font-weight: normal;
         color: #1a1a1a;
         margin-bottom: 0.5rem;
-        font-size: 2.5rem;
+        font-size: 33px;
     }
 
     h2 {
@@ -206,13 +206,13 @@ st.markdown("""
         color: #2d2d2d;
         margin-top: 2rem;
         margin-bottom: 1rem;
-        font-size: 1.8rem;
+        font-size: 23px;
     }
 
     h3 {
         font-weight: normal;
         color: #4a4a4a;
-        font-size: 1.3rem;
+        font-size: 16px;
     }
 
     /* =============================================== */
@@ -223,7 +223,7 @@ st.markdown("""
     .stButton>button {
         border-radius: 20px !important;
         padding: 10px 20px !important;
-        font-family: 'hhsans-Regular', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        font-family: 'hhsans-Regular' !important;
         font-weight: normal !important;
         font-size: 14px !important;
         background: var(--button-color) !important;
@@ -237,7 +237,7 @@ st.markdown("""
     /* Текст внутри кнопок - Regular шрифт */
     .stButton>button, .stButton>button span, .stButton>button p,
     .stButton>button div, .stButton>button * {
-        font-family: 'hhsans-Regular', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        font-family: 'hhsans-Regular' !important;
         font-weight: normal !important;
     }
 
@@ -257,7 +257,7 @@ st.markdown("""
     .stDownloadButton>button {
         border-radius: 20px !important;
         padding: 10px 20px !important;
-        font-family: 'hhsans-Regular', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        font-family: 'hhsans-Regular' !important;
         font-weight: normal !important;
         font-size: 14px !important;
         background: var(--button-color) !important;
@@ -271,7 +271,7 @@ st.markdown("""
     /* Текст внутри download кнопок - Regular шрифт */
     .stDownloadButton>button, .stDownloadButton>button span, .stDownloadButton>button p,
     .stDownloadButton>button div, .stDownloadButton>button * {
-        font-family: 'hhsans-Regular', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        font-family: 'hhsans-Regular' !important;
         font-weight: normal !important;
     }
 
@@ -291,7 +291,7 @@ st.markdown("""
     .stTabs [data-baseweb="tab-list"] button {
         padding: 10px 20px !important;
         font-size: 14px !important;
-        font-family: 'hhsans-Regular', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+        font-family: 'hhsans-Regular' !important;
         font-weight: normal !important;
     }
 
