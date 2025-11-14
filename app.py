@@ -191,22 +191,13 @@ st.markdown("""
     }
 
     /* =============================================== */
-    /* ВСЕ ГЛОБАЛЬНЫЕ СТИЛИ КНОПОК ОТКЛЮЧЕНЫ */
+    /* ГЛОБАЛЬНЫЕ СТИЛИ ДЛЯ ОБЫЧНЫХ КНОПОК (primaryColor отключен в config.toml) */
     /* =============================================== */
 
-    /* ГЛОБАЛЬНЫЕ СТИЛИ ОТКЛЮЧЕНЫ - используем только локальные */
-    /* .stButton>button { ... } */
-    /* .stButton button[kind="primary"] { ... } */
-    /* .stButton button[kind="secondary"] { ... } */
-
-    /* =============================================== */
-    /* ЛОКАЛЬНЫЕ СТИЛИ ДЛЯ ОБЫЧНЫХ КНОПОК (НЕ РЕЖИМ РАБОТЫ) */
-    /* =============================================== */
-
-    /* Обычные primary кнопки - КРАСНЫЕ (исключая mode-buttons-container) */
-    div:not(.mode-buttons-container) > .element-container .stButton button[kind="primary"],
-    div:not(.mode-buttons-container) .stButton button[kind="primary"],
-    .stButton button[kind="primary"]:not(.mode-buttons-container *) {
+    /* ВСЕ кнопки по умолчанию - КРАСНЫЕ (исключая кнопки режима работы) */
+    .stButton button:not([aria-label*="РАЗДЕЛЕНИЕ"]):not([aria-label*="ЕДИНЫМ"]),
+    button[kind="primary"]:not([aria-label*="РАЗДЕЛЕНИЕ"]):not([aria-label*="ЕДИНЫМ"]),
+    button[data-testid*="baseButton"][kind="primary"]:not([aria-label*="РАЗДЕЛЕНИЕ"]):not([aria-label*="ЕДИНЫМ"]) {
         border-radius: 10px !important;
         padding: 0.6rem 2rem !important;
         font-weight: 500 !important;
@@ -217,18 +208,17 @@ st.markdown("""
         color: white !important;
     }
 
-    div:not(.mode-buttons-container) > .element-container .stButton button[kind="primary"]:hover,
-    div:not(.mode-buttons-container) .stButton button[kind="primary"]:hover,
-    .stButton button[kind="primary"]:not(.mode-buttons-container *):hover {
+    .stButton button:not([aria-label*="РАЗДЕЛЕНИЕ"]):not([aria-label*="ЕДИНЫМ"]):hover,
+    button[kind="primary"]:not([aria-label*="РАЗДЕЛЕНИЕ"]):not([aria-label*="ЕДИНЫМ"]):hover,
+    button[data-testid*="baseButton"][kind="primary"]:not([aria-label*="РАЗДЕЛЕНИЕ"]):not([aria-label*="ЕДИНЫМ"]):hover {
         transform: translateY(-2px) !important;
         box-shadow: 0 4px 16px rgba(234, 51, 36, 0.5) !important;
         background: linear-gradient(135deg, #ff4539 0%, #ea3324 100%) !important;
     }
 
-    /* Обычные secondary кнопки - СЕРЫЕ (как у expander, исключая mode-buttons-container) */
-    div:not(.mode-buttons-container) > .element-container .stButton button[kind="secondary"],
-    div:not(.mode-buttons-container) .stButton button[kind="secondary"],
-    .stButton button[kind="secondary"]:not(.mode-buttons-container *) {
+    /* Secondary кнопки - СЕРЫЕ (исключая кнопки режима работы) */
+    button[kind="secondary"]:not([aria-label*="РАЗДЕЛЕНИЕ"]):not([aria-label*="ЕДИНЫМ"]),
+    button[data-testid*="baseButton"][kind="secondary"]:not([aria-label*="РАЗДЕЛЕНИЕ"]):not([aria-label*="ЕДИНЫМ"]) {
         background: #f8f9fa !important;
         border: 1px solid #e9ecef !important;
         color: #1a1a1a !important;
@@ -239,9 +229,8 @@ st.markdown("""
         transition: all 0.3s ease !important;
     }
 
-    div:not(.mode-buttons-container) > .element-container .stButton button[kind="secondary"]:hover,
-    div:not(.mode-buttons-container) .stButton button[kind="secondary"]:hover,
-    .stButton button[kind="secondary"]:not(.mode-buttons-container *):hover {
+    button[kind="secondary"]:not([aria-label*="РАЗДЕЛЕНИЕ"]):not([aria-label*="ЕДИНЫМ"]):hover,
+    button[data-testid*="baseButton"][kind="secondary"]:not([aria-label*="РАЗДЕЛЕНИЕ"]):not([aria-label*="ЕДИНЫМ"]):hover {
         background: #e9ecef !important;
         transform: none !important;
         box-shadow: none !important;
@@ -1713,15 +1702,24 @@ if uploaded_file is not None and hh_areas is not None:
                 if 'export_mode' not in st.session_state:
                     st.session_state.export_mode = None
 
-                # ИНЛАЙН СТИЛИ ДЛЯ КНОПОК РЕЖИМА - ПРЯМО ЗДЕСЬ
-                # Используем JavaScript чтобы пометить выбранную кнопку
+                # ИНЛАЙН СТИЛИ ДЛЯ КНОПОК РЕЖИМА - МАКСИМАЛЬНО АГРЕССИВНЫЕ
                 selected_mode = st.session_state.export_mode
                 st.markdown(f"""
                 <style>
-                /* АГРЕССИВНЫЕ ЯНТАРНЫЕ СТИЛИ ДЛЯ КНОПОК РЕЖИМА РАБОТЫ */
-                /* Убираем зависимость от config.toml primaryColor */
+                /* СУПЕРАГРЕССИВНЫЕ ЯНТАРНЫЕ СТИЛИ ДЛЯ КНОПОК РЕЖИМА РАБОТЫ */
+                /* Теперь config.toml primaryColor отключен, стили должны работать! */
+
+                /* Все возможные селекторы для кнопок "РАЗДЕЛЕНИЕ" и "ЕДИНЫМ" */
+                button[aria-label*="РАЗДЕЛЕНИЕ"],
+                button[aria-label*="ЕДИНЫМ"],
                 button[data-testid*="baseButton"][aria-label*="РАЗДЕЛЕНИЕ"],
-                button[data-testid*="baseButton"][aria-label*="ЕДИНЫМ"] {{
+                button[data-testid*="baseButton"][aria-label*="ЕДИНЫМ"],
+                button.stButton > button[aria-label*="РАЗДЕЛЕНИЕ"],
+                button.stButton > button[aria-label*="ЕДИНЫМ"],
+                div[data-testid="column"] button[aria-label*="РАЗДЕЛЕНИЕ"],
+                div[data-testid="column"] button[aria-label*="ЕДИНЫМ"],
+                .stButton button[aria-label*="РАЗДЕЛЕНИЕ"],
+                .stButton button[aria-label*="ЕДИНЫМ"] {{
                     width: 100% !important;
                     height: 140px !important;
                     min-height: 140px !important;
@@ -1731,6 +1729,7 @@ if uploaded_file is not None and hh_areas is not None:
                     font-weight: 800 !important;
                     letter-spacing: 2px !important;
                     text-align: center !important;
+                    line-height: normal !important;
                     border: 5px solid #FFAA00 !important;
                     background: rgba(255, 170, 0, 0.15) !important;
                     color: #FFAA00 !important;
@@ -1739,6 +1738,9 @@ if uploaded_file is not None and hh_areas is not None:
                     transition: all 0.3s ease !important;
                 }}
 
+                /* Hover состояние */
+                button[aria-label*="РАЗДЕЛЕНИЕ"]:hover,
+                button[aria-label*="ЕДИНЫМ"]:hover,
                 button[data-testid*="baseButton"][aria-label*="РАЗДЕЛЕНИЕ"]:hover,
                 button[data-testid*="baseButton"][aria-label*="ЕДИНЫМ"]:hover {{
                     background: rgba(255, 170, 0, 0.25) !important;
@@ -1747,8 +1749,8 @@ if uploaded_file is not None and hh_areas is not None:
                 }}
 
                 /* Выбранная кнопка - полностью янтарная */
-                {"button[data-testid*='baseButton'][aria-label*='РАЗДЕЛЕНИЕ']" if selected_mode == "split" else ""}
-                {"button[data-testid*='baseButton'][aria-label*='ЕДИНЫМ']" if selected_mode == "single" else ""} {{
+                {"button[aria-label*='РАЗДЕЛЕНИЕ'], button[data-testid*='baseButton'][aria-label*='РАЗДЕЛЕНИЕ']" if selected_mode == "split" else ""}
+                {"button[aria-label*='ЕДИНЫМ'], button[data-testid*='baseButton'][aria-label*='ЕДИНЫМ']" if selected_mode == "single" else ""} {{
                     background: #FFAA00 !important;
                     color: white !important;
                     border-color: #FFAA00 !important;

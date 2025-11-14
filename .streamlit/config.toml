@@ -1,5 +1,6 @@
 [theme]
-primaryColor = "#ea3324"
+# primaryColor ОТКЛЮЧЕН - управляем цветами через CSS в app.py
+# primaryColor = "#ea3324"
 backgroundColor = "#ffffff"
 secondaryBackgroundColor = "#f8f9fa"
 textColor = "#1a1a1a"
