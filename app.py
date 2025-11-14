@@ -1664,32 +1664,35 @@ if uploaded_file is not None and hh_areas is not None:
                 # CSS для стилизации кнопок ярким красным цветом
                 st.markdown("""
                 <style>
-                /* Стилизация кнопок режима - яркий красный */
+                /* Стилизация кнопок режима - яркий красный, большие */
                 div[data-testid="column"] > div > div > button[kind="secondary"],
                 div[data-testid="column"] > div > div > button[kind="primary"] {
                     border-radius: 10px;
-                    border: 2px solid #ea3324 !important;
-                    background: transparent !important;
+                    border: 3px solid #ea3324 !important;
+                    background: rgba(234, 51, 36, 0.15) !important;
                     transition: all 0.3s ease;
-                    padding: 15px;
-                    font-size: 16px;
-                    font-weight: 600;
-                    letter-spacing: 0.5px;
+                    padding: 25px 20px !important;
+                    font-size: 18px !important;
+                    font-weight: 700 !important;
+                    letter-spacing: 1px;
                     color: #ea3324 !important;
+                    min-height: 80px !important;
                 }
                 div[data-testid="column"] > div > div > button[kind="secondary"]:hover {
-                    background: rgba(234, 51, 36, 0.1) !important;
-                    box-shadow: 0 2px 12px rgba(234, 51, 36, 0.3);
+                    background: rgba(234, 51, 36, 0.25) !important;
+                    box-shadow: 0 4px 16px rgba(234, 51, 36, 0.4);
+                    transform: translateY(-2px);
                 }
                 div[data-testid="column"] > div > div > button[kind="primary"] {
                     background: #ea3324 !important;
                     border-color: #ea3324 !important;
                     color: white !important;
-                    box-shadow: 0 4px 12px rgba(234, 51, 36, 0.4);
+                    box-shadow: 0 6px 20px rgba(234, 51, 36, 0.5);
                 }
                 div[data-testid="column"] > div > div > button[kind="primary"]:hover {
                     background: #d62e1f !important;
-                    box-shadow: 0 4px 16px rgba(234, 51, 36, 0.5);
+                    box-shadow: 0 8px 24px rgba(234, 51, 36, 0.6);
+                    transform: translateY(-2px);
                 }
                 </style>
                 """, unsafe_allow_html=True)
@@ -1718,8 +1721,8 @@ if uploaded_file is not None and hh_areas is not None:
                         st.session_state.export_mode = "single"
                         st.rerun()
 
-                # Добавляем текст для визуального увеличения блока
-                st.markdown('<p style="text-align: center; margin-top: 10px; color: rgba(49, 51, 63, 0.6); font-size: 0.9rem;">Выберите режим работы</p>', unsafe_allow_html=True)
+                # Добавляем текст со стрелочкой вверх
+                st.markdown('<p style="text-align: center; margin-top: 10px; color: rgba(49, 51, 63, 0.6); font-size: 0.9rem;"><span style="color: #ea3324; font-size: 1.2rem;">↑</span> Выберите режим работы</p>', unsafe_allow_html=True)
 
                 # Показываем выбранный режим (скрыто)
                 # if st.session_state.export_mode == "split":
