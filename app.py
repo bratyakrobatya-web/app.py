@@ -266,34 +266,6 @@ st.markdown("""
         box-shadow: 0 0 0 3px rgba(234, 51, 36, 0.2) !important;
     }
 
-    /* Черная окантовка для блока редактирования городов - ПЕРЕКРЫВАЕТ глобальный красный стиль */
-    .edit-cities-block div[data-baseweb="select"] > div,
-    .edit-cities-block .stSelectbox > div > div,
-    .edit-cities-block .stSelectbox > div > div > div,
-    .edit-cities-block [data-testid="stSelectbox"] > div > div {
-        border: 2px solid #000000 !important;
-        border-color: #000000 !important;
-        border-radius: 10px !important;
-        background: transparent !important;
-        transition: all 0.3s ease !important;
-    }
-
-    .edit-cities-block div[data-baseweb="select"] > div:hover,
-    .edit-cities-block .stSelectbox:hover > div > div,
-    .edit-cities-block [data-testid="stSelectbox"]:hover > div > div {
-        background: rgba(0, 0, 0, 0.05) !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
-        border-color: #000000 !important;
-    }
-
-    .edit-cities-block div[data-baseweb="select"] > div:focus-within,
-    .edit-cities-block .stSelectbox > div > div:focus-within,
-    .edit-cities-block [data-testid="stSelectbox"] > div > div:focus-within {
-        border: 2px solid #000000 !important;
-        border-color: #000000 !important;
-        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1) !important;
-    }
-
     .stTextInput > div > div {
         border-radius: 10px;
         border: 1px solid #dee2e6;
@@ -503,9 +475,60 @@ st.markdown("""
     }
 
     /* =============================================== */
-    /* КНОПКИ РЕЖИМА РАБОТЫ - используют type="primary" */
+    /* КНОПКИ РЕЖИМА РАБОТЫ - КРАСНАЯ ЗАЛИВКА */
     /* =============================================== */
-    /* Красная заливка применяется автоматически через config.toml primaryColor */
+    /* Стилизуем кнопки с key="mode_split" и key="mode_single" */
+    button[data-testid*="baseButton"][class*="mode_split"],
+    button[data-testid*="baseButton"][class*="mode_single"],
+    div[data-testid="column"] button[data-testid*="baseButton"]:has(p:contains("РАЗДЕЛЕНИЕ ПО ВАКАНСИЯМ")),
+    div[data-testid="column"] button[data-testid*="baseButton"]:has(p:contains("ЕДИНЫМ ФАЙЛОМ")) {
+        background: linear-gradient(135deg, #ea3324 0%, #c02a1e 100%) !important;
+        border: none !important;
+        color: white !important;
+        border-radius: 10px !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 2px 8px rgba(234, 51, 36, 0.3) !important;
+    }
+
+    button[data-testid*="baseButton"][class*="mode_split"]:hover,
+    button[data-testid*="baseButton"][class*="mode_single"]:hover,
+    div[data-testid="column"] button[data-testid*="baseButton"]:has(p:contains("РАЗДЕЛЕНИЕ ПО ВАКАНСИЯМ")):hover,
+    div[data-testid="column"] button[data-testid*="baseButton"]:has(p:contains("ЕДИНЫМ ФАЙЛОМ")):hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 16px rgba(234, 51, 36, 0.5) !important;
+        background: linear-gradient(135deg, #ff4539 0%, #ea3324 100%) !important;
+    }
+
+    /* =============================================== */
+    /* ИСКЛЮЧЕНИЕ: Черная окантовка для блока редактирования городов */
+    /* =============================================== */
+    /* Эти стили ДОЛЖНЫ быть в самом конце, чтобы перекрыть все глобальные красные стили */
+    .edit-cities-block div[data-baseweb="select"] > div,
+    .edit-cities-block .stSelectbox > div > div,
+    .edit-cities-block .stSelectbox > div > div > div,
+    .edit-cities-block [data-testid="stSelectbox"] > div > div {
+        border: 2px solid #000000 !important;
+        border-color: #000000 !important;
+        border-radius: 10px !important;
+        background: transparent !important;
+        transition: all 0.3s ease !important;
+    }
+
+    .edit-cities-block div[data-baseweb="select"] > div:hover,
+    .edit-cities-block .stSelectbox:hover > div > div,
+    .edit-cities-block [data-testid="stSelectbox"]:hover > div > div {
+        background: rgba(0, 0, 0, 0.05) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
+        border-color: #000000 !important;
+    }
+
+    .edit-cities-block div[data-baseweb="select"] > div:focus-within,
+    .edit-cities-block .stSelectbox > div > div:focus-within,
+    .edit-cities-block [data-testid="stSelectbox"] > div > div:focus-within {
+        border: 2px solid #000000 !important;
+        border-color: #000000 !important;
+        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1) !important;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -1667,32 +1690,30 @@ if uploaded_file is not None and hh_areas is not None:
                 if 'export_mode' not in st.session_state:
                     st.session_state.export_mode = None
 
-                # СТИЛИ ДЛЯ КНОПОК РЕЖИМА применяются через type="primary"
-                # Красная заливка берется из .streamlit/config.toml (primaryColor = "#ea3324")
+                # СТИЛИ ДЛЯ КНОПОК РЕЖИМА применяются через CSS (см. ниже в комментарии про стили кнопок)
+                # Красная заливка применяется через специальные CSS селекторы
 
                 # Кнопки выбора режима работы
                 col1, col2 = st.columns(2)
 
                 with col1:
                     selected_split = st.session_state.export_mode == "split"
-                    # ИСПОЛЬЗУЕМ type="primary" для красной заливки (из config.toml primaryColor)
+                    # НЕ используем type="primary" - стили применяются через CSS по key
                     if st.button(
                         "**РАЗДЕЛЕНИЕ ПО ВАКАНСИЯМ**\n\n(работа с отдельными файлами)",
                         use_container_width=True,
-                        key="mode_split",
-                        type="primary"
+                        key="mode_split"
                     ):
                         st.session_state.export_mode = "split"
                         st.rerun()
 
                 with col2:
                     selected_single = st.session_state.export_mode == "single"
-                    # ИСПОЛЬЗУЕМ type="primary" для красной заливки (из config.toml primaryColor)
+                    # НЕ используем type="primary" - стили применяются через CSS по key
                     if st.button(
                         "**ЕДИНЫМ ФАЙЛОМ**\n\n(работа с общим списком гео)",
                         use_container_width=True,
-                        key="mode_single",
-                        type="primary"
+                        key="mode_single"
                     ):
                         st.session_state.export_mode = "single"
                         st.rerun()
