@@ -538,10 +538,90 @@ st.markdown("""
     }
 
     /* =============================================== */
-    /* СТИЛИ ДЛЯ КНОПОК РЕЖИМА РАБОТЫ ПЕРЕНЕСЕНЫ INLINE */
-    /* (см. код около строки 1780 - inline стили перед кнопками) */
+    /* СТИЛИ ДЛЯ КНОПОК РЕЖИМА РАБОТЫ - ЯНТАРНЫЕ */
     /* =============================================== */
+
+    /* Класс для янтарных кнопок режима работы */
+    .amber-mode-button {
+        width: 100% !important;
+        height: 140px !important;
+        min-height: 140px !important;
+        max-height: 140px !important;
+        padding: 50px 70px !important;
+        font-size: 27px !important;
+        font-weight: 800 !important;
+        letter-spacing: 2px !important;
+        text-align: center !important;
+        line-height: normal !important;
+        border: 5px solid #FFAA00 !important;
+        background: rgba(255, 170, 0, 0.15) !important;
+        color: #FFAA00 !important;
+        box-shadow: 0 8px 16px rgba(255, 170, 0, 0.3) !important;
+        border-radius: 12px !important;
+        transition: all 0.3s ease !important;
+    }
+
+    .amber-mode-button:hover {
+        background: rgba(255, 170, 0, 0.25) !important;
+        transform: translateY(-4px) !important;
+        box-shadow: 0 12px 24px rgba(255, 170, 0, 0.45) !important;
+    }
+
+    .amber-mode-button.selected {
+        background: #FFAA00 !important;
+        color: white !important;
+        border-color: #FFAA00 !important;
+        box-shadow: 0 10px 28px rgba(255, 170, 0, 0.65) !important;
+    }
 </style>
+
+<script>
+// JAVASCRIPT для прямого поиска и стилизации кнопок режима работы
+function styleAmberButtons() {
+    // Ждем пока DOM загрузится
+    setTimeout(function() {
+        // Находим ВСЕ кнопки
+        const allButtons = document.querySelectorAll('button');
+
+        allButtons.forEach(function(button) {
+            const buttonText = button.textContent || button.innerText || '';
+
+            // Если кнопка содержит текст "РАЗДЕЛЕНИЕ" или "ЕДИНЫМ"
+            if (buttonText.includes('РАЗДЕЛЕНИЕ') || buttonText.includes('ЕДИНЫМ')) {
+                // Добавляем класс для стилизации
+                button.classList.add('amber-mode-button');
+
+                // Применяем стили НАПРЯМУЮ через JavaScript
+                button.style.width = '100%';
+                button.style.height = '140px';
+                button.style.minHeight = '140px';
+                button.style.maxHeight = '140px';
+                button.style.padding = '50px 70px';
+                button.style.fontSize = '27px';
+                button.style.fontWeight = '800';
+                button.style.letterSpacing = '2px';
+                button.style.textAlign = 'center';
+                button.style.border = '5px solid #FFAA00';
+                button.style.background = 'rgba(255, 170, 0, 0.15)';
+                button.style.color = '#FFAA00';
+                button.style.boxShadow = '0 8px 16px rgba(255, 170, 0, 0.3)';
+                button.style.borderRadius = '12px';
+                button.style.transition = 'all 0.3s ease';
+            }
+        });
+    }, 100);
+}
+
+// Запускаем при загрузке страницы
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', styleAmberButtons);
+} else {
+    styleAmberButtons();
+}
+
+// Запускаем периодически для обработки динамически добавленных кнопок
+setInterval(styleAmberButtons, 500);
+</script>
 """, unsafe_allow_html=True)
 
 # Инициализация session_state
@@ -1702,64 +1782,10 @@ if uploaded_file is not None and hh_areas is not None:
                 if 'export_mode' not in st.session_state:
                     st.session_state.export_mode = None
 
-                # ИНЛАЙН СТИЛИ ДЛЯ КНОПОК РЕЖИМА - МАКСИМАЛЬНО АГРЕССИВНЫЕ
-                selected_mode = st.session_state.export_mode
-                st.markdown(f"""
-                <style>
-                /* СУПЕРАГРЕССИВНЫЕ ЯНТАРНЫЕ СТИЛИ ДЛЯ КНОПОК РЕЖИМА РАБОТЫ */
-                /* Теперь config.toml primaryColor отключен, стили должны работать! */
+                # СТИЛИ ДЛЯ КНОПОК РЕЖИМА применяются через JavaScript (см. строку 578-624)
+                # JavaScript ищет кнопки с текстом "РАЗДЕЛЕНИЕ" и "ЕДИНЫМ" и стилизует их напрямую
 
-                /* Все возможные селекторы для кнопок "РАЗДЕЛЕНИЕ" и "ЕДИНЫМ" */
-                button[aria-label*="РАЗДЕЛЕНИЕ"],
-                button[aria-label*="ЕДИНЫМ"],
-                button[data-testid*="baseButton"][aria-label*="РАЗДЕЛЕНИЕ"],
-                button[data-testid*="baseButton"][aria-label*="ЕДИНЫМ"],
-                button.stButton > button[aria-label*="РАЗДЕЛЕНИЕ"],
-                button.stButton > button[aria-label*="ЕДИНЫМ"],
-                div[data-testid="column"] button[aria-label*="РАЗДЕЛЕНИЕ"],
-                div[data-testid="column"] button[aria-label*="ЕДИНЫМ"],
-                .stButton button[aria-label*="РАЗДЕЛЕНИЕ"],
-                .stButton button[aria-label*="ЕДИНЫМ"] {{
-                    width: 100% !important;
-                    height: 140px !important;
-                    min-height: 140px !important;
-                    max-height: 140px !important;
-                    padding: 50px 70px !important;
-                    font-size: 27px !important;
-                    font-weight: 800 !important;
-                    letter-spacing: 2px !important;
-                    text-align: center !important;
-                    line-height: normal !important;
-                    border: 5px solid #FFAA00 !important;
-                    background: rgba(255, 170, 0, 0.15) !important;
-                    color: #FFAA00 !important;
-                    box-shadow: 0 8px 16px rgba(255, 170, 0, 0.3) !important;
-                    border-radius: 12px !important;
-                    transition: all 0.3s ease !important;
-                }}
-
-                /* Hover состояние */
-                button[aria-label*="РАЗДЕЛЕНИЕ"]:hover,
-                button[aria-label*="ЕДИНЫМ"]:hover,
-                button[data-testid*="baseButton"][aria-label*="РАЗДЕЛЕНИЕ"]:hover,
-                button[data-testid*="baseButton"][aria-label*="ЕДИНЫМ"]:hover {{
-                    background: rgba(255, 170, 0, 0.25) !important;
-                    transform: translateY(-4px) !important;
-                    box-shadow: 0 12px 24px rgba(255, 170, 0, 0.45) !important;
-                }}
-
-                /* Выбранная кнопка - полностью янтарная */
-                {"button[aria-label*='РАЗДЕЛЕНИЕ'], button[data-testid*='baseButton'][aria-label*='РАЗДЕЛЕНИЕ']" if selected_mode == "split" else ""}
-                {"button[aria-label*='ЕДИНЫМ'], button[data-testid*='baseButton'][aria-label*='ЕДИНЫМ']" if selected_mode == "single" else ""} {{
-                    background: #FFAA00 !important;
-                    color: white !important;
-                    border-color: #FFAA00 !important;
-                    box-shadow: 0 10px 28px rgba(255, 170, 0, 0.65) !important;
-                }}
-                </style>
-                """, unsafe_allow_html=True)
-
-                # Обычные Streamlit кнопки с агрессивной CSS стилизацией
+                # Кнопки выбора режима работы
                 col1, col2 = st.columns(2)
 
                 with col1:
