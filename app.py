@@ -208,20 +208,20 @@ st.markdown("""
     }
 
     h2 {
-    font-family: 'hhsans-Regular' !important;
-    font-weight: normal;
-    color: #2d2d2d;
-    margin-top: 2rem;
-    margin-bottom: 1rem;
-    font-size: 20px;
-}
+        font-family: 'hhsans-Regular' !important;
+        font-weight: normal;
+        color: #2d2d2d;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        font-size: 16px;
+    }
 
     h3 {
-    font-family: 'hhsans-Regular' !important;
-    font-weight: normal;
-    color: #4a4a4a;
-    font-size: 13px;
-}
+        font-family: 'hhsans-Regular' !important;
+        font-weight: normal;
+        color: #4a4a4a;
+        font-size: 14px;
+    }
 
     /* =============================================== */
     /* СТИЛИ КНОПОК - ГРАДИЕНТНЫЙ СТИЛЬ ДЛЯ ВСЕХ КНОПОК */
