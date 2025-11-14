@@ -34,21 +34,27 @@ st.markdown("""
     /* CSS ПЕРЕМЕННЫЕ ДЛЯ ГРАДИЕНТА */
     /* =============================================== */
     :root {
-        /* Огненный градиент 8.1 (Классический огненный) */
-        --gradient-main: linear-gradient(145deg, #FBBF24 0%, #F97316 50%, #DC2626 100%);
+        /* Изящный красно-белый градиент для кнопок */
+        --gradient-main: linear-gradient(145deg, #ffffff 0%, #ff8575 35%, #f4301f 100%);
 
-        --primary-color: #F97316;
-        --primary-light: #FBBF24;
-        --primary-mid: #DC2626;
-        --primary-dark: #B91C1C;
-        --primary-accent: #F97316;
-        --primary-orange: #FF9800;
+        /* Цвета для UI элементов (оранжевый - остается без изменений) */
+        --ui-color: #F97316;
+        --ui-shadow: rgba(249, 115, 22, 0.4);
+        --ui-shadow-hover: rgba(249, 115, 22, 0.6);
 
-        /* Тени для эффекта "глубокого неона" с оранжевым */
-        --shadow-primary: rgba(249, 115, 22, 0.4);
-        --shadow-hover: rgba(249, 115, 22, 0.6);
-        --shadow-glow: 0 6px 20px rgba(249, 115, 22, 0.5);
-        --shadow-glow-hover: 0 8px 30px rgba(249, 115, 22, 0.7);
+        /* Цвета для кнопок (красный) */
+        --primary-color: #f4301f;
+        --primary-light: #ff8575;
+        --primary-mid: #f4301f;
+        --primary-dark: #c72515;
+        --primary-accent: #f4301f;
+        --primary-orange: #f4301f;
+
+        /* Тени для кнопок - красный */
+        --shadow-primary: rgba(244, 48, 31, 0.4);
+        --shadow-hover: rgba(244, 48, 31, 0.6);
+        --shadow-glow: 0 6px 20px rgba(244, 48, 31, 0.5);
+        --shadow-glow-hover: 0 8px 30px rgba(244, 48, 31, 0.7);
     }
 
     /* Подключение шрифта hhsans Regular */
@@ -90,8 +96,8 @@ st.markdown("""
         width: 32px;
         height: 32px;
         background: transparent;
-        color: var(--primary-color);
-        border: 2px solid var(--primary-color);
+        color: var(--ui-color);
+        border: 2px solid var(--ui-color);
         border-radius: 50%;
         font-weight: bold;
         font-size: 16px;
@@ -106,7 +112,7 @@ st.markdown("""
         justify-content: center;
         width: 20px;
         height: 20px;
-        background: var(--gradient-main);
+        background: var(--ui-color);
         color: white;
         border-radius: 50%;
         font-weight: bold;
@@ -267,15 +273,15 @@ st.markdown("""
     button[data-testid*="export_all_cities_btn"],
     div[data-testid*="export_all_cities_btn"] button {
         background: transparent !important;
-        border: 2px solid var(--primary-color) !important;
-        color: var(--primary-color) !important;
+        border: 2px solid var(--ui-color) !important;
+        color: var(--ui-color) !important;
     }
 
     button[data-testid*="export_all_cities_btn"]:hover,
     div[data-testid*="export_all_cities_btn"] button:hover {
-        background: rgba(126, 87, 194, 0.1) !important;
-        border: 2px solid var(--primary-color) !important;
-        color: var(--primary-color) !important;
+        background: rgba(249, 115, 22, 0.1) !important;
+        border: 2px solid var(--ui-color) !important;
+        color: var(--ui-color) !important;
     }
 
     /* File Uploader */
@@ -288,7 +294,7 @@ st.markdown("""
     }
 
     [data-testid="stFileUploader"]:hover {
-        border-color: var(--primary-color);
+        border-color: var(--ui-color);
         background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
     }
 
@@ -301,7 +307,7 @@ st.markdown("""
 
 
     .uploadedFileName {
-        color: var(--primary-color);
+        color: var(--ui-color);
         font-weight: 500;
     }
 
@@ -309,7 +315,7 @@ st.markdown("""
     div[data-baseweb="select"] > div,
     .stSelectbox > div > div,
     [data-testid="stSelectbox"] > div > div {
-        border: 2px solid var(--primary-color) !important;
+        border: 2px solid #F97316 !important;
         border-radius: 10px;
         background: transparent !important;
         transition: all 0.3s ease !important;
@@ -318,15 +324,15 @@ st.markdown("""
     div[data-baseweb="select"] > div:hover,
     .stSelectbox:hover > div > div,
     [data-testid="stSelectbox"]:hover > div > div {
-        background: rgba(178, 34, 34, 0.05) !important;
-        box-shadow: 0 2px 12px var(--shadow-primary);
+        background: rgba(249, 115, 22, 0.05) !important;
+        box-shadow: 0 2px 12px rgba(249, 115, 22, 0.4);
     }
 
     div[data-baseweb="select"] > div:focus-within,
     .stSelectbox > div > div:focus-within,
     [data-testid="stSelectbox"] > div > div:focus-within {
-        border-color: var(--primary-color) !important;
-        box-shadow: 0 0 0 3px var(--shadow-primary) !important;
+        border-color: #F97316 !important;
+        box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.4) !important;
     }
 
     .stTextInput > div > div {
@@ -342,14 +348,14 @@ st.markdown("""
     /* Информационные блоки - С ГРАДИЕНТОМ */
     .stInfo {
         background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%) !important;
-        border-left: 5px solid var(--primary-color) !important;
+        border-left: 5px solid var(--ui-color) !important;
         border-radius: 10px;
         padding: 1rem;
     }
 
     .stSuccess {
-        background: rgba(178, 34, 34, 0.1) !important;
-        border: 2px solid var(--primary-color) !important;
+        background: rgba(249, 115, 22, 0.1) !important;
+        border: 2px solid var(--ui-color) !important;
         border-radius: 10px;
         padding: 1rem;
         color: #1a1a1a !important;
@@ -365,14 +371,14 @@ st.markdown("""
 
     .stWarning {
         background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%) !important;
-        border-left: 5px solid var(--primary-color) !important;
+        border-left: 5px solid var(--ui-color) !important;
         border-radius: 10px;
         padding: 1rem;
     }
 
     .stError {
         background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%) !important;
-        border-left: 5px solid var(--primary-color) !important;
+        border-left: 5px solid var(--ui-color) !important;
         border-radius: 10px;
         padding: 1rem;
     }
@@ -386,7 +392,7 @@ st.markdown("""
     [data-testid="stSidebar"] h1 {
         font-size: 1.5rem;
         padding-bottom: 1rem;
-        border-bottom: 2px solid var(--primary-color);
+        border-bottom: 2px solid var(--ui-color);
     }
 
     /* Expander */
@@ -409,20 +415,20 @@ st.markdown("""
 
     /* Slider - активная часть с градиентом */
     .stSlider > div > div > div {
-        background: var(--gradient-main) !important;
+        background: var(--ui-color) !important;
     }
 
     /* Тумблер слайдера - простой круг */
     .stSlider > div > div > div > div {
         background-color: white !important;
-        border: 2px solid var(--primary-color) !important;
+        border: 2px solid var(--ui-color) !important;
         height: 20px !important;
     }
 
     .stSlider > div > div > div > div:hover {
         background-color: white !important;
-        box-shadow: 0 0 8px var(--shadow-primary) !important;
-        border: 2px solid var(--primary-color) !important;
+        box-shadow: 0 0 8px var(--ui-shadow) !important;
+        border: 2px solid var(--ui-color) !important;
     }
 
     /* Вкладки */
@@ -444,9 +450,9 @@ st.markdown("""
     }
 
     .stTabs [aria-selected="true"] {
-        background: var(--gradient-main);
+        background: var(--ui-color);
         color: white;
-        border-bottom: 2px solid var(--primary-color);
+        border-bottom: 2px solid var(--ui-color);
     }
 
     .stTabs [data-baseweb="tab"]:hover {
@@ -490,7 +496,7 @@ st.markdown("""
 
     /* Прогресс бар с градиентом */
     .stProgress > div > div {
-        background: var(--gradient-main);
+        background: var(--ui-color);
         border-radius: 10px;
     }
 
@@ -506,8 +512,8 @@ st.markdown("""
     /* Кнопка Browse files в File Uploader - градиентная рамка */
     [data-testid="stFileUploader"] button {
         background: transparent !important;
-        border: 2px solid var(--primary-color) !important;
-        color: var(--primary-color) !important;
+        border: 2px solid var(--ui-color) !important;
+        color: var(--ui-color) !important;
         border-radius: 10px;
         padding: 0.5rem 1.5rem;
         font-weight: 500;
@@ -515,9 +521,9 @@ st.markdown("""
     }
 
     [data-testid="stFileUploader"] button:hover {
-        background: rgba(178, 34, 34, 0.1) !important;
+        background: rgba(249, 115, 22, 0.1) !important;
         transform: translateY(-2px);
-        box-shadow: 0 4px 16px var(--shadow-primary) !important;
+        box-shadow: 0 4px 16px var(--ui-shadow) !important;
     }
 
     /* Селектор MultiSelect - БЕЗ красной рамки (одинарная рамка) */
@@ -1557,13 +1563,13 @@ with st.sidebar:
         color: #1a1a1a !important;
         font-weight: 500;
         transition: all 0.3s ease;
-        border-left: 3px solid var(--primary-color);
+        border-left: 3px solid var(--ui-color);
     }
     .nav-link:visited {
         color: #1a1a1a !important;
     }
     .nav-link:hover {
-        background: var(--gradient-main);
+        background: var(--ui-color);
         color: white !important;
         transform: translateX(5px);
         border-left: 3px solid transparent;
