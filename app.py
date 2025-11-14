@@ -34,20 +34,29 @@ st.markdown("""
     /* CSS ПЕРЕМЕННЫЕ ДЛЯ ГРАДИЕНТА */
     /* =============================================== */
     :root {
-        --gradient-main: radial-gradient(at 30% 30%, #4B0082 0%, transparent 50%),
-                         radial-gradient(at 70% 70%, #DC143C 0%, transparent 50%),
-                         radial-gradient(at 50% 10%, #9370DB 0%, transparent 45%),
-                         radial-gradient(at 10% 80%, #FF4500 0%, transparent 45%),
-                         linear-gradient(135deg, #4B0082 0%, #DC143C 100%);
+        /* Диагональный линейный градиент с мягкими переходами через промежуточные цвета */
+        --gradient-main: linear-gradient(145deg, #7E57C2 0%, #A855F7 25%, #E91E63 50%, #EC4899 75%, #FF9800 100%);
 
-        --primary-color: #4B0082;
-        --primary-light: #9370DB;
-        --primary-dark: #2E0854;
-        --primary-accent: #DC143C;
-        --primary-red: #DC143C;
+        /* Радиальный градиент для эффекта свечения/глубины */
+        --gradient-radial: radial-gradient(circle at center, rgba(255,255,255,0.15) 0%, #A855F7 40%, #E91E63 70%, #FF9800 100%);
 
-        --shadow-primary: rgba(75, 0, 130, 0.3);
-        --shadow-hover: rgba(75, 0, 130, 0.5);
+        /* Градиент для фона с эффектом объемности */
+        --gradient-soft: radial-gradient(circle at 30% 30%, rgba(168, 85, 247, 0.3) 0%, transparent 50%),
+                         radial-gradient(circle at 70% 70%, rgba(233, 30, 99, 0.3) 0%, transparent 50%),
+                         linear-gradient(145deg, #7E57C2 0%, #E91E63 50%, #FF9800 100%);
+
+        --primary-color: #7E57C2;
+        --primary-light: #A855F7;
+        --primary-mid: #E91E63;
+        --primary-dark: #5B3A8F;
+        --primary-accent: #EC4899;
+        --primary-orange: #FF9800;
+
+        /* Тени для эффекта "глубокого неона" */
+        --shadow-primary: rgba(233, 30, 99, 0.4);
+        --shadow-hover: rgba(233, 30, 99, 0.6);
+        --shadow-glow: 0 4px 15px rgba(233, 30, 99, 0.4);
+        --shadow-glow-hover: 0 6px 25px rgba(233, 30, 99, 0.6);
     }
 
     /* Подключение шрифта hhsans Regular */
@@ -214,52 +223,52 @@ st.markdown("""
     /* СТИЛИ КНОПОК - ГРАДИЕНТНЫЙ СТИЛЬ ДЛЯ ВСЕХ КНОПОК */
     /* =============================================== */
 
-    /* Все обычные кнопки (включая primary и secondary) - ГРАДИЕНТНЫЙ СТИЛЬ */
+    /* Все обычные кнопки (включая primary и secondary) - ГРАДИЕНТНЫЙ СТИЛЬ С ЭФФЕКТОМ НЕОНА */
     .stButton>button {
-        border-radius: 10px !important;
+        border-radius: 8px !important;
         padding: 0.6rem 2rem !important;
         font-weight: 500 !important;
         background: var(--gradient-main) !important;
         border: none !important;
         transition: all 0.3s ease !important;
-        box-shadow: 0 2px 8px var(--shadow-primary) !important;
+        box-shadow: var(--shadow-glow) !important;
         color: white !important;
     }
 
     .stButton>button:hover {
         transform: translateY(-2px) !important;
-        box-shadow: 0 4px 16px var(--shadow-hover) !important;
+        box-shadow: var(--shadow-glow-hover) !important;
         filter: brightness(1.1) !important;
         color: white !important;
     }
 
     .stButton>button:active {
         transform: translateY(0px) !important;
-        box-shadow: 0 2px 8px var(--shadow-primary) !important;
+        box-shadow: var(--shadow-glow) !important;
     }
 
-    /* Download кнопки - ГРАДИЕНТНЫЙ СТИЛЬ */
+    /* Download кнопки - ГРАДИЕНТНЫЙ СТИЛЬ С ЭФФЕКТОМ НЕОНА */
     .stDownloadButton>button {
-        border-radius: 10px !important;
+        border-radius: 8px !important;
         padding: 0.6rem 2rem !important;
         font-weight: 500 !important;
         background: var(--gradient-main) !important;
         border: none !important;
         transition: all 0.3s ease !important;
-        box-shadow: 0 2px 8px var(--shadow-primary) !important;
+        box-shadow: var(--shadow-glow) !important;
         color: white !important;
     }
 
     .stDownloadButton>button:hover {
         transform: translateY(-2px) !important;
-        box-shadow: 0 4px 16px var(--shadow-hover) !important;
+        box-shadow: var(--shadow-glow-hover) !important;
         filter: brightness(1.1) !important;
         color: white !important;
     }
 
     .stDownloadButton>button:active {
         transform: translateY(0px) !important;
-        box-shadow: 0 2px 8px var(--shadow-primary) !important;
+        box-shadow: var(--shadow-glow) !important;
     }
 
     /* ИСКЛЮЧЕНИЕ: Кнопка "Выгрузить ВСЕ города" БЕЗ градиента */
