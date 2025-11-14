@@ -267,30 +267,51 @@ st.markdown("""
         font-weight: 500;
     }
 
-    /* Inputs */
-    .stSelectbox > div > div {
+    /* Inputs - Selectbox с красной окантовкой */
+    div[data-baseweb="select"] > div,
+    .stSelectbox > div > div,
+    [data-testid="stSelectbox"] > div > div {
+        border: 2px solid #ea3324 !important;
         border-radius: 10px;
         background: transparent !important;
-        border: 2px solid #ea3324 !important;
-        transition: all 0.3s ease;
+        transition: all 0.3s ease !important;
     }
 
-    .stSelectbox:hover > div > div {
+    div[data-baseweb="select"] > div:hover,
+    .stSelectbox:hover > div > div,
+    [data-testid="stSelectbox"]:hover > div > div {
         background: rgba(234, 51, 36, 0.05) !important;
         box-shadow: 0 2px 12px rgba(234, 51, 36, 0.2);
     }
 
+    div[data-baseweb="select"] > div:focus-within,
+    .stSelectbox > div > div:focus-within,
+    [data-testid="stSelectbox"] > div > div:focus-within {
+        border-color: #ea3324 !important;
+        box-shadow: 0 0 0 3px rgba(234, 51, 36, 0.2) !important;
+    }
+
     /* Черная окантовка для блока редактирования городов */
+    .edit-cities-block div[data-baseweb="select"] > div,
     .edit-cities-block .stSelectbox > div > div,
     .edit-cities-block .stSelectbox > div > div > div,
-    .edit-cities-block [data-baseweb="select"] > div {
+    .edit-cities-block [data-testid="stSelectbox"] > div > div {
         border: 2px solid #000000 !important;
         border-radius: 10px;
     }
 
-    .edit-cities-block .stSelectbox:hover > div > div {
+    .edit-cities-block div[data-baseweb="select"] > div:hover,
+    .edit-cities-block .stSelectbox:hover > div > div,
+    .edit-cities-block [data-testid="stSelectbox"]:hover > div > div {
         background: rgba(0, 0, 0, 0.05) !important;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .edit-cities-block div[data-baseweb="select"] > div:focus-within,
+    .edit-cities-block .stSelectbox > div > div:focus-within,
+    .edit-cities-block [data-testid="stSelectbox"] > div > div:focus-within {
+        border-color: #000000 !important;
+        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1) !important;
     }
 
     .stTextInput > div > div {
