@@ -69,8 +69,8 @@ st.markdown("""
         width: 32px;
         height: 32px;
         background: transparent;
-        color: #FFAA00;
-        border: 2px solid #FFAA00;
+        color: #ea3324;
+        border: 2px solid #ea3324;
         border-radius: 50%;
         font-weight: bold;
         font-size: 16px;
@@ -85,7 +85,7 @@ st.markdown("""
         justify-content: center;
         width: 20px;
         height: 20px;
-        background: #FFAA00;
+        background: #ea3324;
         color: white;
         border-radius: 50%;
         font-weight: bold;
@@ -196,15 +196,15 @@ st.markdown("""
         padding: 0.6rem 2rem;
         font-weight: 500;
         border: none;
-        background: linear-gradient(135deg, #FFAA00 0%, #CC8800 100%);
+        background: linear-gradient(135deg, #ea3324 0%, #c02a1e 100%);
         transition: all 0.3s ease;
-        box-shadow: 0 2px 8px rgba(255, 170, 0, 0.3);
+        box-shadow: 0 2px 8px rgba(234, 51, 36, 0.3);
     }
 
     .stButton>button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(255, 170, 0, 0.5);
-        background: linear-gradient(135deg, #FFB733 0%, #FFAA00 100%);
+        box-shadow: 0 4px 16px rgba(234, 51, 36, 0.5);
+        background: linear-gradient(135deg, #ff4539 0%, #ea3324 100%);
     }
 
     /* Кнопка secondary - стиль как у expander */
@@ -226,17 +226,17 @@ st.markdown("""
         border-radius: 10px;
         padding: 0.6rem 2rem;
         font-weight: 500;
-        background: linear-gradient(135deg, #FFAA00 0%, #CC8800 100%);
+        background: linear-gradient(135deg, #ea3324 0%, #c02a1e 100%);
         border: none;
         transition: all 0.3s ease;
-        box-shadow: 0 2px 8px rgba(255, 170, 0, 0.3);
+        box-shadow: 0 2px 8px rgba(234, 51, 36, 0.3);
         color: white !important;
     }
 
     .stDownloadButton>button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(255, 170, 0, 0.5);
-        background: linear-gradient(135deg, #FFB733 0%, #FFAA00 100%);
+        box-shadow: 0 4px 16px rgba(234, 51, 36, 0.5);
+        background: linear-gradient(135deg, #ff4539 0%, #ea3324 100%);
         color: white !important;
     }
 
@@ -250,7 +250,7 @@ st.markdown("""
     }
 
     [data-testid="stFileUploader"]:hover {
-        border-color: #FFAA00;
+        border-color: #ea3324;
         background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
     }
 
@@ -263,7 +263,7 @@ st.markdown("""
 
 
     .uploadedFileName {
-        color: #FFAA00;
+        color: #ea3324;
         font-weight: 500;
     }
 
@@ -271,7 +271,7 @@ st.markdown("""
     div[data-baseweb="select"] > div,
     .stSelectbox > div > div,
     [data-testid="stSelectbox"] > div > div {
-        border: 2px solid #FFAA00 !important;
+        border: 2px solid #ea3324 !important;
         border-radius: 10px;
         background: transparent !important;
         transition: all 0.3s ease !important;
@@ -280,15 +280,15 @@ st.markdown("""
     div[data-baseweb="select"] > div:hover,
     .stSelectbox:hover > div > div,
     [data-testid="stSelectbox"]:hover > div > div {
-        background: rgba(255, 170, 0, 0.05) !important;
-        box-shadow: 0 2px 12px rgba(255, 170, 0, 0.2);
+        background: rgba(234, 51, 36, 0.05) !important;
+        box-shadow: 0 2px 12px rgba(234, 51, 36, 0.2);
     }
 
     div[data-baseweb="select"] > div:focus-within,
     .stSelectbox > div > div:focus-within,
     [data-testid="stSelectbox"] > div > div:focus-within {
-        border-color: #FFAA00 !important;
-        box-shadow: 0 0 0 3px rgba(255, 170, 0, 0.2) !important;
+        border-color: #ea3324 !important;
+        box-shadow: 0 0 0 3px rgba(234, 51, 36, 0.2) !important;
     }
 
     /* Черная окантовка для блока редактирования городов */
@@ -371,7 +371,7 @@ st.markdown("""
     [data-testid="stSidebar"] h1 {
         font-size: 1.5rem;
         padding-bottom: 1rem;
-        border-bottom: 2px solid #FFAA00;
+        border-bottom: 2px solid #ea3324;
     }
 
     /* Expander */
@@ -394,20 +394,20 @@ st.markdown("""
 
     /* Slider - активная часть */
     .stSlider > div > div > div {
-        background: #FFAA00 !important;
+        background: #ea3324 !important;
     }
 
     /* Тумблер слайдера - простой круг */
     .stSlider > div > div > div > div {
         background-color: white !important;
-        border: 2px solid #FFAA00 !important;
+        border: 2px solid #ea3324 !important;
         height: 20px !important;
     }
 
     .stSlider > div > div > div > div:hover {
         background-color: white !important;
-        box-shadow: 0 0 8px rgba(255, 170, 0, 0.4) !important;
-        border: 2px solid #FFAA00 !important;
+        box-shadow: 0 0 8px rgba(234, 51, 36, 0.4) !important;
+        border: 2px solid #ea3324 !important;
     }
 
     /* Вкладки */
@@ -429,9 +429,9 @@ st.markdown("""
     }
 
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #FFAA00 0%, #CC8800 100%);
+        background: linear-gradient(135deg, #ea3324 0%, #c02a1e 100%);
         color: white;
-        border-bottom: 2px solid #FFAA00;
+        border-bottom: 2px solid #ea3324;
     }
 
     .stTabs [data-baseweb="tab"]:hover {
@@ -439,7 +439,7 @@ st.markdown("""
     }
 
     .stTabs [aria-selected="true"]:hover {
-        background: linear-gradient(135deg, #CC8800 0%, #FFAA00 100%);
+        background: linear-gradient(135deg, #c02a1e 0%, #ea3324 100%);
     }
 
     /* DataFrame */
@@ -475,7 +475,7 @@ st.markdown("""
 
     /* Прогресс бар */
     .stProgress > div > div {
-        background: linear-gradient(90deg, #FFAA00 0%, #CC8800 100%);
+        background: linear-gradient(90deg, #ea3324 0%, #c02a1e 100%);
         border-radius: 10px;
     }
 
@@ -491,8 +491,8 @@ st.markdown("""
     /* Кнопка Browse files в File Uploader - красная рамка */
     [data-testid="stFileUploader"] button {
         background: transparent !important;
-        border: 2px solid #FFAA00 !important;
-        color: #FFAA00 !important;
+        border: 2px solid #ea3324 !important;
+        color: #ea3324 !important;
         border-radius: 10px;
         padding: 0.5rem 1.5rem;
         font-weight: 500;
@@ -500,9 +500,9 @@ st.markdown("""
     }
 
     [data-testid="stFileUploader"] button:hover {
-        background: rgba(255, 170, 0, 0.1) !important;
+        background: rgba(234, 51, 36, 0.1) !important;
         transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(255, 170, 0, 0.3) !important;
+        box-shadow: 0 4px 16px rgba(234, 51, 36, 0.3) !important;
     }
 
     /* Селектор MultiSelect - БЕЗ красной рамки (одинарная рамка) */
@@ -1534,13 +1534,13 @@ with st.sidebar:
         color: #1a1a1a !important;
         font-weight: 500;
         transition: all 0.2s ease;
-        border-left: 3px solid #FFAA00;
+        border-left: 3px solid #ea3324;
     }
     .nav-link:visited {
         color: #1a1a1a !important;
     }
     .nav-link:hover {
-        background: #FFAA00;
+        background: #ea3324;
         color: white !important;
         transform: translateX(5px);
     }
@@ -1783,7 +1783,7 @@ if uploaded_file is not None and hh_areas is not None:
                         st.rerun()
 
                 # Добавляем текст со стрелочкой вверх
-                st.markdown('<p style="text-align: center; margin-top: 10px; color: rgba(49, 51, 63, 0.6); font-size: 0.9rem;"><span style="color: #FFAA00; font-size: 1.2rem;">↑</span> Выберите режим работы</p>', unsafe_allow_html=True)
+                st.markdown('<p style="text-align: center; margin-top: 10px; color: rgba(49, 51, 63, 0.6); font-size: 0.9rem;"><span style="color: #ea3324; font-size: 1.2rem;">↑</span> Выберите режим работы</p>', unsafe_allow_html=True)
 
                 # Показываем выбранный режим (скрыто)
                 # if st.session_state.export_mode == "split":
@@ -2002,9 +2002,9 @@ if uploaded_file is not None and hh_areas is not None:
 
                                 # Определяем цвет окантовки
                                 if default_idx == 0:
-                                    border_color = "#FFAA00"  # Красная для "Нет совпадения"
+                                    border_color = "#ea3324"  # Красная для "Нет совпадения"
                                 else:
-                                    border_color = "#FFAA00"  # Оранжевая для городов с процентом
+                                    border_color = "#ea3324"  # Оранжевая для городов с процентом
 
                                 col1, col2, col3, col4 = st.columns([2, 3, 1, 1])
 
@@ -2245,9 +2245,9 @@ if uploaded_file is not None and hh_areas is not None:
 
                                     # Определяем цвет окантовки
                                     if default_idx == 0:
-                                        border_color = "#FFAA00"  # Красная для "Нет совпадения"
+                                        border_color = "#ea3324"  # Красная для "Нет совпадения"
                                     else:
-                                        border_color = "#FFAA00"  # Оранжевая для городов с процентом
+                                        border_color = "#ea3324"  # Оранжевая для городов с процентом
 
                                     col1, col2, col3 = st.columns([2, 3, 1])
 
