@@ -34,30 +34,37 @@ st.markdown("""
     /* CSS ПЕРЕМЕННЫЕ ДЛЯ ГРАДИЕНТА */
     /* =============================================== */
     :root {
-        /* Красно-белый градиент для кнопок */
-        --gradient-main: linear-gradient(145deg, #f4301f 0%, #ff6b5a 60%, #ffcbc3 100%);
+        /* Мягкий розово-красный градиент для кнопок */
+        --gradient-main: linear-gradient(135deg, #FF6B9D 0%, #FF0000 100%);
+        --gradient-main-hover: linear-gradient(135deg, #FF5757 0%, #D32F2F 100%);
 
-        /* Красно-белый градиент для селекторов */
-        --gradient-selector: linear-gradient(145deg, #f4301f 0%, #ff8575 60%, #ffffff 100%);
+        /* Мягкий розово-красный градиент для селекторов (окантовка) */
+        --gradient-selector: linear-gradient(90deg,
+            #FFB6C1 0%,
+            #FFA0B9 20%,
+            #FF8AAE 40%,
+            #FF6B9D 60%,
+            #FF5757 80%,
+            #FF0000 100%);
 
         /* Цвета для UI элементов (красный) */
         --ui-color: #f4301f;
-        --ui-shadow: rgba(244, 48, 31, 0.4);
-        --ui-shadow-hover: rgba(244, 48, 31, 0.6);
+        --ui-shadow: rgba(255, 107, 157, 0.25);
+        --ui-shadow-hover: rgba(255, 107, 157, 0.35);
 
         /* Цвета для кнопок (красный) */
-        --primary-color: #f4301f;
-        --primary-light: #ff8575;
-        --primary-mid: #f4301f;
-        --primary-dark: #c72515;
-        --primary-accent: #f4301f;
-        --primary-orange: #f4301f;
+        --primary-color: #FF6B9D;
+        --primary-light: #FF8AAE;
+        --primary-mid: #FF5757;
+        --primary-dark: #D32F2F;
+        --primary-accent: #FF0000;
+        --primary-orange: #FF6B9D;
 
-        /* Тени для кнопок - красный */
-        --shadow-primary: rgba(244, 48, 31, 0.4);
-        --shadow-hover: rgba(244, 48, 31, 0.6);
-        --shadow-glow: 0 6px 20px rgba(244, 48, 31, 0.5);
-        --shadow-glow-hover: 0 8px 30px rgba(244, 48, 31, 0.7);
+        /* Тени для кнопок - мягкий красный */
+        --shadow-primary: rgba(255, 107, 157, 0.25);
+        --shadow-hover: rgba(255, 107, 157, 0.35);
+        --shadow-glow: 0 6px 20px rgba(255, 107, 157, 0.35);
+        --shadow-glow-hover: 0 8px 30px rgba(255, 107, 157, 0.5);
     }
 
     /* Подключение шрифта hhsans Regular */
@@ -236,17 +243,19 @@ st.markdown("""
     /* СТИЛИ КНОПОК - ГРАДИЕНТНЫЙ СТИЛЬ ДЛЯ ВСЕХ КНОПОК */
     /* =============================================== */
 
-    /* Все обычные кнопки (включая primary и secondary) - ГРАДИЕНТНЫЙ СТИЛЬ С ЭФФЕКТОМ НЕОНА */
+    /* Все обычные кнопки (включая primary и secondary) - МЯГКИЙ ГРАДИЕНТ */
     .stButton>button {
-        border-radius: 8px !important;
-        padding: 0.6rem 2rem !important;
+        border-radius: 20px !important;
+        padding: 14px 24px !important;
         font-family: 'hhsans-Medium', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
         font-weight: 500 !important;
+        font-size: 16px !important;
         background: var(--gradient-main) !important;
         border: none !important;
         transition: all 0.3s ease !important;
-        box-shadow: var(--shadow-glow) !important;
+        box-shadow: none !important;
         color: white !important;
+        cursor: pointer !important;
     }
 
     /* Текст внутри кнопок - Medium шрифт */
@@ -257,28 +266,30 @@ st.markdown("""
     }
 
     .stButton>button:hover {
+        background: var(--gradient-main-hover) !important;
         transform: translateY(-2px) !important;
-        box-shadow: var(--shadow-glow-hover) !important;
-        filter: brightness(1.1) !important;
+        box-shadow: 0 6px 20px rgba(255, 107, 157, 0.35) !important;
         color: white !important;
     }
 
     .stButton>button:active {
         transform: translateY(0px) !important;
-        box-shadow: var(--shadow-glow) !important;
+        box-shadow: none !important;
     }
 
-    /* Download кнопки - ГРАДИЕНТНЫЙ СТИЛЬ С ЭФФЕКТОМ НЕОНА */
+    /* Download кнопки - МЯГКИЙ ГРАДИЕНТ */
     .stDownloadButton>button {
-        border-radius: 8px !important;
-        padding: 0.6rem 2rem !important;
+        border-radius: 20px !important;
+        padding: 14px 24px !important;
         font-family: 'hhsans-Medium', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
         font-weight: 500 !important;
+        font-size: 16px !important;
         background: var(--gradient-main) !important;
         border: none !important;
         transition: all 0.3s ease !important;
-        box-shadow: var(--shadow-glow) !important;
+        box-shadow: none !important;
         color: white !important;
+        cursor: pointer !important;
     }
 
     /* Текст внутри download кнопок - Medium шрифт */
@@ -289,15 +300,15 @@ st.markdown("""
     }
 
     .stDownloadButton>button:hover {
+        background: var(--gradient-main-hover) !important;
         transform: translateY(-2px) !important;
-        box-shadow: var(--shadow-glow-hover) !important;
-        filter: brightness(1.1) !important;
+        box-shadow: 0 6px 20px rgba(255, 107, 157, 0.35) !important;
         color: white !important;
     }
 
     .stDownloadButton>button:active {
         transform: translateY(0px) !important;
-        box-shadow: var(--shadow-glow) !important;
+        box-shadow: none !important;
     }
 
     /* File Uploader */
@@ -327,39 +338,63 @@ st.markdown("""
         font-weight: 500;
     }
 
-    /* Inputs - Selectbox с черно-красным градиентом ТОЛЬКО на окантовке */
+    /* Inputs - Selectbox с мягким розово-красным градиентом на окантовке */
     div[data-baseweb="select"] > div,
     .stSelectbox > div > div,
     [data-testid="stSelectbox"] > div > div {
         position: relative;
-        border: 2px solid transparent !important;
-        border-radius: 10px;
-        background: linear-gradient(white, white) padding-box,
-                    var(--gradient-selector) border-box !important;
+        padding: 1.5px !important;
+        border-radius: 20px !important;
+        background: var(--gradient-selector) !important;
         transition: all 0.3s ease !important;
+        cursor: pointer !important;
+    }
+
+    /* Внутренний белый фон селектора */
+    div[data-baseweb="select"] > div > div,
+    .stSelectbox > div > div > div,
+    [data-testid="stSelectbox"] > div > div > div {
+        background: white !important;
+        border-radius: 18px !important;
+        padding: 14px 20px !important;
+        font-size: 15px !important;
+        color: #333 !important;
     }
 
     div[data-baseweb="select"] > div:hover,
     .stSelectbox:hover > div > div,
     [data-testid="stSelectbox"]:hover > div > div {
-        box-shadow: 0 4px 16px var(--ui-shadow);
-        filter: brightness(1.05);
+        transform: translateX(4px);
+        padding: 2px !important;
+        box-shadow: 0 4px 16px rgba(255, 107, 157, 0.25);
     }
 
     div[data-baseweb="select"] > div:focus-within,
     .stSelectbox > div > div:focus-within,
     [data-testid="stSelectbox"] > div > div:focus-within {
-        box-shadow: 0 0 0 3px var(--ui-shadow) !important;
+        box-shadow: 0 4px 16px rgba(255, 107, 157, 0.35) !important;
     }
 
     .stTextInput > div > div {
-        border-radius: 10px;
+        border-radius: 20px;
         border: 1px solid #dee2e6;
     }
 
+    /* MultiSelect с мягким розово-красным градиентом на окантовке */
     .stMultiSelect > div > div {
-        border-radius: 10px;
-        border: 1px solid #dee2e6;
+        position: relative;
+        padding: 1.5px !important;
+        border-radius: 20px !important;
+        background: var(--gradient-selector) !important;
+        transition: all 0.3s ease !important;
+        cursor: pointer !important;
+        border: none !important;
+    }
+
+    .stMultiSelect > div > div:hover {
+        transform: translateX(4px);
+        padding: 2px !important;
+        box-shadow: 0 4px 16px rgba(255, 107, 157, 0.25);
     }
 
     /* Информационные блоки - С ГРАДИЕНТОМ */
@@ -529,33 +564,28 @@ st.markdown("""
     }
 
 
-    /* Кнопка Browse files в File Uploader - градиентная рамка */
+    /* Кнопка Browse files в File Uploader - мягкий градиент */
     [data-testid="stFileUploader"] button {
-        background: transparent !important;
-        border: 2px solid var(--ui-color) !important;
-        color: var(--ui-color) !important;
-        border-radius: 10px;
-        padding: 0.5rem 1.5rem;
-        font-weight: 500;
-        transition: all 0.3s ease;
+        background: var(--gradient-main) !important;
+        border: none !important;
+        color: white !important;
+        border-radius: 20px !important;
+        padding: 14px 24px !important;
+        font-weight: 500 !important;
+        font-size: 16px !important;
+        transition: all 0.3s ease !important;
+        cursor: pointer !important;
     }
 
     [data-testid="stFileUploader"] button:hover {
-        background: rgba(244, 48, 31, 0.1) !important;
+        background: var(--gradient-main-hover) !important;
         transform: translateY(-2px);
-        box-shadow: 0 4px 16px var(--ui-shadow) !important;
+        box-shadow: 0 6px 20px rgba(255, 107, 157, 0.35) !important;
     }
 
-    /* Селектор MultiSelect - БЕЗ красной рамки (одинарная рамка) */
+    /* Селектор MultiSelect - с мягким градиентом */
     [data-testid="stMultiSelect"] {
-        border-radius: 10px;
-    }
-
-    [data-testid="stMultiSelect"] > div {
-        background: transparent !important;
-        border: 1px solid #dee2e6 !important;
-        border-radius: 10px;
-        transition: all 0.3s ease;
+        border-radius: 20px;
     }
 
     [data-testid="stMultiSelect"]:hover > div {
