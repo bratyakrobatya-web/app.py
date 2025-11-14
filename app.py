@@ -34,37 +34,23 @@ st.markdown("""
     /* CSS ПЕРЕМЕННЫЕ ДЛЯ ГРАДИЕНТА */
     /* =============================================== */
     :root {
-        /* Мягкий красно-розовый градиент для кнопок (обратный) */
-        --gradient-main: linear-gradient(135deg, #FF0000 0%, #FF6B9D 100%);
-        --gradient-main-hover: linear-gradient(135deg, #D32F2F 0%, #FF5757 100%);
-
-        /* Мягкий розово-красный градиент для селекторов (окантовка) */
-        --gradient-selector: linear-gradient(90deg,
-            #FFB6C1 0%,
-            #FFA0B9 20%,
-            #FF8AAE 40%,
-            #FF6B9D 60%,
-            #FF5757 80%,
-            #FF0000 100%);
+        /* Базовый красный цвет для кнопок */
+        --button-color: #f4301f;
+        --button-hover: #d32f2f;
 
         /* Цвета для UI элементов (красный) */
         --ui-color: #f4301f;
-        --ui-shadow: rgba(255, 107, 157, 0.25);
-        --ui-shadow-hover: rgba(255, 107, 157, 0.35);
+        --ui-shadow: rgba(244, 48, 31, 0.25);
+        --ui-shadow-hover: rgba(244, 48, 31, 0.35);
 
         /* Цвета для кнопок (красный) */
-        --primary-color: #FF6B9D;
-        --primary-light: #FF8AAE;
-        --primary-mid: #FF5757;
-        --primary-dark: #D32F2F;
-        --primary-accent: #FF0000;
-        --primary-orange: #FF6B9D;
+        --primary-color: #f4301f;
+        --primary-dark: #d32f2f;
 
-        /* Тени для кнопок - мягкий красный */
-        --shadow-primary: rgba(255, 107, 157, 0.25);
-        --shadow-hover: rgba(255, 107, 157, 0.35);
-        --shadow-glow: 0 6px 20px rgba(255, 107, 157, 0.35);
-        --shadow-glow-hover: 0 8px 30px rgba(255, 107, 157, 0.5);
+        /* Тени для кнопок - красный */
+        --shadow-primary: rgba(244, 48, 31, 0.25);
+        --shadow-hover: rgba(244, 48, 31, 0.35);
+        --shadow-glow: 0 6px 20px rgba(244, 48, 31, 0.35);
     }
 
     /* Подключение шрифта hhsans Regular */
@@ -243,14 +229,14 @@ st.markdown("""
     /* СТИЛИ КНОПОК - ГРАДИЕНТНЫЙ СТИЛЬ ДЛЯ ВСЕХ КНОПОК */
     /* =============================================== */
 
-    /* Все обычные кнопки (включая primary и secondary) - МЯГКИЙ ГРАДИЕНТ */
+    /* Все обычные кнопки (включая primary и secondary) - БАЗОВЫЙ КРАСНЫЙ */
     .stButton>button {
         border-radius: 20px !important;
         padding: 10px 20px !important;
         font-family: 'hhsans-Medium', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
         font-weight: 500 !important;
         font-size: 14px !important;
-        background: var(--gradient-main) !important;
+        background: var(--button-color) !important;
         border: none !important;
         transition: all 0.3s ease !important;
         box-shadow: none !important;
@@ -266,9 +252,9 @@ st.markdown("""
     }
 
     .stButton>button:hover {
-        background: var(--gradient-main-hover) !important;
+        background: var(--button-hover) !important;
         transform: translateY(-2px) !important;
-        box-shadow: 0 6px 20px rgba(255, 107, 157, 0.35) !important;
+        box-shadow: var(--shadow-glow) !important;
         color: white !important;
     }
 
@@ -277,14 +263,14 @@ st.markdown("""
         box-shadow: none !important;
     }
 
-    /* Download кнопки - МЯГКИЙ ГРАДИЕНТ */
+    /* Download кнопки - БАЗОВЫЙ КРАСНЫЙ */
     .stDownloadButton>button {
         border-radius: 20px !important;
         padding: 10px 20px !important;
         font-family: 'hhsans-Medium', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
         font-weight: 500 !important;
         font-size: 14px !important;
-        background: var(--gradient-main) !important;
+        background: var(--button-color) !important;
         border: none !important;
         transition: all 0.3s ease !important;
         box-shadow: none !important;
@@ -300,9 +286,9 @@ st.markdown("""
     }
 
     .stDownloadButton>button:hover {
-        background: var(--gradient-main-hover) !important;
+        background: var(--button-hover) !important;
         transform: translateY(-2px) !important;
-        box-shadow: 0 6px 20px rgba(255, 107, 157, 0.35) !important;
+        box-shadow: var(--shadow-glow) !important;
         color: white !important;
     }
 
@@ -338,31 +324,31 @@ st.markdown("""
         font-weight: 500;
     }
 
-    /* Inputs - Selectbox с мягким розово-красным градиентом на окантовке */
+    /* Inputs - Selectbox простые без градиента */
     div[data-baseweb="select"] > div,
     .stSelectbox > div > div,
     [data-testid="stSelectbox"] > div > div {
         position: relative;
-        border: 2px solid transparent !important;
+        border: 1px solid #dee2e6 !important;
         border-radius: 20px !important;
-        background: linear-gradient(white, white) padding-box,
-                    var(--gradient-selector) border-box !important;
+        background: white !important;
         transition: all 0.3s ease !important;
         cursor: pointer !important;
-        padding: 14px 20px !important;
+        padding: 10px 20px !important;
     }
 
     div[data-baseweb="select"] > div:hover,
     .stSelectbox:hover > div > div,
     [data-testid="stSelectbox"]:hover > div > div {
-        transform: translateX(4px);
-        box-shadow: 0 4px 16px rgba(255, 107, 157, 0.25);
+        border-color: var(--ui-color) !important;
+        box-shadow: 0 2px 8px rgba(244, 48, 31, 0.15);
     }
 
     div[data-baseweb="select"] > div:focus-within,
     .stSelectbox > div > div:focus-within,
     [data-testid="stSelectbox"] > div > div:focus-within {
-        box-shadow: 0 4px 16px rgba(255, 107, 157, 0.35) !important;
+        border-color: var(--ui-color) !important;
+        box-shadow: 0 0 0 3px rgba(244, 48, 31, 0.15) !important;
     }
 
     .stTextInput > div > div {
@@ -370,20 +356,20 @@ st.markdown("""
         border: 1px solid #dee2e6;
     }
 
-    /* MultiSelect с мягким розово-красным градиентом на окантовке */
+    /* MultiSelect простой без градиента */
     .stMultiSelect > div > div {
         position: relative;
-        border: 2px solid transparent !important;
+        border: 1px solid #dee2e6 !important;
         border-radius: 20px !important;
-        background: linear-gradient(white, white) padding-box,
-                    var(--gradient-selector) border-box !important;
+        background: white !important;
         transition: all 0.3s ease !important;
         cursor: pointer !important;
+        padding: 10px 20px !important;
     }
 
     .stMultiSelect > div > div:hover {
-        transform: translateX(4px);
-        box-shadow: 0 4px 16px rgba(255, 107, 157, 0.25);
+        border-color: var(--ui-color) !important;
+        box-shadow: 0 2px 8px rgba(244, 48, 31, 0.15);
     }
 
     /* Информационные блоки - С ГРАДИЕНТОМ */
@@ -553,9 +539,9 @@ st.markdown("""
     }
 
 
-    /* Кнопка Browse files в File Uploader - мягкий градиент */
+    /* Кнопка Browse files в File Uploader - базовый красный */
     [data-testid="stFileUploader"] button {
-        background: var(--gradient-main) !important;
+        background: var(--button-color) !important;
         border: none !important;
         color: white !important;
         border-radius: 20px !important;
@@ -567,9 +553,9 @@ st.markdown("""
     }
 
     [data-testid="stFileUploader"] button:hover {
-        background: var(--gradient-main-hover) !important;
+        background: var(--button-hover) !important;
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(255, 107, 157, 0.35) !important;
+        box-shadow: var(--shadow-glow) !important;
     }
 
     /* Селектор MultiSelect - с мягким градиентом */
