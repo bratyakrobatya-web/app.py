@@ -1410,7 +1410,184 @@ def match_cities(original_df, hh_areas, threshold=85, sheet_name=None):
       
     total_duplicates = duplicate_original_count + duplicate_hh_count  
       
-    return pd.DataFrame(results), duplicate_original_count, duplicate_hh_count, total_duplicates  
+    return pd.DataFrame(results), duplicate_original_count, duplicate_hh_count, total_duplicates
+
+def merge_cities_files(df1, df2, hh_areas, threshold=85):
+    """
+    Объединяет два файла с городами с удалением дублей.
+
+    Args:
+        df1: Первый DataFrame с городами
+        df2: Второй DataFrame с городами
+        hh_areas: Справочник HH.ru
+        threshold: Порог совпадения для сопоставления
+
+    Returns:
+        merged_df: Объединенный DataFrame без дублей
+        stats: Словарь со статистикой объединения
+    """
+
+    # Используем только российские города
+    hh_city_names = get_russian_cities(hh_areas)
+
+    # Словари для отслеживания уникальных городов
+    seen_original_cities = {}  # По исходному названию
+    seen_hh_cities = {}  # По результату HH
+
+    results = []
+    stats = {
+        'total_from_file1': len(df1),
+        'total_from_file2': len(df2),
+        'duplicates_removed': 0,
+        'unique_cities': 0,
+        'merged_total': 0
+    }
+
+    # Определяем названия столбцов для каждого файла
+    first_col_name_df1 = df1.columns[0]
+    first_col_name_df2 = df2.columns[0]
+
+    # Обрабатываем первый файл
+    st.info("📄 Обработка первого файла...")
+    progress_bar = st.progress(0)
+
+    for idx, row in df1.iterrows():
+        progress = (idx + 1) / len(df1)
+        progress_bar.progress(progress)
+
+        client_city = row[first_col_name_df1]
+
+        # Пропускаем пустые значения
+        if pd.isna(client_city) or str(client_city).strip() == "":
+            continue
+
+        client_city_original = str(client_city).strip()
+        client_city_normalized = normalize_city_name(client_city_original)
+
+        # Проверяем, не видели ли мы уже этот город
+        if client_city_normalized in seen_original_cities:
+            stats['duplicates_removed'] += 1
+            continue
+
+        # Сопоставляем с HH
+        match_result, candidates = smart_match_city(client_city_original, hh_city_names, hh_areas, threshold)
+
+        if match_result:
+            matched_name = match_result[0]
+            score = match_result[1]
+            hh_info = hh_areas[matched_name]
+            hh_city_normalized = normalize_city_name(hh_info['name'])
+
+            # Проверяем дубликат по результату HH
+            if hh_city_normalized in seen_hh_cities:
+                stats['duplicates_removed'] += 1
+                continue
+
+            # Добавляем город
+            city_result = {
+                'Исходное название': client_city_original,
+                'Итоговое гео': hh_info['name'],
+                'ID HH': hh_info['id'],
+                'Регион': hh_info['parent'],
+                'Совпадение %': round(score, 1),
+                'Источник': 'Файл 1',
+                'Статус': '✅ Точное' if score >= 95 else '⚠️ Похожее'
+            }
+
+            results.append(city_result)
+            seen_original_cities[client_city_normalized] = city_result
+            seen_hh_cities[hh_city_normalized] = True
+            stats['unique_cities'] += 1
+        else:
+            # Город не найден в HH, но добавляем в список
+            city_result = {
+                'Исходное название': client_city_original,
+                'Итоговое гео': None,
+                'ID HH': None,
+                'Регион': None,
+                'Совпадение %': 0,
+                'Источник': 'Файл 1',
+                'Статус': '❌ Не найдено'
+            }
+
+            results.append(city_result)
+            seen_original_cities[client_city_normalized] = city_result
+            stats['unique_cities'] += 1
+
+    progress_bar.empty()
+
+    # Обрабатываем второй файл
+    st.info("📄 Обработка второго файла...")
+    progress_bar = st.progress(0)
+
+    for idx, row in df2.iterrows():
+        progress = (idx + 1) / len(df2)
+        progress_bar.progress(progress)
+
+        client_city = row[first_col_name_df2]
+
+        # Пропускаем пустые значения
+        if pd.isna(client_city) or str(client_city).strip() == "":
+            continue
+
+        client_city_original = str(client_city).strip()
+        client_city_normalized = normalize_city_name(client_city_original)
+
+        # Проверяем, не видели ли мы уже этот город (из первого файла или ранее из второго)
+        if client_city_normalized in seen_original_cities:
+            stats['duplicates_removed'] += 1
+            continue
+
+        # Сопоставляем с HH
+        match_result, candidates = smart_match_city(client_city_original, hh_city_names, hh_areas, threshold)
+
+        if match_result:
+            matched_name = match_result[0]
+            score = match_result[1]
+            hh_info = hh_areas[matched_name]
+            hh_city_normalized = normalize_city_name(hh_info['name'])
+
+            # Проверяем дубликат по результату HH
+            if hh_city_normalized in seen_hh_cities:
+                stats['duplicates_removed'] += 1
+                continue
+
+            # Добавляем город
+            city_result = {
+                'Исходное название': client_city_original,
+                'Итоговое гео': hh_info['name'],
+                'ID HH': hh_info['id'],
+                'Регион': hh_info['parent'],
+                'Совпадение %': round(score, 1),
+                'Источник': 'Файл 2',
+                'Статус': '✅ Точное' if score >= 95 else '⚠️ Похожее'
+            }
+
+            results.append(city_result)
+            seen_original_cities[client_city_normalized] = city_result
+            seen_hh_cities[hh_city_normalized] = True
+            stats['unique_cities'] += 1
+        else:
+            # Город не найден в HH, но добавляем в список
+            city_result = {
+                'Исходное название': client_city_original,
+                'Итоговое гео': None,
+                'ID HH': None,
+                'Регион': None,
+                'Совпадение %': 0,
+                'Источник': 'Файл 2',
+                'Статус': '❌ Не найдено'
+            }
+
+            results.append(city_result)
+            seen_original_cities[client_city_normalized] = city_result
+            stats['unique_cities'] += 1
+
+    progress_bar.empty()
+
+    stats['merged_total'] = len(results)
+
+    return pd.DataFrame(results), stats
 
 # ============================================
 # ИНТЕРФЕЙС
@@ -1646,12 +1823,21 @@ with st.sidebar:
     if hh_areas:
         st.success(f"✅ Справочник HH загружен: **{len(hh_areas)}** городов")
 
-st.subheader("📁 Загрузка файла")
-uploaded_file = st.file_uploader(
-    "Выберите файл с городами",
-    type=['xlsx', 'csv'],
-    help="Поддерживаются форматы: Excel (.xlsx) и CSV"
-)
+# Выбор режима работы
+st.subheader("🎯 Выбор режима работы")
+mode_tab1, mode_tab2 = st.tabs(["📁 Обработка одного файла", "🔗 Объединение двух файлов"])
+
+# ============================================
+# РЕЖИМ 1: ОБРАБОТКА ОДНОГО ФАЙЛА
+# ============================================
+with mode_tab1:
+    st.subheader("📁 Загрузка файла")
+    uploaded_file = st.file_uploader(
+        "Выберите файл с городами",
+        type=['xlsx', 'csv'],
+        help="Поддерживаются форматы: Excel (.xlsx) и CSV",
+        key="single_file_uploader"
+    )
 
 if uploaded_file is not None and hh_areas is not None:  
     st.markdown("---")  
@@ -3065,10 +3251,151 @@ if uploaded_file is not None and hh_areas is not None:
                     st.caption("📊 Подробный отчет со всеми данными")
                     st.caption("📊 Включает статусы и проценты совпадений")
       
-    except Exception as e:  
-        st.error(f"❌ Ошибка обработки файла: {str(e)}")  
-        import traceback  
-        st.code(traceback.format_exc())  
+    except Exception as e:
+        st.error(f"❌ Ошибка обработки файла: {str(e)}")
+        import traceback
+        st.code(traceback.format_exc())
+
+# ============================================
+# РЕЖИМ 2: ОБЪЕДИНЕНИЕ ДВУХ ФАЙЛОВ
+# ============================================
+with mode_tab2:
+    st.subheader("🔗 Объединение двух файлов с удалением дублей")
+    st.info("📋 Загрузите два файла с городами. Система объединит их и удалит дубликаты, используя интеллектуальное сопоставление с HH.ru")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("#### 📄 Первый файл")
+        uploaded_file_1 = st.file_uploader(
+            "Выберите первый файл",
+            type=['xlsx', 'csv'],
+            help="Поддерживаются форматы: Excel (.xlsx) и CSV",
+            key="merge_file_1_uploader"
+        )
+        if uploaded_file_1:
+            st.success(f"✅ Загружен: {uploaded_file_1.name}")
+
+    with col2:
+        st.markdown("#### 📄 Второй файл")
+        uploaded_file_2 = st.file_uploader(
+            "Выберите второй файл",
+            type=['xlsx', 'csv'],
+            help="Поддерживаются форматы: Excel (.xlsx) и CSV",
+            key="merge_file_2_uploader"
+        )
+        if uploaded_file_2:
+            st.success(f"✅ Загружен: {uploaded_file_2.name}")
+
+    if uploaded_file_1 is not None and uploaded_file_2 is not None and hh_areas is not None:
+        st.markdown("---")
+
+        if st.button("🔗 Объединить файлы", type="primary", use_container_width=True, key="merge_files_btn"):
+            with st.spinner("Обрабатываю файлы..."):
+                try:
+                    # Читаем первый файл
+                    if uploaded_file_1.name.endswith('.csv'):
+                        df1 = pd.read_csv(uploaded_file_1, header=None)
+                    else:
+                        df1 = pd.read_excel(uploaded_file_1, header=None)
+
+                    # Читаем второй файл
+                    if uploaded_file_2.name.endswith('.csv'):
+                        df2 = pd.read_csv(uploaded_file_2, header=None)
+                    else:
+                        df2 = pd.read_excel(uploaded_file_2, header=None)
+
+                    # Объединяем файлы
+                    merged_df, stats = merge_cities_files(df1, df2, hh_areas, threshold)
+
+                    # Сохраняем результат в session_state
+                    st.session_state.merged_result = merged_df
+                    st.session_state.merge_stats = stats
+
+                    st.success("✅ Файлы успешно объединены!")
+
+                except Exception as e:
+                    st.error(f"❌ Ошибка при объединении файлов: {str(e)}")
+                    import traceback
+                    st.code(traceback.format_exc())
+
+        # Показываем результаты, если они есть
+        if 'merged_result' in st.session_state and st.session_state.merged_result is not None:
+            st.markdown("---")
+            st.subheader("📊 Результаты объединения")
+
+            stats = st.session_state.merge_stats
+            merged_df = st.session_state.merged_result
+
+            # Статистика
+            col1, col2, col3, col4, col5 = st.columns(5)
+
+            col1.metric("Файл 1", stats['total_from_file1'])
+            col2.metric("Файл 2", stats['total_from_file2'])
+            col3.metric("🗑️ Дублей удалено", stats['duplicates_removed'])
+            col4.metric("✨ Уникальных", stats['unique_cities'])
+            col5.metric("📦 Итого", stats['merged_total'])
+
+            # Показываем таблицу
+            st.markdown("---")
+            st.subheader("📋 Объединенная таблица")
+
+            # Добавляем нумерацию
+            display_df = merged_df.copy()
+            display_df.insert(0, '№', range(1, len(display_df) + 1))
+
+            st.dataframe(display_df, use_container_width=True, height=400, hide_index=True)
+
+            # Кнопки скачивания
+            st.markdown("---")
+            st.subheader("💾 Скачать результаты")
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                # Скачать основной файл (без дублей)
+                output = io.BytesIO()
+                with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                    # Убираем столбец "Источник" для чистоты
+                    export_df = merged_df.drop(columns=['Источник'], errors='ignore')
+                    export_df.to_excel(writer, index=False, sheet_name='Объединенные города')
+                output.seek(0)
+
+                st.download_button(
+                    label=f"📥 Скачать объединенный файл ({len(merged_df)} городов)",
+                    data=output,
+                    file_name=f"merged_cities_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True,
+                    type="primary"
+                )
+
+            with col2:
+                # Скачать детальный отчет
+                output_detail = io.BytesIO()
+                with pd.ExcelWriter(output_detail, engine='openpyxl') as writer:
+                    merged_df.to_excel(writer, index=False, sheet_name='Детальный отчет')
+                output_detail.seek(0)
+
+                st.download_button(
+                    label=f"📊 Скачать детальный отчет",
+                    data=output_detail,
+                    file_name=f"merged_cities_detailed_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    use_container_width=True
+                )
+
+            # Показываем распределение по источникам
+            st.markdown("---")
+            st.subheader("📈 Распределение по источникам")
+
+            source_counts = merged_df['Источник'].value_counts()
+
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("📄 Из первого файла", source_counts.get('Файл 1', 0))
+            with col2:
+                st.metric("📄 Из второго файла", source_counts.get('Файл 2', 0))
 
 st.markdown("---")
 
