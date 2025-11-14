@@ -363,8 +363,7 @@ st.markdown("""
     }
 
     /* MultiSelect с черной окантовкой */
-    .stMultiSelect > div:first-child > div:first-child {
-        position: relative;
+    [data-testid="stMultiSelect"] [data-baseweb="select"] > div {
         border: 2px solid #1a1a1a !important;
         border-radius: 10px !important;
         background: white !important;
@@ -372,14 +371,9 @@ st.markdown("""
         cursor: pointer !important;
     }
 
-    .stMultiSelect > div:first-child > div:first-child:hover {
+    [data-testid="stMultiSelect"] [data-baseweb="select"] > div:hover {
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
         filter: brightness(1.02);
-    }
-
-    /* Убираем border со всех вложенных элементов */
-    .stMultiSelect > div > div > div {
-        border: none !important;
     }
 
     /* Информационные блоки - С ГРАДИЕНТОМ */
@@ -2163,8 +2157,6 @@ if uploaded_files and hh_areas is not None:
                     display_df = result_df_filtered.copy()
                     display_df = display_df.drop(['row_id', 'sort_priority'], axis=1, errors='ignore')
 
-                    # Добавляем порядковые номера вместо ID
-                    display_df.insert(0, '№', range(1, len(display_df) + 1))
                     # Сбрасываем индекс чтобы избежать дублирования
                     display_df = display_df.reset_index(drop=True)
 
@@ -3561,9 +3553,10 @@ if hh_areas is not None:
             st.success(f"✅ Найдено **{city_count}** городов")
 
         # Показываем таблицу на полную ширину
-        # Добавляем порядковые номера вместо ID HH
+        # Сортируем по населению по убыванию
         display_cities_df = cities_df.copy()
-        display_cities_df.insert(0, '№', range(1, len(display_cities_df) + 1))
+        if 'Население' in display_cities_df.columns:
+            display_cities_df = display_cities_df.sort_values('Население', ascending=False)
         display_cities_df = display_cities_df.reset_index(drop=True)
 
         st.dataframe(display_cities_df, use_container_width=True, height=400, hide_index=True)
