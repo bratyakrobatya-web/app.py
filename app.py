@@ -70,6 +70,16 @@ st.markdown("""
         font-display: swap;
     }
 
+    /* Подключение шрифта hhsans Medium для кнопок */
+    @font-face {
+        font-family: 'hhsans-Medium';
+        src: url('hhsans-Medium.woff2') format('woff2'),
+             url('hhsans-Medium.ttf') format('truetype');
+        font-weight: 500;
+        font-style: normal;
+        font-display: swap;
+    }
+
     /* Анимация для логотипа */
     @keyframes rotate {
         from { transform: rotate(0deg); }
@@ -83,14 +93,13 @@ st.markdown("""
         margin-right: 8px;
         width: 1em;
         height: 1em;
-        color: var(--ui-color);
     }
 
-    .rotating-earth svg {
+    .rotating-earth img {
         width: 100%;
         height: 100%;
         display: block;
-        fill: var(--ui-color);
+        filter: brightness(0) saturate(100%) invert(24%) sepia(95%) saturate(3456%) hue-rotate(353deg) brightness(99%) contrast(93%);
     }
 
     /* Круги с цифрами с градиентом */
@@ -231,6 +240,7 @@ st.markdown("""
     .stButton>button {
         border-radius: 8px !important;
         padding: 0.6rem 2rem !important;
+        font-family: 'hhsans-Medium', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
         font-weight: 500 !important;
         background: var(--gradient-main) !important;
         border: none !important;
@@ -255,6 +265,7 @@ st.markdown("""
     .stDownloadButton>button {
         border-radius: 8px !important;
         padding: 0.6rem 2rem !important;
+        font-family: 'hhsans-Medium', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
         font-weight: 500 !important;
         background: var(--gradient-main) !important;
         border: none !important;
@@ -302,38 +313,23 @@ st.markdown("""
         font-weight: 500;
     }
 
-    /* Inputs - Selectbox с черно-красным градиентом */
+    /* Inputs - Selectbox с черно-красным градиентом ТОЛЬКО на окантовке */
     div[data-baseweb="select"] > div,
     .stSelectbox > div > div,
     [data-testid="stSelectbox"] > div > div {
+        position: relative;
         border: 2px solid transparent !important;
         border-radius: 10px;
-        background: var(--gradient-selector) !important;
-        background-clip: padding-box !important;
-        position: relative;
+        background: linear-gradient(white, white) padding-box,
+                    var(--gradient-selector) border-box !important;
         transition: all 0.3s ease !important;
-    }
-
-    /* Внутренний фон для селекторов */
-    div[data-baseweb="select"] > div::before,
-    .stSelectbox > div > div::before,
-    [data-testid="stSelectbox"] > div > div::before {
-        content: '';
-        position: absolute;
-        top: 2px;
-        left: 2px;
-        right: 2px;
-        bottom: 2px;
-        background: white;
-        border-radius: 8px;
-        z-index: -1;
     }
 
     div[data-baseweb="select"] > div:hover,
     .stSelectbox:hover > div > div,
     [data-testid="stSelectbox"]:hover > div > div {
         box-shadow: 0 4px 16px var(--ui-shadow);
-        filter: brightness(1.1);
+        filter: brightness(1.05);
     }
 
     div[data-baseweb="select"] > div:focus-within,
@@ -1377,15 +1373,20 @@ def match_cities(original_df, hh_areas, threshold=85, sheet_name=None):
 # ИНТЕРФЕЙС
 # ============================================
 
-# SVG иконка контурной земли
-GLOBE_ICON = '''<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-<circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-<path d="M12 2C12 2 15 6 15 12C15 18 12 22 12 22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-<path d="M12 2C12 2 9 6 9 12C9 18 12 22 12 22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-<path d="M2 12H22" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-<path d="M4 16C4 16 6 15 12 15C18 15 20 16 20 16" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-<path d="M4 8C4 8 6 9 12 9C18 9 20 8 20 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-</svg>'''
+# Загрузка иконки synchronize.png
+try:
+    import base64
+    from io import BytesIO
+    from PIL import Image
+
+    sync_icon_image = Image.open("synchronize.png")
+    buffered = BytesIO()
+    sync_icon_image.save(buffered, format="PNG")
+    sync_icon_base64 = base64.b64encode(buffered.getvalue()).decode()
+    SYNC_ICON = f'<img src="data:image/png;base64,{sync_icon_base64}" style="width: 1em; height: 1em; display: inline-block;">'
+except Exception as e:
+    # Fallback если файл не найден
+    SYNC_ICON = '🔄'
 
 # Загрузка справочника HH
 try:
@@ -1397,7 +1398,7 @@ except Exception as e:
 # ============================================
 # ГЛАВНЫЙ ЗАГОЛОВОК
 # ============================================
-st.markdown(f'<h1 style="text-align: left; color: #f4301f; margin-bottom: 1rem;"><span class="rotating-earth">{GLOBE_ICON}</span> Синхронизатор гео HH.ru</h1>', unsafe_allow_html=True)
+st.markdown(f'<h1 style="text-align: left; color: #f4301f; margin-bottom: 1rem;"><span class="rotating-earth">{SYNC_ICON}</span> Синхронизатор гео HH.ru</h1>', unsafe_allow_html=True)
 st.markdown("---")
 
 # ============================================
@@ -1441,20 +1442,6 @@ if hh_areas:
 
                 col1, col2 = st.columns(2)
                 with col1:
-                    output_full = io.BytesIO()
-                    with pd.ExcelWriter(output_full, engine='openpyxl') as writer:
-                        all_cities_df.to_excel(writer, index=False, sheet_name='Города')
-                    output_full.seek(0)
-                    st.download_button(
-                        label=f"📥 Скачать полный отчет ({len(all_cities_df)} городов)",
-                        data=output_full,
-                        file_name="all_cities.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        use_container_width=True,
-                        type="primary",
-                        key="download_all_full"
-                    )
-                with col2:
                     publisher_df = pd.DataFrame({'Город': all_cities_df['Город']})
                     output_pub = io.BytesIO()
                     with pd.ExcelWriter(output_pub, engine='openpyxl') as writer:
@@ -1468,6 +1455,20 @@ if hh_areas:
                         use_container_width=True,
                         type="primary",
                         key="download_all_publisher"
+                    )
+                with col2:
+                    output_full = io.BytesIO()
+                    with pd.ExcelWriter(output_full, engine='openpyxl') as writer:
+                        all_cities_df.to_excel(writer, index=False, sheet_name='Города')
+                    output_full.seek(0)
+                    st.download_button(
+                        label=f"📥 Скачать полный отчет ({len(all_cities_df)} городов)",
+                        data=output_full,
+                        file_name="all_cities.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True,
+                        type="primary",
+                        key="download_all_full"
                     )
 
 st.markdown("---")
@@ -1509,7 +1510,7 @@ with st.sidebar:
         # Fallback если PNG еще не создан
         st.markdown(
             f'<div class="title-container">'
-            f'<span class="rotating-earth">{GLOBE_ICON}</span>'
+            f'<span class="rotating-earth">{SYNC_ICON}</span>'
             f'</div>',
             unsafe_allow_html=True
         )
