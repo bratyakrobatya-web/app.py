@@ -505,74 +505,96 @@ st.markdown("""
         box-shadow: 0 4px 16px rgba(234, 51, 36, 0.3) !important;
     }
 
-    /* Селектор "Федеральные округа" - красная рамка */
+    /* Селектор MultiSelect - БЕЗ красной рамки (одинарная рамка) */
     [data-testid="stMultiSelect"] {
         border-radius: 10px;
     }
 
     [data-testid="stMultiSelect"] > div {
         background: transparent !important;
-        border: 2px solid #ea3324 !important;
+        border: 1px solid #dee2e6 !important;
         border-radius: 10px;
         transition: all 0.3s ease;
     }
 
     [data-testid="stMultiSelect"]:hover > div {
-        background: rgba(234, 51, 36, 0.05) !important;
-        box-shadow: 0 2px 12px rgba(234, 51, 36, 0.2);
+        background: rgba(0, 0, 0, 0.02) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     }
 
     /* =============================================== */
-    /* СТИЛИ ДЛЯ КНОПОК ВЫБОРА РЕЖИМА РАБОТЫ */
+    /* СТИЛИ ДЛЯ КНОПОК ВЫБОРА РЕЖИМА РАБОТЫ - АГРЕССИВНАЯ СТИЛИЗАЦИЯ */
     /* =============================================== */
 
-    /* Переопределяем стили для кнопок режима работы */
-    div.mode-selection-buttons .stButton > button {
-        border-radius: 10px !important;
-        border: 3px solid #ea3324 !important;
+    /* Максимально агрессивные стили для кнопок режима */
+    div[data-testid="column"]:has(button[key="mode_split"]) button,
+    div[data-testid="column"]:has(button[key="mode_single"]) button {
+        width: 100% !important;
+        height: 140px !important;
+        min-height: 140px !important;
+        max-height: 140px !important;
+        padding: 50px 70px !important;
+        font-size: 24px !important;
+        font-weight: 800 !important;
+        letter-spacing: 2px !important;
+        text-align: center !important;
+        border-radius: 12px !important;
+        border: 5px solid #ea3324 !important;
         background: rgba(234, 51, 36, 0.15) !important;
-        padding: 30px 50px !important;
-        font-size: 20px !important;
-        font-weight: 700 !important;
-        letter-spacing: 1px !important;
         color: #ea3324 !important;
-        min-height: 90px !important;
         transition: all 0.3s ease !important;
-        box-shadow: 0 4px 8px rgba(234, 51, 36, 0.2) !important;
+        box-shadow: 0 8px 16px rgba(234, 51, 36, 0.3) !important;
+        position: relative !important;
     }
 
-    div.mode-selection-buttons .stButton > button:hover {
+    div[data-testid="column"]:has(button[key="mode_split"]) button::after,
+    div[data-testid="column"]:has(button[key="mode_single"]) button::after {
+        content: '';
+        position: absolute;
+        bottom: 25px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 3px;
+        background: currentColor;
+        opacity: 0.35;
+    }
+
+    div[data-testid="column"]:has(button[key="mode_split"]) button:hover,
+    div[data-testid="column"]:has(button[key="mode_single"]) button:hover {
         background: rgba(234, 51, 36, 0.25) !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 0 8px 16px rgba(234, 51, 36, 0.4) !important;
+        transform: translateY(-4px) !important;
+        box-shadow: 0 12px 24px rgba(234, 51, 36, 0.45) !important;
     }
 
     /* Выбранная кнопка (primary) */
-    div.mode-selection-buttons .stButton > button[kind="primary"] {
+    div[data-testid="column"]:has(button[key="mode_split"]) button[kind="primary"],
+    div[data-testid="column"]:has(button[key="mode_single"]) button[kind="primary"] {
         background: #ea3324 !important;
-        border-color: #ea3324 !important;
         color: white !important;
-        box-shadow: 0 6px 20px rgba(234, 51, 36, 0.5) !important;
+        border-color: #ea3324 !important;
+        box-shadow: 0 10px 28px rgba(234, 51, 36, 0.65) !important;
     }
 
-    div.mode-selection-buttons .stButton > button[kind="primary"]:hover {
+    div[data-testid="column"]:has(button[key="mode_split"]) button[kind="primary"]:hover,
+    div[data-testid="column"]:has(button[key="mode_single"]) button[kind="primary"]:hover {
         background: #d62e1f !important;
-        box-shadow: 0 8px 24px rgba(234, 51, 36, 0.6) !important;
+        box-shadow: 0 14px 32px rgba(234, 51, 36, 0.75) !important;
     }
 
-    /* Переопределяем secondary кнопку для режима */
-    div.mode-selection-buttons .stButton > button[kind="secondary"] {
+    div[data-testid="column"]:has(button[key="mode_split"]) button[kind="primary"]::after,
+    div[data-testid="column"]:has(button[key="mode_single"]) button[kind="primary"]::after {
+        opacity: 0.6;
+    }
+
+    /* Переопределяем secondary */
+    div[data-testid="column"]:has(button[key="mode_split"]) button[kind="secondary"],
+    div[data-testid="column"]:has(button[key="mode_single"]) button[kind="secondary"] {
         background: rgba(234, 51, 36, 0.15) !important;
-        border: 3px solid #ea3324 !important;
+        border: 5px solid #ea3324 !important;
         color: #ea3324 !important;
-        font-weight: 700 !important;
-        box-shadow: 0 4px 8px rgba(234, 51, 36, 0.2) !important;
-    }
-
-    div.mode-selection-buttons .stButton > button[kind="secondary"]:hover {
-        background: rgba(234, 51, 36, 0.25) !important;
-        transform: translateY(-2px) !important;
-        box-shadow: 0 8px 16px rgba(234, 51, 36, 0.4) !important;
+        font-weight: 800 !important;
+        box-shadow: 0 8px 16px rgba(234, 51, 36, 0.3) !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -1735,9 +1757,7 @@ if uploaded_file is not None and hh_areas is not None:
                 if 'export_mode' not in st.session_state:
                     st.session_state.export_mode = None
 
-                # Wrapper для кнопок режима
-                st.markdown('<div class="mode-selection-buttons">', unsafe_allow_html=True)
-
+                # Обычные Streamlit кнопки с агрессивной CSS стилизацией
                 col1, col2 = st.columns(2)
 
                 with col1:
@@ -1761,9 +1781,6 @@ if uploaded_file is not None and hh_areas is not None:
                     ):
                         st.session_state.export_mode = "single"
                         st.rerun()
-
-                # Закрываем wrapper
-                st.markdown('</div>', unsafe_allow_html=True)
 
                 # Добавляем текст со стрелочкой вверх
                 st.markdown('<p style="text-align: center; margin-top: 10px; color: rgba(49, 51, 63, 0.6); font-size: 0.9rem;"><span style="color: #ea3324; font-size: 1.2rem;">↑</span> Выберите режим работы</p>', unsafe_allow_html=True)
