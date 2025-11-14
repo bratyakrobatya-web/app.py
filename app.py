@@ -61,7 +61,7 @@ st.markdown("""
         display: block;
     }
 
-    /* Черные круги с цифрами */
+    /* Красные круги с цифрами */
     .step-number {
         display: inline-flex;
         align-items: center;
@@ -69,8 +69,8 @@ st.markdown("""
         width: 32px;
         height: 32px;
         background: transparent;
-        color: #000000;
-        border: 2px solid #000000;
+        color: #ea3324;
+        border: 2px solid #ea3324;
         border-radius: 50%;
         font-weight: bold;
         font-size: 16px;
@@ -78,14 +78,14 @@ st.markdown("""
         vertical-align: middle;
     }
 
-    /* Белая галочка в черном круге */
+    /* Белая галочка в красном круге */
     .check-circle {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         width: 20px;
         height: 20px;
-        background: #000000;
+        background: #ea3324;
         color: white;
         border-radius: 50%;
         font-weight: bold;
@@ -196,22 +196,22 @@ st.markdown("""
 
     /* Простые стили без специальных селекторов */
 
-    /* Download кнопки - ЧЕРНЫЙ СТИЛЬ */
+    /* Download кнопки - КРАСНЫЙ СТИЛЬ */
     .stDownloadButton>button {
         border-radius: 10px !important;
         padding: 0.6rem 2rem !important;
         font-weight: 500 !important;
-        background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%) !important;
+        background: linear-gradient(135deg, #ea3324 0%, #c02a1e 100%) !important;
         border: none !important;
         transition: all 0.3s ease !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3) !important;
+        box-shadow: 0 2px 8px rgba(234, 51, 36, 0.3) !important;
         color: white !important;
     }
 
     .stDownloadButton>button:hover {
         transform: translateY(-2px) !important;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5) !important;
-        background: linear-gradient(135deg, #333333 0%, #000000 100%) !important;
+        box-shadow: 0 4px 16px rgba(234, 51, 36, 0.5) !important;
+        background: linear-gradient(135deg, #ff4539 0%, #ea3324 100%) !important;
         color: white !important;
     }
 
@@ -225,7 +225,7 @@ st.markdown("""
     }
 
     [data-testid="stFileUploader"]:hover {
-        border-color: #000000;
+        border-color: #ea3324;
         background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
     }
 
@@ -238,15 +238,15 @@ st.markdown("""
 
 
     .uploadedFileName {
-        color: #000000;
+        color: #ea3324;
         font-weight: 500;
     }
 
-    /* Inputs - Selectbox с черной окантовкой */
+    /* Inputs - Selectbox с красной окантовкой */
     div[data-baseweb="select"] > div,
     .stSelectbox > div > div,
     [data-testid="stSelectbox"] > div > div {
-        border: 2px solid #000000 !important;
+        border: 2px solid #ea3324 !important;
         border-radius: 10px;
         background: transparent !important;
         transition: all 0.3s ease !important;
@@ -255,15 +255,15 @@ st.markdown("""
     div[data-baseweb="select"] > div:hover,
     .stSelectbox:hover > div > div,
     [data-testid="stSelectbox"]:hover > div > div {
-        background: rgba(0, 0, 0, 0.05) !important;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+        background: rgba(234, 51, 36, 0.05) !important;
+        box-shadow: 0 2px 12px rgba(234, 51, 36, 0.2);
     }
 
     div[data-baseweb="select"] > div:focus-within,
     .stSelectbox > div > div:focus-within,
     [data-testid="stSelectbox"] > div > div:focus-within {
-        border-color: #000000 !important;
-        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.2) !important;
+        border-color: #ea3324 !important;
+        box-shadow: 0 0 0 3px rgba(234, 51, 36, 0.2) !important;
     }
 
     /* Черная окантовка для блока редактирования городов */
@@ -299,17 +299,17 @@ st.markdown("""
         border: 1px solid #dee2e6;
     }
 
-    /* Информационные блоки - ВСЕ ЧЕРНЫЕ */
+    /* Информационные блоки - ВСЕ КРАСНЫЕ */
     .stInfo {
-        background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%) !important;
-        border-left: 5px solid #000000 !important;
+        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%) !important;
+        border-left: 5px solid #ea3324 !important;
         border-radius: 10px;
         padding: 1rem;
     }
 
     .stSuccess {
-        background: rgba(0, 0, 0, 0.1) !important;
-        border: 2px solid rgba(0, 0, 0, 0.4) !important;
+        background: rgba(234, 51, 36, 0.1) !important;
+        border: 2px solid rgba(234, 51, 36, 0.4) !important;
         border-radius: 10px;
         padding: 1rem;
         color: #1a1a1a !important;
@@ -324,15 +324,15 @@ st.markdown("""
     }
 
     .stWarning {
-        background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%) !important;
-        border-left: 5px solid #000000 !important;
+        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%) !important;
+        border-left: 5px solid #ea3324 !important;
         border-radius: 10px;
         padding: 1rem;
     }
 
     .stError {
-        background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%) !important;
-        border-left: 5px solid #000000 !important;
+        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%) !important;
+        border-left: 5px solid #ea3324 !important;
         border-radius: 10px;
         padding: 1rem;
     }
@@ -346,7 +346,7 @@ st.markdown("""
     [data-testid="stSidebar"] h1 {
         font-size: 1.5rem;
         padding-bottom: 1rem;
-        border-bottom: 2px solid #000000;
+        border-bottom: 2px solid #ea3324;
     }
 
     /* Expander */
@@ -369,20 +369,20 @@ st.markdown("""
 
     /* Slider - активная часть */
     .stSlider > div > div > div {
-        background: #000000 !important;
+        background: #ea3324 !important;
     }
 
     /* Тумблер слайдера - простой круг */
     .stSlider > div > div > div > div {
         background-color: white !important;
-        border: 2px solid #000000 !important;
+        border: 2px solid #ea3324 !important;
         height: 20px !important;
     }
 
     .stSlider > div > div > div > div:hover {
         background-color: white !important;
-        box-shadow: 0 0 8px rgba(0, 0, 0, 0.4) !important;
-        border: 2px solid #000000 !important;
+        box-shadow: 0 0 8px rgba(234, 51, 36, 0.4) !important;
+        border: 2px solid #ea3324 !important;
     }
 
     /* Вкладки */
@@ -404,9 +404,9 @@ st.markdown("""
     }
 
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
+        background: linear-gradient(135deg, #ea3324 0%, #c02a1e 100%);
         color: white;
-        border-bottom: 2px solid #000000;
+        border-bottom: 2px solid #ea3324;
     }
 
     .stTabs [data-baseweb="tab"]:hover {
@@ -414,7 +414,7 @@ st.markdown("""
     }
 
     .stTabs [aria-selected="true"]:hover {
-        background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%);
+        background: linear-gradient(135deg, #c02a1e 0%, #ea3324 100%);
     }
 
     /* DataFrame */
@@ -450,7 +450,7 @@ st.markdown("""
 
     /* Прогресс бар */
     .stProgress > div > div {
-        background: linear-gradient(90deg, #000000 0%, #1a1a1a 100%);
+        background: linear-gradient(90deg, #ea3324 0%, #c02a1e 100%);
         border-radius: 10px;
     }
 
@@ -463,11 +463,11 @@ st.markdown("""
     }
 
 
-    /* Кнопка Browse files в File Uploader - черная рамка */
+    /* Кнопка Browse files в File Uploader - красная рамка */
     [data-testid="stFileUploader"] button {
         background: transparent !important;
-        border: 2px solid #000000 !important;
-        color: #000000 !important;
+        border: 2px solid #ea3324 !important;
+        color: #ea3324 !important;
         border-radius: 10px;
         padding: 0.5rem 1.5rem;
         font-weight: 500;
@@ -475,9 +475,9 @@ st.markdown("""
     }
 
     [data-testid="stFileUploader"] button:hover {
-        background: rgba(0, 0, 0, 0.1) !important;
+        background: rgba(234, 51, 36, 0.1) !important;
         transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3) !important;
+        box-shadow: 0 4px 16px rgba(234, 51, 36, 0.3) !important;
     }
 
     /* Селектор MultiSelect - БЕЗ красной рамки (одинарная рамка) */
@@ -1672,7 +1672,7 @@ if uploaded_file is not None and hh_areas is not None:
                     selected_split = st.session_state.export_mode == "split"
                     # ИСПОЛЬЗУЕМ type="primary" для красной заливки (из config.toml primaryColor)
                     if st.button(
-                        "РАЗДЕЛЕНИЕ ПО ВАКАНСИЯМ",
+                        "**РАЗДЕЛЕНИЕ ПО ВАКАНСИЯМ**\n\n(работа с отдельными файлами)",
                         use_container_width=True,
                         key="mode_split",
                         type="primary"
@@ -1684,7 +1684,7 @@ if uploaded_file is not None and hh_areas is not None:
                     selected_single = st.session_state.export_mode == "single"
                     # ИСПОЛЬЗУЕМ type="primary" для красной заливки (из config.toml primaryColor)
                     if st.button(
-                        "ЕДИНЫМ ФАЙЛОМ",
+                        "**ЕДИНЫМ ФАЙЛОМ**\n\n(работа с общим списком гео)",
                         use_container_width=True,
                         key="mode_single",
                         type="primary"
@@ -1693,7 +1693,7 @@ if uploaded_file is not None and hh_areas is not None:
                         st.rerun()
 
                 # Добавляем текст со стрелочкой вверх
-                st.markdown('<p style="text-align: center; margin-top: 10px; color: rgba(49, 51, 63, 0.6); font-size: 0.9rem;"><span style="color: #000000; font-size: 1.2rem;">↑</span> Выберите режим работы</p>', unsafe_allow_html=True)
+                st.markdown('<p style="text-align: center; margin-top: 10px; color: rgba(49, 51, 63, 0.6); font-size: 0.9rem;"><span style="color: #ea3324; font-size: 1.2rem;">↑</span> Выберите режим работы</p>', unsafe_allow_html=True)
 
                 # Показываем выбранный режим (скрыто)
                 # if st.session_state.export_mode == "split":
