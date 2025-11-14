@@ -98,7 +98,7 @@ st.markdown("""
         color: var(--ui-color);
         border: 2px solid var(--ui-color);
         border-radius: 50%;
-        font-family: 'hhsans-Regular' !important;
+        font-family: 'hhsans-Regular' ;
         font-weight: normal;
         font-size: 16px;
         margin-right: 8px;
@@ -115,7 +115,7 @@ st.markdown("""
         background: var(--ui-color);
         color: white;
         border-radius: 50%;
-        font-family: 'hhsans-Regular' !important;
+        font-family: 'hhsans-Regular' ;
         font-weight: normal;
         font-size: 14px;
         margin-right: 8px;
@@ -124,7 +124,7 @@ st.markdown("""
 
     .main-title {
         display: inline-block;
-        font-family: 'hhsans-Regular' !important;
+        font-family: 'hhsans-Regular' ;
         font-size: 3em;
         font-weight: normal;
         vertical-align: middle;
@@ -152,7 +152,7 @@ st.markdown("""
 
     /* Базовые стили */
     html, body, [class*="css"] {
-        font-family: 'hhsans-Regular' !important;
+        font-family: 'hhsans-Regular' ;
         font-size: 14px;
     }
 
@@ -162,7 +162,7 @@ st.markdown("""
     .stTextArea textarea, .stNumberInput input,
     [data-testid="stFileUploader"], .uploadedFileName,
     p, div, label, h1, h2, h3, h4, h5, h6 {
-        font-family: 'hhsans-Regular' !important;
+        font-family: 'hhsans-Regular' ;
     }
 
     /* Исключаем иконочные шрифты из глобального применения */
@@ -170,7 +170,7 @@ st.markdown("""
     button span[data-icon], button span[class*="icon"],
     [data-testid="collapsedControl"] span,
     [data-testid="stSidebarCollapsedControl"] span {
-        font-family: 'Material Symbols Outlined', 'Material Icons', system-ui !important;
+        font-family: 'Material Symbols Outlined', 'Material Icons', system-ui ;
     }
 
     /* Улучшение качества изображений - максимальная четкость */
@@ -184,8 +184,8 @@ st.markdown("""
 
     /* Специально для логотипа в sidebar - ультра-качество */
     [data-testid="stSidebar"] img {
-        image-rendering: high-quality !important;
-        image-rendering: -webkit-optimize-contrast !important;
+        image-rendering: high-quality ;
+        image-rendering: -webkit-optimize-contrast ;
         backface-visibility: hidden;
         transform: translateZ(0);
         -webkit-font-smoothing: antialiased;
@@ -201,7 +201,7 @@ st.markdown("""
 
     /* Заголовки */
     h1 {
-        font-family: 'hhsans-Regular' !important;
+        font-family: 'hhsans-Regular' ;
         font-weight: normal;
         color: #1a1a1a;
         margin-bottom: 0.5rem;
@@ -220,7 +220,7 @@ st.markdown("""
     }
 
     h3 {
-        font-family: 'hhsans-Regular' !important;
+        font-family: 'hhsans-Regular';
         font-weight: normal;
         color: #4a4a4a;
         font-size: 3px;
@@ -233,78 +233,78 @@ st.markdown("""
 
     /* Все обычные кнопки (включая primary и secondary) - БАЗОВЫЙ КРАСНЫЙ */
     .stButton>button {
-        border-radius: 20px !important;
-        padding: 10px 20px !important;
-        font-family: 'hhsans-Regular' !important;
-        font-weight: normal !important;
-        font-size: 14px !important;
-        background: var(--button-color) !important;
-        border: none !important;
-        transition: all 0.3s ease !important;
-        box-shadow: none !important;
-        color: white !important;
-        cursor: pointer !important;
+        border-radius: 20px ;
+        padding: 10px 20px ;
+        font-family: 'hhsans-Regular' ;
+        font-weight: normal ;
+        font-size: 14px ;
+        background: var(--button-color) ;
+        border: none ;
+        transition: all 0.3s ease ;
+        box-shadow: none ;
+        color: white ;
+        cursor: pointer ;
     }
 
     /* Текст внутри кнопок - Regular шрифт */
     .stButton>button, .stButton>button span, .stButton>button p,
     .stButton>button div, .stButton>button * {
-        font-family: 'hhsans-Regular' !important;
-        font-weight: normal !important;
+        font-family: 'hhsans-Regular' ;
+        font-weight: normal ;
     }
 
     .stButton>button:hover {
-        background: var(--button-hover) !important;
-        transform: translateY(-2px) !important;
-        box-shadow: var(--shadow-glow) !important;
-        color: white !important;
+        background: var(--button-hover) ;
+        transform: translateY(-2px) ;
+        box-shadow: var(--shadow-glow) ;
+        color: white ;
     }
 
     .stButton>button:active {
-        transform: translateY(0px) !important;
-        box-shadow: none !important;
+        transform: translateY(0px) ;
+        box-shadow: none ;
     }
 
     /* Download кнопки - БАЗОВЫЙ КРАСНЫЙ */
     .stDownloadButton>button {
-        border-radius: 20px !important;
-        padding: 10px 20px !important;
-        font-family: 'hhsans-Regular' !important;
-        font-weight: normal !important;
-        font-size: 14px !important;
-        background: var(--button-color) !important;
-        border: none !important;
-        transition: all 0.3s ease !important;
-        box-shadow: none !important;
-        color: white !important;
-        cursor: pointer !important;
+        border-radius: 20px ;
+        padding: 10px 20px ;
+        font-family: 'hhsans-Regular' ;
+        font-weight: normal ;
+        font-size: 14px ;
+        background: var(--button-color) ;
+        border: none ;
+        transition: all 0.3s ease ;
+        box-shadow: none ;
+        color: white ;
+        cursor: pointer ;
     }
 
     /* Текст внутри download кнопок - Regular шрифт */
     .stDownloadButton>button, .stDownloadButton>button span, .stDownloadButton>button p,
     .stDownloadButton>button div, .stDownloadButton>button * {
-        font-family: 'hhsans-Regular' !important;
-        font-weight: normal !important;
+        font-family: 'hhsans-Regular' ;
+        font-weight: normal ;
     }
 
     .stDownloadButton>button:hover {
-        background: var(--button-hover) !important;
-        transform: translateY(-2px) !important;
-        box-shadow: var(--shadow-glow) !important;
-        color: white !important;
+        background: var(--button-hover) ;
+        transform: translateY(-2px) ;
+        box-shadow: var(--shadow-glow) ;
+        color: white ;
     }
 
     .stDownloadButton>button:active {
-        transform: translateY(0px) !important;
-        box-shadow: none !important;
+        transform: translateY(0px) ;
+        box-shadow: none ;
     }
 
     /* Tab кнопки - размер как обычные кнопки */
     .stTabs [data-baseweb="tab-list"] button {
-        padding: 10px 20px !important;
-        font-size: 14px !important;
-        font-family: 'hhsans-Regular' !important;
-        font-weight: normal !important;
+        padding: 10px 20px ;
+        font-size: 14px ;
+        font-family: 'hhsans-Regular' ;
+        font-weight: normal ;
     }
 
     /* File Uploader */
@@ -339,11 +339,11 @@ st.markdown("""
     .stSelectbox > div > div,
     [data-testid="stSelectbox"] > div > div {
         position: relative;
-        border: 2px solid #1a1a1a !important;
-        border-radius: 10px !important;
-        background: white !important;
-        transition: all 0.3s ease !important;
-        cursor: pointer !important;
+        border: 2px solid #1a1a1a ;
+        border-radius: 10px ;
+        background: white ;
+        transition: all 0.3s ease ;
+        cursor: pointer ;
     }
 
     div[data-baseweb="select"] > div:hover,
@@ -356,7 +356,7 @@ st.markdown("""
     div[data-baseweb="select"] > div:focus-within,
     .stSelectbox > div > div:focus-within,
     [data-testid="stSelectbox"] > div > div:focus-within {
-        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1) !important;
+        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1) ;
     }
 
     .stTextInput > div > div {
@@ -366,11 +366,11 @@ st.markdown("""
 
     /* MultiSelect с черной окантовкой */
     [data-testid="stMultiSelect"] [data-baseweb="select"] > div {
-        border: 2px solid #1a1a1a !important;
-        border-radius: 10px !important;
-        background: white !important;
-        transition: all 0.3s ease !important;
-        cursor: pointer !important;
+        border: 2px solid #1a1a1a ;
+        border-radius: 10px ;
+        background: white ;
+        transition: all 0.3s ease ;
+        cursor: pointer ;
     }
 
     [data-testid="stMultiSelect"] [data-baseweb="select"] > div:hover {
@@ -380,38 +380,38 @@ st.markdown("""
 
     /* Информационные блоки - С ГРАДИЕНТОМ */
     .stInfo {
-        background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%) !important;
-        border-left: 5px solid var(--ui-color) !important;
+        background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%) ;
+        border-left: 5px solid var(--ui-color) ;
         border-radius: 10px;
         padding: 1rem;
     }
 
     .stSuccess {
-        background: rgba(244, 48, 31, 0.1) !important;
-        border: 2px solid var(--ui-color) !important;
+        background: rgba(244, 48, 31, 0.1) ;
+        border: 2px solid var(--ui-color) ;
         border-radius: 10px;
         padding: 1rem;
-        color: #1a1a1a !important;
+        color: #1a1a1a ;
     }
 
     .stSuccess > div {
-        color: #1a1a1a !important;
+        color: #1a1a1a ;
     }
 
     .stSuccess p, .stSuccess strong {
-        color: #1a1a1a !important;
+        color: #1a1a1a ;
     }
 
     .stWarning {
-        background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%) !important;
-        border-left: 5px solid var(--ui-color) !important;
+        background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%) ;
+        border-left: 5px solid var(--ui-color) ;
         border-radius: 10px;
         padding: 1rem;
     }
 
     .stError {
-        background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%) !important;
-        border-left: 5px solid var(--ui-color) !important;
+        background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%) ;
+        border-left: 5px solid var(--ui-color) ;
         border-radius: 10px;
         padding: 1rem;
     }
@@ -442,26 +442,26 @@ st.markdown("""
 
     /* Slider - простой стиль */
     .stSlider > div > div {
-        background: #dee2e6 !important;
-        height: 4px !important;
+        background: #dee2e6 ;
+        height: 4px ;
     }
 
     /* Slider - активная часть с градиентом */
     .stSlider > div > div > div {
-        background: var(--ui-color) !important;
+        background: var(--ui-color) ;
     }
 
     /* Тумблер слайдера - простой круг */
     .stSlider > div > div > div > div {
-        background-color: white !important;
-        border: 2px solid var(--ui-color) !important;
-        height: 20px !important;
+        background-color: white ;
+        border: 2px solid var(--ui-color) ;
+        height: 20px ;
     }
 
     .stSlider > div > div > div > div:hover {
-        background-color: white !important;
-        box-shadow: 0 0 8px var(--ui-shadow) !important;
-        border: 2px solid var(--ui-color) !important;
+        background-color: white ;
+        box-shadow: 0 0 8px var(--ui-shadow) ;
+        border: 2px solid var(--ui-color) ;
     }
 
     /* Вкладки */
@@ -529,11 +529,11 @@ st.markdown("""
 
     /* Прогресс бар - базовый черный цвет вместо оранжевого */
     .stProgress > div > div > div > div {
-        background-color: #1a1a1a !important;
+        background-color: #1a1a1a ;
     }
 
     .stProgress [data-testid="stProgressBar"] > div > div {
-        background-color: #1a1a1a !important;
+        background-color: #1a1a1a ;
     }
 
     /* Divider */
@@ -547,47 +547,47 @@ st.markdown("""
 
     /* Кнопка Browse files в File Uploader - базовый красный */
     [data-testid="stFileUploader"] button {
-        background: var(--button-color) !important;
-        border: none !important;
-        color: white !important;
-        border-radius: 20px !important;
-        padding: 10px 20px !important;
-        font-weight: normal !important;
-        font-size: 14px !important;
-        transition: all 0.3s ease !important;
-        cursor: pointer !important;
+        background: var(--button-color) ;
+        border: none ;
+        color: white ;
+        border-radius: 20px ;
+        padding: 10px 20px ;
+        font-weight: normal ;
+        font-size: 14px ;
+        transition: all 0.3s ease ;
+        cursor: pointer ;
     }
 
     [data-testid="stFileUploader"] button:hover {
-        background: var(--button-hover) !important;
+        background: var(--button-hover) ;
         transform: translateY(-2px);
-        box-shadow: var(--shadow-glow) !important;
+        box-shadow: var(--shadow-glow) ;
     }
 
     /* Теги в мультиселекте - красный цвет вместо оранжевого */
     [data-testid="stMultiSelect"] span[data-baseweb="tag"] {
-        background-color: var(--ui-color) !important;
-        color: white !important;
+        background-color: var(--ui-color) ;
+        color: white ;
         border-radius: 6px;
     }
 
     [data-testid="stMultiSelect"] span[data-baseweb="tag"]:hover {
-        background-color: #d42817 !important;
+        background-color: #d42817 ;
     }
 
     /* Глобальные стили для ссылок - черный цвет вместо оранжевого */
     a {
-        color: #1a1a1a !important;
+        color: #1a1a1a ;
         text-decoration: none;
     }
 
     a:hover {
-        color: #000000 !important;
-        text-decoration: none !important;
+        color: #000000 ;
+        text-decoration: none ;
     }
 
     a:visited {
-        color: #1a1a1a !important;
+        color: #1a1a1a ;
     }
 
 </style>
@@ -1746,22 +1746,22 @@ with st.sidebar:
         margin: 0.25rem 0;
         background: #f8f9fa;
         border-radius: 8px;
-        text-decoration: none !important;
-        color: #1a1a1a !important;
+        text-decoration: none ;
+        color: #1a1a1a ;
         font-weight: normal;
         transition: all 0.3s ease;
         border-left: 3px solid var(--ui-color);
     }
     .nav-link:visited {
-        color: #1a1a1a !important;
-        text-decoration: none !important;
+        color: #1a1a1a ;
+        text-decoration: none ;
     }
     .nav-link:hover {
         background: var(--gradient-main);
-        color: white !important;
+        color: white ;
         transform: translateX(5px);
         border-left: 3px solid transparent;
-        text-decoration: none !important;
+        text-decoration: none ;
     }
     </style>
 
@@ -2264,8 +2264,8 @@ if uploaded_files and hh_areas is not None:
                                     div[data-testid="stSelectbox"]:has(select[id*="select_{row_id}"]) > div > div,
                                     div[data-testid="stSelectbox"]:has(select[id*="select_{row_id}"]) > div > div > div,
                                     div[data-testid="stSelectbox"]:has(select[id*="select_{row_id}"]) [data-baseweb="select"] > div {{
-                                        border-color: {border_color} !important;
-                                        border: 2px solid {border_color} !important;
+                                        border-color: {border_color} ;
+                                        border: 2px solid {border_color} ;
                                     }}
                                     </style>
                                     """, unsafe_allow_html=True)
@@ -2507,8 +2507,8 @@ if uploaded_files and hh_areas is not None:
                                         div[data-testid="stSelectbox"]:has(select[id*="{unique_key}"]) > div > div,
                                         div[data-testid="stSelectbox"]:has(select[id*="{unique_key}"]) > div > div > div,
                                         div[data-testid="stSelectbox"]:has(select[id*="{unique_key}"]) [data-baseweb="select"] > div {{
-                                            border-color: {border_color} !important;
-                                            border: 2px solid {border_color} !important;
+                                            border-color: {border_color} ;
+                                            border: 2px solid {border_color} ;
                                         }}
                                         </style>
                                         """, unsafe_allow_html=True)
