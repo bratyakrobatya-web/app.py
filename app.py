@@ -215,8 +215,8 @@ st.markdown("""
         color: #2d2d2d;
         margin-top: 2rem;
         margin-bottom: 1rem;
-        font-size: 20px;
-        letter-spacing: 5px;
+        font-size: 16px;
+        letter-spacing: 1px;
     }
 
     h3 {
