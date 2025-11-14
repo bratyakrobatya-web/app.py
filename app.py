@@ -281,9 +281,24 @@ st.markdown("""
 
     button[data-testid*="export_all_cities_btn"]:hover,
     div[data-testid*="export_all_cities_btn"] button:hover {
-        background: rgba(75, 0, 130, 0.1) !important;
+        background: rgba(126, 87, 194, 0.1) !important;
         border: 2px solid var(--primary-color) !important;
         color: var(--primary-color) !important;
+    }
+
+    /* Градиент для заголовков H1 и H2 */
+    h1, .main-title {
+        background: var(--gradient-main);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+
+    h2 {
+        background: var(--gradient-main);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
     }
 
     /* File Uploader */
@@ -3437,6 +3452,138 @@ if hh_areas is not None:
                 use_container_width=True,
                 key="download_regions_publisher"
             )
+
+st.markdown("---")
+
+# ============================================
+# ТЕСТОВАЯ СЕКЦИЯ: 10 вариантов градиентов
+# ============================================
+st.markdown("### 🎨 Тестовые градиенты (выберите лучший)")
+st.markdown("""
+<style>
+/* Градиент 1: Текущий (Фиолетовый-Розовый-Оранжевый) */
+.gradient-1 {
+    background: linear-gradient(145deg, #7E57C2 0%, #A855F7 25%, #E91E63 50%, #EC4899 75%, #FF9800 100%) !important;
+    border-radius: 8px !important;
+    padding: 0.6rem 2rem !important;
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(233, 30, 99, 0.4) !important;
+}
+
+/* Градиент 2: Красный-Бирюзовый-Персиковый (экспериментальный) */
+.gradient-2 {
+    background: radial-gradient(at 80% 20%, #FF6B6B 0%, transparent 50%),
+                radial-gradient(at 20% 80%, #4DD0E1 0%, transparent 50%),
+                radial-gradient(at 50% 90%, #FFD1A6 0%, transparent 50%),
+                linear-gradient(135deg, #FF6B6B 0%, #4DD0E1 50%, #FFD1A6 100%) !important;
+    border-radius: 8px !important;
+    padding: 0.6rem 2rem !important;
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(77, 208, 225, 0.4) !important;
+}
+
+/* Градиент 3: Синий-Зеленый-Желтый */
+.gradient-3 {
+    background: linear-gradient(145deg, #3B82F6 0%, #10B981 50%, #FBBF24 100%) !important;
+    border-radius: 8px !important;
+    padding: 0.6rem 2rem !important;
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4) !important;
+}
+
+/* Градиент 4: Фиолетовый-Красный */
+.gradient-4 {
+    background: linear-gradient(145deg, #8B5CF6 0%, #EC4899 50%, #EF4444 100%) !important;
+    border-radius: 8px !important;
+    padding: 0.6rem 2rem !important;
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4) !important;
+}
+
+/* Градиент 5: Розовый-Фиолетовый-Синий */
+.gradient-5 {
+    background: linear-gradient(145deg, #F472B6 0%, #A78BFA 50%, #60A5FA 100%) !important;
+    border-radius: 8px !important;
+    padding: 0.6rem 2rem !important;
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(167, 139, 250, 0.4) !important;
+}
+
+/* Градиент 6: Оранжевый-Красный-Розовый */
+.gradient-6 {
+    background: linear-gradient(145deg, #FB923C 0%, #F87171 50%, #FB7185 100%) !important;
+    border-radius: 8px !important;
+    padding: 0.6rem 2rem !important;
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(248, 113, 113, 0.4) !important;
+}
+
+/* Градиент 7: Зеленый-Бирюзовый-Синий */
+.gradient-7 {
+    background: linear-gradient(145deg, #10B981 0%, #14B8A6 50%, #3B82F6 100%) !important;
+    border-radius: 8px !important;
+    padding: 0.6rem 2rem !important;
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(20, 184, 166, 0.4) !important;
+}
+
+/* Градиент 8: Желтый-Оранжевый-Красный (Огненный) */
+.gradient-8 {
+    background: linear-gradient(145deg, #FBBF24 0%, #F97316 50%, #DC2626 100%) !important;
+    border-radius: 8px !important;
+    padding: 0.6rem 2rem !important;
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(249, 115, 22, 0.4) !important;
+}
+
+/* Градиент 9: Фиолетовый-Синий-Бирюзовый */
+.gradient-9 {
+    background: linear-gradient(145deg, #7C3AED 0%, #2563EB 50%, #06B6D4 100%) !important;
+    border-radius: 8px !important;
+    padding: 0.6rem 2rem !important;
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4) !important;
+}
+
+/* Градиент 10: Красно-Бирюзовый-Персиковый (альтернативный) */
+.gradient-10 {
+    background: radial-gradient(circle at 30% 30%, #FF6B6B 0%, transparent 60%),
+                radial-gradient(circle at 70% 70%, #4DD0E1 0%, transparent 60%),
+                linear-gradient(135deg, #FF6B6B 0%, #FFD1A6 50%, #4DD0E1 100%) !important;
+    border-radius: 8px !important;
+    padding: 0.6rem 2rem !important;
+    border: none !important;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4) !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# Создаем 10 кнопок в 2 ряда по 5 кнопок
+col1, col2, col3, col4, col5 = st.columns(5)
+
+with col1:
+    st.markdown('<button class="gradient-1">1</button>', unsafe_allow_html=True)
+with col2:
+    st.markdown('<button class="gradient-2">2</button>', unsafe_allow_html=True)
+with col3:
+    st.markdown('<button class="gradient-3">3</button>', unsafe_allow_html=True)
+with col4:
+    st.markdown('<button class="gradient-4">4</button>', unsafe_allow_html=True)
+with col5:
+    st.markdown('<button class="gradient-5">5</button>', unsafe_allow_html=True)
+
+col6, col7, col8, col9, col10 = st.columns(5)
+
+with col6:
+    st.markdown('<button class="gradient-6">6</button>', unsafe_allow_html=True)
+with col7:
+    st.markdown('<button class="gradient-7">7</button>', unsafe_allow_html=True)
+with col8:
+    st.markdown('<button class="gradient-8">8</button>', unsafe_allow_html=True)
+with col9:
+    st.markdown('<button class="gradient-9">9</button>', unsafe_allow_html=True)
+with col10:
+    st.markdown('<button class="gradient-10">10</button>', unsafe_allow_html=True)
 
 st.markdown("---")
 st.markdown(
