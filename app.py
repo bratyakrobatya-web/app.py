@@ -529,19 +529,19 @@ st.markdown("""
     /* Максимально агрессивные стили для кнопок режима */
     div[data-testid="column"]:has(button[key="mode_split"]) button,
     div[data-testid="column"]:has(button[key="mode_single"]) button {
-        width: 100% !important;
-        height: 140px !important;
-        min-height: 140px !important;
-        max-height: 140px !important;
-        padding: 50px 70px !important;
+        width: 100%;
+        height: 140px;
+        min-height: 140px;
+        max-height: 140px;
+        padding: 50px 70px;
         font-size: 35px;
-        font-weight: 800 !important;
-        letter-spacing: 2px !important;
-        text-align: center !important;
-        border-radius: 12px !important;
-        border: 5px solid #FFAA00 !important;
+        font-weight: 800;
+        letter-spacing: 2px;
+        text-align: center;
+        border-radius: 12px;
+        border: 5px solid #ea3324;
         background: rgba(255, 170, 0, 0.15) !important;
-        color: #FFAA00 !important;
+        color: #FFAA00;
         transition: all 0.3s ease !important;
         box-shadow: 0 8px 16px rgba(255, 170, 0, 0.3) !important;
         position: relative !important;
