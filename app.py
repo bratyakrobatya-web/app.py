@@ -206,7 +206,7 @@ st.markdown("""
         color: #1a1a1a;
         margin-bottom: 0.5rem;
         font-size: 33px;
-        letter-spacing: 5px;
+        letter-spacing: 1px;
     }
 
     h2 {
