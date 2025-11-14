@@ -498,71 +498,10 @@ st.markdown("""
     }
 
     /* =============================================== */
-    /* КНОПКИ РЕЖИМА РАБОТЫ - КРАСНАЯ ЗАЛИВКА */
+    /* КНОПКИ РЕЖИМА РАБОТЫ - используют type="primary" */
     /* =============================================== */
-
-    /* Используем атрибутные селекторы для кнопок с key="mode_split" и key="mode_single" */
-    button[data-testid*="baseButton-secondary"] p {
-        font-weight: 600 !important;
-    }
-
-    /* Стилизация через содержимое текста кнопок */
-    button:has(p:is(:contains("РАЗДЕЛЕНИЕ ПО ВАКАНСИЯМ"), :contains("ЕДИНЫМ ФАЙЛОМ"))),
-    button p:is(:contains("РАЗДЕЛЕНИЕ ПО ВАКАНСИЯМ"), :contains("ЕДИНЫМ ФАЙЛОМ")) {
-        background: linear-gradient(135deg, #ea3324 0%, #c02a1e 100%) !important;
-        color: white !important;
-    }
+    /* Красная заливка применяется автоматически через config.toml primaryColor */
 </style>
-
-<script>
-// JavaScript для стилизации кнопок режима работы
-const styleButtons = () => {
-    // Находим все кнопки
-    const buttons = document.querySelectorAll('button[data-testid*="baseButton"]');
-
-    buttons.forEach(button => {
-        const text = button.innerText || button.textContent;
-
-        // Проверяем, содержит ли кнопка нужный текст
-        if (text.includes('РАЗДЕЛЕНИЕ ПО ВАКАНСИЯМ') || text.includes('ЕДИНЫМ ФАЙЛОМ')) {
-            // Применяем красные стили
-            button.style.cssText = `
-                background: linear-gradient(135deg, #ea3324 0%, #c02a1e 100%) !important;
-                border: none !important;
-                border-radius: 10px !important;
-                padding: 0.6rem 2rem !important;
-                font-weight: 600 !important;
-                color: white !important;
-                transition: all 0.3s ease !important;
-                box-shadow: 0 2px 8px rgba(234, 51, 36, 0.3) !important;
-            `;
-
-            // Добавляем hover эффект
-            button.addEventListener('mouseenter', () => {
-                button.style.transform = 'translateY(-2px)';
-                button.style.boxShadow = '0 4px 16px rgba(234, 51, 36, 0.5)';
-                button.style.background = 'linear-gradient(135deg, #ff4539 0%, #ea3324 100%)';
-            });
-
-            button.addEventListener('mouseleave', () => {
-                button.style.transform = 'translateY(0)';
-                button.style.boxShadow = '0 2px 8px rgba(234, 51, 36, 0.3)';
-                button.style.background = 'linear-gradient(135deg, #ea3324 0%, #c02a1e 100%)';
-            });
-        }
-    });
-};
-
-// Запускаем стилизацию при загрузке и изменениях DOM
-document.addEventListener('DOMContentLoaded', styleButtons);
-setTimeout(styleButtons, 100);
-setTimeout(styleButtons, 500);
-setTimeout(styleButtons, 1000);
-
-// Наблюдаем за изменениями DOM
-const observer = new MutationObserver(styleButtons);
-observer.observe(document.body, { childList: true, subtree: true });
-</script>
 """, unsafe_allow_html=True)
 
 # Инициализация session_state
@@ -1723,30 +1662,32 @@ if uploaded_file is not None and hh_areas is not None:
                 if 'export_mode' not in st.session_state:
                     st.session_state.export_mode = None
 
-                # СТИЛИ ДЛЯ КНОПОК РЕЖИМА применяются через JavaScript (см. строки 517-565)
-                # JavaScript ищет кнопки с текстом "РАЗДЕЛЕНИЕ ПО ВАКАНСИЯМ" и "ЕДИНЫМ ФАЙЛОМ" и применяет КРАСНУЮ заливку
+                # СТИЛИ ДЛЯ КНОПОК РЕЖИМА применяются через type="primary"
+                # Красная заливка берется из .streamlit/config.toml (primaryColor = "#ea3324")
 
                 # Кнопки выбора режима работы
                 col1, col2 = st.columns(2)
 
                 with col1:
                     selected_split = st.session_state.export_mode == "split"
-                    # НЕ ИСПОЛЬЗУЕМ type - чтобы избежать config.toml primaryColor!
+                    # ИСПОЛЬЗУЕМ type="primary" для красной заливки (из config.toml primaryColor)
                     if st.button(
                         "РАЗДЕЛЕНИЕ ПО ВАКАНСИЯМ",
                         use_container_width=True,
-                        key="mode_split"
+                        key="mode_split",
+                        type="primary"
                     ):
                         st.session_state.export_mode = "split"
                         st.rerun()
 
                 with col2:
                     selected_single = st.session_state.export_mode == "single"
-                    # НЕ ИСПОЛЬЗУЕМ type - чтобы избежать config.toml primaryColor!
+                    # ИСПОЛЬЗУЕМ type="primary" для красной заливки (из config.toml primaryColor)
                     if st.button(
                         "ЕДИНЫМ ФАЙЛОМ",
                         use_container_width=True,
-                        key="mode_single"
+                        key="mode_single",
+                        type="primary"
                     ):
                         st.session_state.export_mode = "single"
                         st.rerun()
