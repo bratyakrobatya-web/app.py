@@ -475,31 +475,6 @@ st.markdown("""
     }
 
     /* =============================================== */
-    /* КНОПКИ РЕЖИМА РАБОТЫ - КРАСНАЯ ЗАЛИВКА */
-    /* =============================================== */
-    /* Стилизуем кнопки с key="mode_split" и key="mode_single" */
-    button[data-testid*="baseButton"][class*="mode_split"],
-    button[data-testid*="baseButton"][class*="mode_single"],
-    div[data-testid="column"] button[data-testid*="baseButton"]:has(p:contains("РАЗДЕЛЕНИЕ ПО ВАКАНСИЯМ")),
-    div[data-testid="column"] button[data-testid*="baseButton"]:has(p:contains("ЕДИНЫМ ФАЙЛОМ")) {
-        background: linear-gradient(135deg, #ea3324 0%, #c02a1e 100%) !important;
-        border: none !important;
-        color: white !important;
-        border-radius: 10px !important;
-        transition: all 0.3s ease !important;
-        box-shadow: 0 2px 8px rgba(234, 51, 36, 0.3) !important;
-    }
-
-    button[data-testid*="baseButton"][class*="mode_split"]:hover,
-    button[data-testid*="baseButton"][class*="mode_single"]:hover,
-    div[data-testid="column"] button[data-testid*="baseButton"]:has(p:contains("РАЗДЕЛЕНИЕ ПО ВАКАНСИЯМ")):hover,
-    div[data-testid="column"] button[data-testid*="baseButton"]:has(p:contains("ЕДИНЫМ ФАЙЛОМ")):hover {
-        transform: translateY(-2px) !important;
-        box-shadow: 0 4px 16px rgba(234, 51, 36, 0.5) !important;
-        background: linear-gradient(135deg, #ff4539 0%, #ea3324 100%) !important;
-    }
-
-    /* =============================================== */
     /* ИСКЛЮЧЕНИЕ: Черная окантовка для блока редактирования городов */
     /* =============================================== */
     /* Эти стили ДОЛЖНЫ быть в самом конце, чтобы перекрыть все глобальные красные стили */
@@ -530,6 +505,58 @@ st.markdown("""
         box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1) !important;
     }
 </style>
+
+<script>
+// JavaScript для принудительного применения черных стилей к селекторам редактирования
+const applyBlackBordersToEditBlock = () => {
+    // Находим все селекторы внутри блока редактирования
+    const editBlock = document.querySelector('.edit-cities-block');
+    if (!editBlock) return;
+
+    const selectors = editBlock.querySelectorAll('[data-baseweb="select"] > div, [data-testid="stSelectbox"] > div > div');
+
+    selectors.forEach(selector => {
+        // Принудительно применяем черные стили
+        selector.style.setProperty('border', '2px solid #000000', 'important');
+        selector.style.setProperty('border-color', '#000000', 'important');
+        selector.style.setProperty('border-radius', '10px', 'important');
+
+        // Добавляем обработчики для hover
+        selector.addEventListener('mouseenter', function() {
+            this.style.setProperty('background', 'rgba(0, 0, 0, 0.05)', 'important');
+            this.style.setProperty('box-shadow', '0 2px 8px rgba(0, 0, 0, 0.15)', 'important');
+            this.style.setProperty('border-color', '#000000', 'important');
+        });
+
+        selector.addEventListener('mouseleave', function() {
+            this.style.setProperty('background', 'transparent', 'important');
+            this.style.setProperty('border-color', '#000000', 'important');
+        });
+
+        // Обработчик для focus
+        selector.addEventListener('focusin', function() {
+            this.style.setProperty('border', '2px solid #000000', 'important');
+            this.style.setProperty('border-color', '#000000', 'important');
+            this.style.setProperty('box-shadow', '0 0 0 3px rgba(0, 0, 0, 0.1)', 'important');
+        });
+
+        selector.addEventListener('focusout', function() {
+            this.style.setProperty('box-shadow', 'none', 'important');
+        });
+    });
+};
+
+// Запускаем функцию при загрузке и изменениях DOM
+document.addEventListener('DOMContentLoaded', applyBlackBordersToEditBlock);
+setTimeout(applyBlackBordersToEditBlock, 100);
+setTimeout(applyBlackBordersToEditBlock, 500);
+setTimeout(applyBlackBordersToEditBlock, 1000);
+setTimeout(applyBlackBordersToEditBlock, 2000);
+
+// Наблюдаем за изменениями DOM
+const observer = new MutationObserver(applyBlackBordersToEditBlock);
+observer.observe(document.body, { childList: true, subtree: true });
+</script>
 """, unsafe_allow_html=True)
 
 # Инициализация session_state
@@ -1698,22 +1725,24 @@ if uploaded_file is not None and hh_areas is not None:
 
                 with col1:
                     selected_split = st.session_state.export_mode == "split"
-                    # НЕ используем type="primary" - стили применяются через CSS по key
+                    # ИСПОЛЬЗУЕМ type="primary" для гарантированной красной заливки
                     if st.button(
                         "**РАЗДЕЛЕНИЕ ПО ВАКАНСИЯМ**\n\n(работа с отдельными файлами)",
                         use_container_width=True,
-                        key="mode_split"
+                        key="mode_split",
+                        type="primary"
                     ):
                         st.session_state.export_mode = "split"
                         st.rerun()
 
                 with col2:
                     selected_single = st.session_state.export_mode == "single"
-                    # НЕ используем type="primary" - стили применяются через CSS по key
+                    # ИСПОЛЬЗУЕМ type="primary" для гарантированной красной заливки
                     if st.button(
                         "**ЕДИНЫМ ФАЙЛОМ**\n\n(работа с общим списком гео)",
                         use_container_width=True,
-                        key="mode_single"
+                        key="mode_single",
+                        type="primary"
                     ):
                         st.session_state.export_mode = "single"
                         st.rerun()
