@@ -210,12 +210,12 @@ st.markdown("""
     }
 
     h2 {
-        font-family: 'hhsans-Regular' !important;
+        font-family: 'hhsans-Regular';
         font-weight: normal;
         color: #2d2d2d;
         margin-top: 2rem;
         margin-bottom: 1rem;
-        font-size: 16px;
+        font-size: 3px;
         letter-spacing: 1px;
     }
 
@@ -223,7 +223,7 @@ st.markdown("""
         font-family: 'hhsans-Regular' !important;
         font-weight: normal;
         color: #4a4a4a;
-        font-size: 16px;
+        font-size: 3px;
         letter-spacing: 5px;
     }
 
