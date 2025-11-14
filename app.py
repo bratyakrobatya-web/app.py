@@ -205,7 +205,7 @@ st.markdown("""
         font-weight: normal;
         color: #1a1a1a;
         margin-bottom: 0.5rem;
-        font-size: 40px;
+        font-size: 33px;
         letter-spacing: 5px;
     }
 
@@ -215,7 +215,7 @@ st.markdown("""
         color: #2d2d2d;
         margin-top: 2rem;
         margin-bottom: 1rem;
-        font-size: 23px;
+        font-size: 20px;
         letter-spacing: 5px;
     }
 
