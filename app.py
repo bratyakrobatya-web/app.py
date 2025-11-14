@@ -34,16 +34,17 @@ st.markdown("""
     /* CSS ПЕРЕМЕННЫЕ ДЛЯ ГРАДИЕНТА */
     /* =============================================== */
     :root {
-        --gradient-main: radial-gradient(at 50% 50%, #4B0082 0%, transparent 70%),
-                         radial-gradient(at 20% 80%, #6A0DAD 0%, transparent 65%),
-                         radial-gradient(at 80% 20%, #9370DB 0%, transparent 60%),
-                         radial-gradient(at 10% 30%, #C6A4F8 0%, transparent 50%),
-                         #5B0097;
+        --gradient-main: radial-gradient(at 30% 30%, #4B0082 0%, transparent 50%),
+                         radial-gradient(at 70% 70%, #DC143C 0%, transparent 50%),
+                         radial-gradient(at 50% 10%, #9370DB 0%, transparent 45%),
+                         radial-gradient(at 10% 80%, #FF4500 0%, transparent 45%),
+                         linear-gradient(135deg, #4B0082 0%, #DC143C 100%);
 
         --primary-color: #4B0082;
         --primary-light: #9370DB;
         --primary-dark: #2E0854;
-        --primary-accent: #C6A4F8;
+        --primary-accent: #DC143C;
+        --primary-red: #DC143C;
 
         --shadow-primary: rgba(75, 0, 130, 0.3);
         --shadow-hover: rgba(75, 0, 130, 0.5);
@@ -1554,16 +1555,17 @@ with st.sidebar:
         text-decoration: none;
         color: #1a1a1a !important;
         font-weight: 500;
-        transition: all 0.2s ease;
-        border-left: 3px solid #ea3324;
+        transition: all 0.3s ease;
+        border-left: 3px solid var(--primary-color);
     }
     .nav-link:visited {
         color: #1a1a1a !important;
     }
     .nav-link:hover {
-        background: #ea3324;
+        background: var(--gradient-main);
         color: white !important;
         transform: translateX(5px);
+        border-left: 3px solid transparent;
     }
     </style>
 
