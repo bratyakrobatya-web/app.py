@@ -209,10 +209,32 @@ st.markdown("""
     }
 
     /* =============================================== */
-    /* СТИЛИ КНОПОК - УПРАВЛЯЮТСЯ ЧЕРЕЗ config.toml */
+    /* СТИЛИ КНОПОК - ГРАДИЕНТНЫЙ СТИЛЬ ДЛЯ ВСЕХ КНОПОК */
     /* =============================================== */
 
-    /* Простые стили без специальных селекторов */
+    /* Все обычные кнопки (включая primary и secondary) - ГРАДИЕНТНЫЙ СТИЛЬ */
+    .stButton>button {
+        border-radius: 10px !important;
+        padding: 0.6rem 2rem !important;
+        font-weight: 500 !important;
+        background: var(--gradient-main) !important;
+        border: none !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 2px 8px var(--shadow-primary) !important;
+        color: white !important;
+    }
+
+    .stButton>button:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 4px 16px var(--shadow-hover) !important;
+        filter: brightness(1.1) !important;
+        color: white !important;
+    }
+
+    .stButton>button:active {
+        transform: translateY(0px) !important;
+        box-shadow: 0 2px 8px var(--shadow-primary) !important;
+    }
 
     /* Download кнопки - ГРАДИЕНТНЫЙ СТИЛЬ */
     .stDownloadButton>button {
@@ -231,6 +253,11 @@ st.markdown("""
         box-shadow: 0 4px 16px var(--shadow-hover) !important;
         filter: brightness(1.1) !important;
         color: white !important;
+    }
+
+    .stDownloadButton>button:active {
+        transform: translateY(0px) !important;
+        box-shadow: 0 2px 8px var(--shadow-primary) !important;
     }
 
     /* File Uploader */
