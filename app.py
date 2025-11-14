@@ -213,14 +213,14 @@ st.markdown("""
         color: #2d2d2d;
         margin-top: 2rem;
         margin-bottom: 1rem;
-        font-size: 16px;
+        font-size: 10px;
     }
 
     h3 {
         font-family: 'hhsans-Regular' !important;
         font-weight: normal;
         color: #4a4a4a;
-        font-size: 14px;
+        font-size: 10px;
     }
 
     /* =============================================== */
