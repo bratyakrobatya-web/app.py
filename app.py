@@ -540,8 +540,8 @@ st.markdown("""
         text-align: center;
         border-radius: 12px;
         border: 5px solid #ea3324;
-        background: rgba(255, 170, 0, 0.15) !important;
-        color: #FFAA00;
+        background: #ea3324;
+        color: #ea3324;
         transition: all 0.3s ease !important;
         box-shadow: 0 8px 16px rgba(255, 170, 0, 0.3) !important;
         position: relative !important;
