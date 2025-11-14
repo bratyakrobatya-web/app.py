@@ -34,11 +34,11 @@ st.markdown("""
     /* CSS ПЕРЕМЕННЫЕ ДЛЯ ГРАДИЕНТА */
     /* =============================================== */
     :root {
-        /* Изящный красно-белый градиент для кнопок (меньше белого) */
-        --gradient-main: linear-gradient(145deg, #ffcbc3 0%, #ff6b5a 40%, #f4301f 100%);
+        /* Красно-белый градиент для кнопок */
+        --gradient-main: linear-gradient(145deg, #f4301f 0%, #ff6b5a 60%, #ffcbc3 100%);
 
-        /* Черно-красный градиент для селекторов */
-        --gradient-selector: linear-gradient(145deg, #1a1a1a 0%, #8b2a1f 40%, #f4301f 100%);
+        /* Бело-красный градиент для селекторов */
+        --gradient-selector: linear-gradient(145deg, #ffffff 0%, #ff8575 60%, #f4301f 100%);
 
         /* Цвета для UI элементов (красный) */
         --ui-color: #f4301f;
@@ -88,7 +88,7 @@ st.markdown("""
 
     .rotating-earth {
         display: inline-block;
-        animation: rotate 3s linear infinite;
+        animation: rotate 6s linear infinite;
         vertical-align: middle;
         margin-right: 8px;
         width: 1em;
@@ -544,6 +544,26 @@ st.markdown("""
     [data-testid="stMultiSelect"]:hover > div {
         background: rgba(0, 0, 0, 0.02) !important;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Теги в мультиселекте - красный цвет вместо оранжевого */
+    [data-testid="stMultiSelect"] span[data-baseweb="tag"] {
+        background-color: var(--ui-color) !important;
+        color: white !important;
+        border-radius: 6px;
+    }
+
+    [data-testid="stMultiSelect"] span[data-baseweb="tag"]:hover {
+        background-color: #d42817 !important;
+    }
+
+    /* Прогресс бар - красный цвет */
+    .stProgress > div > div > div {
+        background-color: var(--ui-color) !important;
+    }
+
+    .stProgress [role="progressbar"] {
+        background-color: var(--ui-color) !important;
     }
 
 </style>
