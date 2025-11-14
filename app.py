@@ -1665,38 +1665,46 @@ if uploaded_file is not None and hh_areas is not None:
                 st.markdown("""
                 <style>
                 /* Стилизация кнопок режима - яркий красный, большие */
-                div[data-testid="column"] > div > div > button[kind="secondary"],
-                div[data-testid="column"] > div > div > button[kind="primary"] {
-                    border-radius: 10px;
+                div.mode-buttons-container .stButton > button {
+                    border-radius: 10px !important;
                     border: 3px solid #ea3324 !important;
                     background: rgba(234, 51, 36, 0.15) !important;
-                    transition: all 0.3s ease;
+                    transition: all 0.3s ease !important;
                     padding: 25px 20px !important;
                     font-size: 18px !important;
                     font-weight: 700 !important;
-                    letter-spacing: 1px;
+                    letter-spacing: 1px !important;
                     color: #ea3324 !important;
                     min-height: 80px !important;
+                    width: 100% !important;
                 }
-                div[data-testid="column"] > div > div > button[kind="secondary"]:hover {
+
+                div.mode-buttons-container .stButton > button:hover {
                     background: rgba(234, 51, 36, 0.25) !important;
-                    box-shadow: 0 4px 16px rgba(234, 51, 36, 0.4);
-                    transform: translateY(-2px);
+                    box-shadow: 0 4px 16px rgba(234, 51, 36, 0.4) !important;
+                    transform: translateY(-2px) !important;
                 }
-                div[data-testid="column"] > div > div > button[kind="primary"] {
+
+                /* Выбранная кнопка (primary) */
+                div.mode-buttons-container .stButton > button[kind="primary"],
+                div.mode-buttons-container .stButton > button[data-baseweb="button"][kind="primary"] {
                     background: #ea3324 !important;
                     border-color: #ea3324 !important;
                     color: white !important;
-                    box-shadow: 0 6px 20px rgba(234, 51, 36, 0.5);
+                    box-shadow: 0 6px 20px rgba(234, 51, 36, 0.5) !important;
                 }
-                div[data-testid="column"] > div > div > button[kind="primary"]:hover {
+
+                div.mode-buttons-container .stButton > button[kind="primary"]:hover,
+                div.mode-buttons-container .stButton > button[data-baseweb="button"][kind="primary"]:hover {
                     background: #d62e1f !important;
-                    box-shadow: 0 8px 24px rgba(234, 51, 36, 0.6);
-                    transform: translateY(-2px);
+                    box-shadow: 0 8px 24px rgba(234, 51, 36, 0.6) !important;
+                    transform: translateY(-2px) !important;
                 }
                 </style>
                 """, unsafe_allow_html=True)
 
+                # Wrapper для кнопок режима
+                st.markdown('<div class="mode-buttons-container">', unsafe_allow_html=True)
                 col1, col2 = st.columns(2)
 
                 with col1:
@@ -1720,6 +1728,9 @@ if uploaded_file is not None and hh_areas is not None:
                     ):
                         st.session_state.export_mode = "single"
                         st.rerun()
+
+                # Закрываем wrapper для кнопок
+                st.markdown('</div>', unsafe_allow_html=True)
 
                 # Добавляем текст со стрелочкой вверх
                 st.markdown('<p style="text-align: center; margin-top: 10px; color: rgba(49, 51, 63, 0.6); font-size: 0.9rem;"><span style="color: #ea3324; font-size: 1.2rem;">↑</span> Выберите режим работы</p>', unsafe_allow_html=True)
