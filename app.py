@@ -130,7 +130,6 @@ st.markdown("""
         vertical-align: middle;
         margin: 0;
         color: var(--ui-color);
-        letter-spacing: 1px;
     }
 
     .title-container {
@@ -206,26 +205,23 @@ st.markdown("""
         color: #1a1a1a;
         margin-bottom: 0.5rem;
         font-size: 33px;
-        letter-spacing: 1px;
     }
 
     h2 {
-        font-family: 'hhsans-Regular';
-        font-weight: normal;
-        color: #2d2d2d;
-        margin-top: 2rem;
-        margin-bottom: 1rem;
-        font-size: 3px;
-        letter-spacing: 1px;
-    }
+    font-family: 'hhsans-Regular' !important;
+    font-weight: normal;
+    color: #2d2d2d;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+    font-size: 20px;
+}
 
     h3 {
-        font-family: 'hhsans-Regular';
-        font-weight: normal;
-        color: #4a4a4a;
-        font-size: 3px;
-        letter-spacing: 5px;
-    }
+    font-family: 'hhsans-Regular' !important;
+    font-weight: normal;
+    color: #4a4a4a;
+    font-size: 13px;
+}
 
     /* =============================================== */
     /* СТИЛИ КНОПОК - ГРАДИЕНТНЫЙ СТИЛЬ ДЛЯ ВСЕХ КНОПОК */
