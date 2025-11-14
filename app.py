@@ -96,6 +96,7 @@ st.markdown("""
         color: var(--ui-color);
         border: 2px solid var(--ui-color);
         border-radius: 50%;
+        font-family: 'hhsans-Regular' !important;
         font-weight: normal;
         font-size: 16px;
         margin-right: 8px;
@@ -112,6 +113,7 @@ st.markdown("""
         background: var(--ui-color);
         color: white;
         border-radius: 50%;
+        font-family: 'hhsans-Regular' !important;
         font-weight: normal;
         font-size: 14px;
         margin-right: 8px;
@@ -120,6 +122,7 @@ st.markdown("""
 
     .main-title {
         display: inline-block;
+        font-family: 'hhsans-Regular' !important;
         font-size: 3em;
         font-weight: normal;
         vertical-align: middle;
@@ -195,6 +198,7 @@ st.markdown("""
 
     /* Заголовки */
     h1 {
+        font-family: 'hhsans-Regular' !important;
         font-weight: normal;
         color: #1a1a1a;
         margin-bottom: 0.5rem;
@@ -202,6 +206,7 @@ st.markdown("""
     }
 
     h2 {
+        font-family: 'hhsans-Regular' !important;
         font-weight: normal;
         color: #2d2d2d;
         margin-top: 2rem;
@@ -210,6 +215,7 @@ st.markdown("""
     }
 
     h3 {
+        font-family: 'hhsans-Regular' !important;
         font-weight: normal;
         color: #4a4a4a;
         font-size: 16px;
