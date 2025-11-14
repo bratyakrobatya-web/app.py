@@ -34,13 +34,17 @@ st.markdown("""
     /* CSS ПЕРЕМЕННЫЕ ДЛЯ ГРАДИЕНТА */
     /* =============================================== */
     :root {
-        /* Изящный красно-белый градиент для кнопок */
-        --gradient-main: linear-gradient(145deg, #ffffff 0%, #ff8575 35%, #f4301f 100%);
+        /* Изящный красно-белый градиент для кнопок (меньше белого) */
+        --gradient-main: linear-gradient(145deg, #ffcbc3 0%, #ff6b5a 40%, #f4301f 100%);
 
-        /* Цвета для UI элементов (оранжевый - остается без изменений) */
-        --ui-color: #F97316;
-        --ui-shadow: rgba(249, 115, 22, 0.4);
-        --ui-shadow-hover: rgba(249, 115, 22, 0.6);
+        /* Цвета для UI элементов (красный) */
+        --ui-color: #f4301f;
+        --ui-shadow: rgba(244, 48, 31, 0.4);
+        --ui-shadow-hover: rgba(244, 48, 31, 0.6);
+
+        /* Цвета для селекторов (оранжевый - остается без изменений) */
+        --selector-color: #F97316;
+        --selector-shadow: rgba(249, 115, 22, 0.4);
 
         /* Цвета для кнопок (красный) */
         --primary-color: #f4301f;
@@ -80,12 +84,14 @@ st.markdown("""
         margin-right: 8px;
         width: 1em;
         height: 1em;
+        color: var(--ui-color);
     }
 
     .rotating-earth svg {
         width: 100%;
         height: 100%;
         display: block;
+        fill: var(--ui-color);
     }
 
     /* Круги с цифрами с градиентом */
@@ -127,6 +133,7 @@ st.markdown("""
         font-weight: bold;
         vertical-align: middle;
         margin: 0;
+        color: var(--ui-color);
     }
 
     .title-container {
@@ -279,7 +286,7 @@ st.markdown("""
 
     button[data-testid*="export_all_cities_btn"]:hover,
     div[data-testid*="export_all_cities_btn"] button:hover {
-        background: rgba(249, 115, 22, 0.1) !important;
+        background: rgba(244, 48, 31, 0.1) !important;
         border: 2px solid var(--ui-color) !important;
         color: var(--ui-color) !important;
     }
@@ -315,7 +322,7 @@ st.markdown("""
     div[data-baseweb="select"] > div,
     .stSelectbox > div > div,
     [data-testid="stSelectbox"] > div > div {
-        border: 2px solid #F97316 !important;
+        border: 2px solid var(--selector-color) !important;
         border-radius: 10px;
         background: transparent !important;
         transition: all 0.3s ease !important;
@@ -325,14 +332,14 @@ st.markdown("""
     .stSelectbox:hover > div > div,
     [data-testid="stSelectbox"]:hover > div > div {
         background: rgba(249, 115, 22, 0.05) !important;
-        box-shadow: 0 2px 12px rgba(249, 115, 22, 0.4);
+        box-shadow: 0 2px 12px var(--selector-shadow);
     }
 
     div[data-baseweb="select"] > div:focus-within,
     .stSelectbox > div > div:focus-within,
     [data-testid="stSelectbox"] > div > div:focus-within {
-        border-color: #F97316 !important;
-        box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.4) !important;
+        border-color: var(--selector-color) !important;
+        box-shadow: 0 0 0 3px var(--selector-shadow) !important;
     }
 
     .stTextInput > div > div {
@@ -354,7 +361,7 @@ st.markdown("""
     }
 
     .stSuccess {
-        background: rgba(249, 115, 22, 0.1) !important;
+        background: rgba(244, 48, 31, 0.1) !important;
         border: 2px solid var(--ui-color) !important;
         border-radius: 10px;
         padding: 1rem;
@@ -521,7 +528,7 @@ st.markdown("""
     }
 
     [data-testid="stFileUploader"] button:hover {
-        background: rgba(249, 115, 22, 0.1) !important;
+        background: rgba(244, 48, 31, 0.1) !important;
         transform: translateY(-2px);
         box-shadow: 0 4px 16px var(--ui-shadow) !important;
     }
@@ -1472,7 +1479,7 @@ except Exception as e:
 # ============================================
 # ГЛАВНЫЙ ЗАГОЛОВОК
 # ============================================
-st.markdown(f'<h1 style="text-align: left; color: #1a1a1a; margin-bottom: 1rem;"><span class="rotating-earth">{GLOBE_ICON}</span> Синхронизатор гео HH.ru</h1>', unsafe_allow_html=True)
+st.markdown(f'<h1 style="text-align: left; color: #f4301f; margin-bottom: 1rem;"><span class="rotating-earth">{GLOBE_ICON}</span> Синхронизатор гео HH.ru</h1>', unsafe_allow_html=True)
 st.markdown("---")
 
 # ============================================
