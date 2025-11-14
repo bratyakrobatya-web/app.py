@@ -190,43 +190,23 @@ st.markdown("""
         font-size: 1.3rem;
     }
 
-    /* Кнопки - ГЛОБАЛЬНЫЙ СТИЛЬ ОТКЛЮЧЕН */
-    /* .stButton>button {
-        border-radius: 10px;
-        padding: 0.6rem 2rem;
-        font-weight: 500;
-        border: none;
-        background: linear-gradient(135deg, #ea3324 0%, #c02a1e 100%);
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 8px rgba(234, 51, 36, 0.3);
-    }
+    /* =============================================== */
+    /* ВСЕ ГЛОБАЛЬНЫЕ СТИЛИ КНОПОК ОТКЛЮЧЕНЫ */
+    /* =============================================== */
 
-    .stButton>button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 16px rgba(234, 51, 36, 0.5);
-        background: linear-gradient(135deg, #ff4539 0%, #ea3324 100%);
-    } */
+    /* ГЛОБАЛЬНЫЕ СТИЛИ ОТКЛЮЧЕНЫ - используем только локальные */
+    /* .stButton>button { ... } */
+    /* .stButton button[kind="primary"] { ... } */
+    /* .stButton button[kind="secondary"] { ... } */
 
-    /* Кнопка secondary - стиль как у expander */
-    .stButton button[kind="secondary"] {
-        background: #f8f9fa !important;
-        border: 1px solid #e9ecef !important;
-        color: #1a1a1a !important;
-        font-weight: 500;
-        box-shadow: none !important;
-        border-radius: 10px;
-        padding: 0.6rem 2rem;
-        transition: all 0.3s ease;
-    }
+    /* =============================================== */
+    /* ЛОКАЛЬНЫЕ СТИЛИ ДЛЯ ОБЫЧНЫХ КНОПОК (НЕ РЕЖИМ РАБОТЫ) */
+    /* =============================================== */
 
-    .stButton button[kind="secondary"]:hover {
-        background: #e9ecef !important;
-        transform: none !important;
-        box-shadow: none !important;
-    }
-
-    /* Кнопка primary - КРАСНЫЙ СТИЛЬ */
-    .stButton button[kind="primary"] {
+    /* Обычные primary кнопки - КРАСНЫЕ (исключая mode-buttons-container) */
+    div:not(.mode-buttons-container) > .element-container .stButton button[kind="primary"],
+    div:not(.mode-buttons-container) .stButton button[kind="primary"],
+    .stButton button[kind="primary"]:not(.mode-buttons-container *) {
         border-radius: 10px !important;
         padding: 0.6rem 2rem !important;
         font-weight: 500 !important;
@@ -237,10 +217,34 @@ st.markdown("""
         color: white !important;
     }
 
-    .stButton button[kind="primary"]:hover {
+    div:not(.mode-buttons-container) > .element-container .stButton button[kind="primary"]:hover,
+    div:not(.mode-buttons-container) .stButton button[kind="primary"]:hover,
+    .stButton button[kind="primary"]:not(.mode-buttons-container *):hover {
         transform: translateY(-2px) !important;
         box-shadow: 0 4px 16px rgba(234, 51, 36, 0.5) !important;
         background: linear-gradient(135deg, #ff4539 0%, #ea3324 100%) !important;
+    }
+
+    /* Обычные secondary кнопки - СЕРЫЕ (как у expander, исключая mode-buttons-container) */
+    div:not(.mode-buttons-container) > .element-container .stButton button[kind="secondary"],
+    div:not(.mode-buttons-container) .stButton button[kind="secondary"],
+    .stButton button[kind="secondary"]:not(.mode-buttons-container *) {
+        background: #f8f9fa !important;
+        border: 1px solid #e9ecef !important;
+        color: #1a1a1a !important;
+        font-weight: 500 !important;
+        box-shadow: none !important;
+        border-radius: 10px !important;
+        padding: 0.6rem 2rem !important;
+        transition: all 0.3s ease !important;
+    }
+
+    div:not(.mode-buttons-container) > .element-container .stButton button[kind="secondary"]:hover,
+    div:not(.mode-buttons-container) .stButton button[kind="secondary"]:hover,
+    .stButton button[kind="secondary"]:not(.mode-buttons-container *):hover {
+        background: #e9ecef !important;
+        transform: none !important;
+        box-shadow: none !important;
     }
 
     /* Download кнопки - КРАСНЫЙ СТИЛЬ */
