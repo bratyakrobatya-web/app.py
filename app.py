@@ -276,21 +276,6 @@ st.markdown("""
         box-shadow: var(--shadow-glow) !important;
     }
 
-    /* ИСКЛЮЧЕНИЕ: Кнопка "Выгрузить ВСЕ города" БЕЗ градиента */
-    button[data-testid*="export_all_cities_btn"],
-    div[data-testid*="export_all_cities_btn"] button {
-        background: transparent !important;
-        border: 2px solid var(--ui-color) !important;
-        color: var(--ui-color) !important;
-    }
-
-    button[data-testid*="export_all_cities_btn"]:hover,
-    div[data-testid*="export_all_cities_btn"] button:hover {
-        background: rgba(244, 48, 31, 0.1) !important;
-        border: 2px solid var(--ui-color) !important;
-        color: var(--ui-color) !important;
-    }
-
     /* File Uploader */
     [data-testid="stFileUploader"] {
         background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
@@ -318,11 +303,11 @@ st.markdown("""
         font-weight: 500;
     }
 
-    /* Inputs - Selectbox с градиентной окантовкой */
+    /* Inputs - Selectbox с градиентной окантовкой (красный по умолчанию) */
     div[data-baseweb="select"] > div,
     .stSelectbox > div > div,
     [data-testid="stSelectbox"] > div > div {
-        border: 2px solid var(--selector-color) !important;
+        border: 2px solid var(--ui-color) !important;
         border-radius: 10px;
         background: transparent !important;
         transition: all 0.3s ease !important;
@@ -331,15 +316,15 @@ st.markdown("""
     div[data-baseweb="select"] > div:hover,
     .stSelectbox:hover > div > div,
     [data-testid="stSelectbox"]:hover > div > div {
-        background: rgba(249, 115, 22, 0.05) !important;
-        box-shadow: 0 2px 12px var(--selector-shadow);
+        background: rgba(244, 48, 31, 0.05) !important;
+        box-shadow: 0 2px 12px var(--ui-shadow);
     }
 
     div[data-baseweb="select"] > div:focus-within,
     .stSelectbox > div > div:focus-within,
     [data-testid="stSelectbox"] > div > div:focus-within {
-        border-color: var(--selector-color) !important;
-        box-shadow: 0 0 0 3px var(--selector-shadow) !important;
+        border-color: var(--ui-color) !important;
+        box-shadow: 0 0 0 3px var(--ui-shadow) !important;
     }
 
     .stTextInput > div > div {
@@ -551,15 +536,15 @@ st.markdown("""
     }
 
     /* =============================================== */
-    /* ИСКЛЮЧЕНИЕ: Черная окантовка для блока редактирования городов */
+    /* ИСКЛЮЧЕНИЕ: Оранжевая окантовка для блока редактирования городов ≤90% */
     /* =============================================== */
     /* Эти стили ДОЛЖНЫ быть в самом конце, чтобы перекрыть все глобальные красные стили */
     .edit-cities-block div[data-baseweb="select"] > div,
     .edit-cities-block .stSelectbox > div > div,
     .edit-cities-block .stSelectbox > div > div > div,
     .edit-cities-block [data-testid="stSelectbox"] > div > div {
-        border: 2px solid #000000 !important;
-        border-color: #000000 !important;
+        border: 2px solid var(--selector-color) !important;
+        border-color: var(--selector-color) !important;
         border-radius: 10px !important;
         background: transparent !important;
         transition: all 0.3s ease !important;
@@ -568,23 +553,23 @@ st.markdown("""
     .edit-cities-block div[data-baseweb="select"] > div:hover,
     .edit-cities-block .stSelectbox:hover > div > div,
     .edit-cities-block [data-testid="stSelectbox"]:hover > div > div {
-        background: rgba(0, 0, 0, 0.05) !important;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
-        border-color: #000000 !important;
+        background: rgba(249, 115, 22, 0.05) !important;
+        box-shadow: 0 2px 8px var(--selector-shadow) !important;
+        border-color: var(--selector-color) !important;
     }
 
     .edit-cities-block div[data-baseweb="select"] > div:focus-within,
     .edit-cities-block .stSelectbox > div > div:focus-within,
     .edit-cities-block [data-testid="stSelectbox"] > div > div:focus-within {
-        border: 2px solid #000000 !important;
-        border-color: #000000 !important;
-        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1) !important;
+        border: 2px solid var(--selector-color) !important;
+        border-color: var(--selector-color) !important;
+        box-shadow: 0 0 0 3px var(--selector-shadow) !important;
     }
 </style>
 
 <script>
-// JavaScript для принудительного применения черных стилей к селекторам редактирования
-const applyBlackBordersToEditBlock = () => {
+// JavaScript для принудительного применения оранжевых стилей к селекторам редактирования ≤90%
+const applyOrangeBordersToEditBlock = () => {
     // Находим все селекторы внутри блока редактирования
     const editBlock = document.querySelector('.edit-cities-block');
     if (!editBlock) return;
@@ -592,28 +577,28 @@ const applyBlackBordersToEditBlock = () => {
     const selectors = editBlock.querySelectorAll('[data-baseweb="select"] > div, [data-testid="stSelectbox"] > div > div');
 
     selectors.forEach(selector => {
-        // Принудительно применяем черные стили
-        selector.style.setProperty('border', '2px solid #000000', 'important');
-        selector.style.setProperty('border-color', '#000000', 'important');
+        // Принудительно применяем оранжевые стили
+        selector.style.setProperty('border', '2px solid #F97316', 'important');
+        selector.style.setProperty('border-color', '#F97316', 'important');
         selector.style.setProperty('border-radius', '10px', 'important');
 
         // Добавляем обработчики для hover
         selector.addEventListener('mouseenter', function() {
-            this.style.setProperty('background', 'rgba(0, 0, 0, 0.05)', 'important');
-            this.style.setProperty('box-shadow', '0 2px 8px rgba(0, 0, 0, 0.15)', 'important');
-            this.style.setProperty('border-color', '#000000', 'important');
+            this.style.setProperty('background', 'rgba(249, 115, 22, 0.05)', 'important');
+            this.style.setProperty('box-shadow', '0 2px 8px rgba(249, 115, 22, 0.4)', 'important');
+            this.style.setProperty('border-color', '#F97316', 'important');
         });
 
         selector.addEventListener('mouseleave', function() {
             this.style.setProperty('background', 'transparent', 'important');
-            this.style.setProperty('border-color', '#000000', 'important');
+            this.style.setProperty('border-color', '#F97316', 'important');
         });
 
         // Обработчик для focus
         selector.addEventListener('focusin', function() {
-            this.style.setProperty('border', '2px solid #000000', 'important');
-            this.style.setProperty('border-color', '#000000', 'important');
-            this.style.setProperty('box-shadow', '0 0 0 3px rgba(0, 0, 0, 0.1)', 'important');
+            this.style.setProperty('border', '2px solid #F97316', 'important');
+            this.style.setProperty('border-color', '#F97316', 'important');
+            this.style.setProperty('box-shadow', '0 0 0 3px rgba(249, 115, 22, 0.4)', 'important');
         });
 
         selector.addEventListener('focusout', function() {
@@ -623,14 +608,14 @@ const applyBlackBordersToEditBlock = () => {
 };
 
 // Запускаем функцию при загрузке и изменениях DOM
-document.addEventListener('DOMContentLoaded', applyBlackBordersToEditBlock);
-setTimeout(applyBlackBordersToEditBlock, 100);
-setTimeout(applyBlackBordersToEditBlock, 500);
-setTimeout(applyBlackBordersToEditBlock, 1000);
-setTimeout(applyBlackBordersToEditBlock, 2000);
+document.addEventListener('DOMContentLoaded', applyOrangeBordersToEditBlock);
+setTimeout(applyOrangeBordersToEditBlock, 100);
+setTimeout(applyOrangeBordersToEditBlock, 500);
+setTimeout(applyOrangeBordersToEditBlock, 1000);
+setTimeout(applyOrangeBordersToEditBlock, 2000);
 
 // Наблюдаем за изменениями DOM
-const observer = new MutationObserver(applyBlackBordersToEditBlock);
+const observer = new MutationObserver(applyOrangeBordersToEditBlock);
 observer.observe(document.body, { childList: true, subtree: true });
 </script>
 """, unsafe_allow_html=True)
@@ -1487,7 +1472,7 @@ st.markdown("---")
 # ============================================
 if hh_areas:
     st.markdown('<div id="проверка-гео"></div>', unsafe_allow_html=True)
-    st.header("🔍 Проверка гео")
+    st.header("🔍 Проверка гео и выгрузка базы")
 
     col1, col2 = st.columns([3, 1])
     
@@ -1511,6 +1496,46 @@ if hh_areas:
             st.success("✅ Найдено")
             st.info(f"**ID HH:** {city_info['id']}")
             st.info(f"**Регион:** {city_info['parent']}")
+
+    # КНОПКА ВЫГРУЗКИ ВСЕХ ГОРОДОВ
+    st.markdown("###")
+    if st.button("🌍 Выгрузить ВСЕ города из справочника", type="secondary", use_container_width=False, key="export_all_cities_btn"):
+        with st.spinner("Формирую полный список..."):
+            all_cities_df = get_all_cities(hh_areas)
+            if not all_cities_df.empty:
+                st.success(f"✅ Найдено **{len(all_cities_df)}** городов в справочнике HH.ru")
+                st.dataframe(all_cities_df, use_container_width=True, height=400)
+
+                col1, col2 = st.columns(2)
+                with col1:
+                    output_full = io.BytesIO()
+                    with pd.ExcelWriter(output_full, engine='openpyxl') as writer:
+                        all_cities_df.to_excel(writer, index=False, sheet_name='Города')
+                    output_full.seek(0)
+                    st.download_button(
+                        label=f"📥 Скачать полный отчет ({len(all_cities_df)} городов)",
+                        data=output_full,
+                        file_name="all_cities.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True,
+                        type="primary",
+                        key="download_all_full"
+                    )
+                with col2:
+                    publisher_df = pd.DataFrame({'Город': all_cities_df['Город']})
+                    output_pub = io.BytesIO()
+                    with pd.ExcelWriter(output_pub, engine='openpyxl') as writer:
+                        publisher_df.to_excel(writer, index=False, header=False, sheet_name='Гео')
+                    output_pub.seek(0)
+                    st.download_button(
+                        label=f"📤 Для публикатора ({len(all_cities_df)} городов)",
+                        data=output_pub,
+                        file_name="all_cities_publisher.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True,
+                        type="primary",
+                        key="download_all_publisher"
+                    )
 
 st.markdown("---")
 
@@ -1566,7 +1591,7 @@ with st.sidebar:
         margin: 0.25rem 0;
         background: #f8f9fa;
         border-radius: 8px;
-        text-decoration: none;
+        text-decoration: none !important;
         color: #1a1a1a !important;
         font-weight: 500;
         transition: all 0.3s ease;
@@ -1574,16 +1599,18 @@ with st.sidebar:
     }
     .nav-link:visited {
         color: #1a1a1a !important;
+        text-decoration: none !important;
     }
     .nav-link:hover {
-        background: var(--ui-color);
+        background: var(--gradient-main);
         color: white !important;
         transform: translateX(5px);
         border-left: 3px solid transparent;
+        text-decoration: none !important;
     }
     </style>
 
-    <a href="#проверка-гео" class="nav-link">Проверка гео</a>
+    <a href="#проверка-гео" class="nav-link">Проверка гео и выгрузка базы</a>
     <a href="#синхронизатор-городов" class="nav-link">Синхронизатор городов</a>
     <a href="#выбор-регионов-и-городов" class="nav-link">Выбор регионов и городов</a>
     """, unsafe_allow_html=True)
@@ -3077,45 +3104,6 @@ st.header("🗺️ Выбор регионов и городов")
 if hh_areas is not None:
     # Получаем полный список городов для фильтров
     all_cities_full = get_all_cities(hh_areas)
-
-    # КНОПКА ВЫГРУЗКИ ВСЕХ ГОРОДОВ (ПЕРЕД ФИЛЬТРАМИ)
-    if st.button("🌍 Выгрузить ВСЕ города из справочника", type="secondary", use_container_width=False, key="export_all_cities_btn"):
-        with st.spinner("Формирую полный список..."):
-            all_cities_df = get_all_cities(hh_areas)
-            if not all_cities_df.empty:
-                st.success(f"✅ Найдено **{len(all_cities_df)}** городов в справочнике HH.ru")
-                st.dataframe(all_cities_df, use_container_width=True, height=400)
-
-                col1, col2 = st.columns(2)
-                with col1:
-                    output_full = io.BytesIO()
-                    with pd.ExcelWriter(output_full, engine='openpyxl') as writer:
-                        all_cities_df.to_excel(writer, index=False, sheet_name='Города')
-                    output_full.seek(0)
-                    st.download_button(
-                        label=f"📥 Скачать полный отчет ({len(all_cities_df)} городов)",
-                        data=output_full,
-                        file_name="all_cities.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        use_container_width=True,
-                        type="primary",
-                        key="download_all_full"
-                    )
-                with col2:
-                    publisher_df = pd.DataFrame({'Город': all_cities_df['Город']})
-                    output_pub = io.BytesIO()
-                    with pd.ExcelWriter(output_pub, engine='openpyxl') as writer:
-                        publisher_df.to_excel(writer, index=False, header=False, sheet_name='Гео')
-                    output_pub.seek(0)
-                    st.download_button(
-                        label=f"📤 Для публикатора ({len(all_cities_df)} городов)",
-                        data=output_pub,
-                        file_name="all_cities_publisher.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        use_container_width=True,
-                        type="primary",
-                        key="download_all_publisher"
-                    )
 
     # ФИЛЬТРЫ В ОДНОМ БЛОКЕ
     st.markdown("### 🔍 Фильтры")
