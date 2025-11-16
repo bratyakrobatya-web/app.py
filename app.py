@@ -30,6 +30,9 @@ st.set_page_config(
 # Кастомный CSS для современного дизайна
 st.markdown("""
 <style>
+    /* Подключение шрифта Golos Text через Google Fonts - ДОЛЖНО БЫТЬ ПЕРВЫМ */
+    @import url('https://fonts.googleapis.com/css2?family=Golos+Text:wght@400&display=swap');
+
     /* =============================================== */
     /* CSS ПЕРЕМЕННЫЕ ДЛЯ ГРАДИЕНТА */
     /* =============================================== */
@@ -52,9 +55,6 @@ st.markdown("""
         --shadow-hover: rgba(244, 48, 31, 0.35);
         --shadow-glow: 0 6px 20px rgba(244, 48, 31, 0.35);
     }
-
-    /* Подключение шрифта Golos Text через Google Fonts */
-    @import url('https://fonts.googleapis.com/css2?family=Golos+Text:wght@400&display=swap');
 
     /* Анимация для логотипа */
     @keyframes rotate {
@@ -89,7 +89,7 @@ st.markdown("""
         color: var(--ui-color);
         border: 2px solid var(--ui-color);
         border-radius: 50%;
-        font-family: 'Golos Text' ;
+        font-family: 'Golos Text' !important;
         font-weight: normal;
         font-size: 16px;
         margin-right: 8px;
@@ -106,7 +106,7 @@ st.markdown("""
         background: var(--ui-color);
         color: white;
         border-radius: 50%;
-        font-family: 'Golos Text' ;
+        font-family: 'Golos Text' !important;
         font-weight: normal;
         font-size: 14px;
         margin-right: 8px;
@@ -115,7 +115,7 @@ st.markdown("""
 
     .main-title {
         display: inline-block;
-        font-family: 'Golos Text' ;
+        font-family: 'Golos Text' !important;
         font-size: 3em;
         font-weight: normal;
         vertical-align: middle;
@@ -142,7 +142,7 @@ st.markdown("""
 
     /* Базовые стили */
     html, body, [class*="css"] {
-        font-family: 'Golos Text' ;
+        font-family: 'Golos Text' !important;
         font-size: 14px;
     }
 
@@ -152,7 +152,7 @@ st.markdown("""
     .stTextArea textarea, .stNumberInput input,
     [data-testid="stFileUploader"], .uploadedFileName,
     p, div, label, h1, h2, h3, h4, h5, h6 {
-        font-family: 'Golos Text' ;
+        font-family: 'Golos Text' !important;
     }
 
     /* Исключаем иконочные шрифты из глобального применения */
@@ -191,7 +191,7 @@ st.markdown("""
 
     /* Заголовки */
     h1 {
-        font-family: 'Golos Text' ;
+        font-family: 'Golos Text' !important;
         font-weight: normal;
         color: #1a1a1a;
         margin-bottom: 0.5rem;
@@ -222,7 +222,7 @@ st.markdown("""
     .stButton>button {
         border-radius: 20px ;
         padding: 10px 20px ;
-        font-family: 'Golos Text' ;
+        font-family: 'Golos Text' !important;
         font-weight: normal ;
         font-size: 14px ;
         background: var(--button-color) ;
@@ -236,7 +236,7 @@ st.markdown("""
     /* Текст внутри кнопок - Regular шрифт */
     .stButton>button, .stButton>button span, .stButton>button p,
     .stButton>button div, .stButton>button * {
-        font-family: 'Golos Text' ;
+        font-family: 'Golos Text' !important;
         font-weight: normal ;
     }
 
@@ -256,7 +256,7 @@ st.markdown("""
     .stDownloadButton>button {
         border-radius: 20px ;
         padding: 10px 20px ;
-        font-family: 'Golos Text' ;
+        font-family: 'Golos Text' !important;
         font-weight: normal ;
         font-size: 14px ;
         background: var(--button-color) ;
@@ -270,7 +270,7 @@ st.markdown("""
     /* Текст внутри download кнопок - Regular шрифт */
     .stDownloadButton>button, .stDownloadButton>button span, .stDownloadButton>button p,
     .stDownloadButton>button div, .stDownloadButton>button * {
-        font-family: 'Golos Text' ;
+        font-family: 'Golos Text' !important;
         font-weight: normal ;
     }
 
@@ -290,7 +290,7 @@ st.markdown("""
     .stTabs [data-baseweb="tab-list"] button {
         padding: 10px 20px ;
         font-size: 14px ;
-        font-family: 'Golos Text' ;
+        font-family: 'Golos Text' !important;
         font-weight: normal ;
     }
 
