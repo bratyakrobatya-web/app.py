@@ -1733,22 +1733,30 @@ with st.sidebar:
         margin: 0.25rem 0;
         background: #f8f9fa;
         border-radius: 8px;
-        text-decoration: none ;
-        color: #1a1a1a ;
+        text-decoration: none !important;
+        color: #1a1a1a !important;
         font-weight: normal;
         transition: all 0.3s ease;
         border-left: 3px solid var(--ui-color);
     }
+    .nav-link:link {
+        color: #1a1a1a !important;
+        text-decoration: none !important;
+    }
     .nav-link:visited {
-        color: #1a1a1a ;
-        text-decoration: none ;
+        color: #1a1a1a !important;
+        text-decoration: none !important;
+    }
+    .nav-link:active {
+        color: #1a1a1a !important;
+        text-decoration: none !important;
     }
     .nav-link:hover {
         background: var(--button-hover);
-        color: white ;
+        color: white !important;
         transform: translateX(5px);
         border-left: 3px solid transparent;
-        text-decoration: none ;
+        text-decoration: none !important;
     }
     </style>
 
@@ -3600,10 +3608,10 @@ st.markdown("""
 
 uploaded_files = st.file_uploader(
     "Загрузите файлы для объединения",
-    type=['xlsx', 'xls', 'csv'],
+    type=['xlsx', 'xls', 'xlsm', 'xlsb', 'csv'],
     accept_multiple_files=True,
     key="file_merger_uploader",
-    help="Можно загрузить несколько файлов с одинаковыми столбцами"
+    help="Можно загрузить несколько файлов Excel (xlsx, xls, xlsm, xlsb) или CSV с одинаковыми столбцами"
 )
 
 if uploaded_files:
@@ -3644,20 +3652,13 @@ if uploaded_files:
                 st.metric("Уникальные", unique_rows)
 
             if duplicate_rows > 0:
-                st.warning(f"⚠️ Найдено {duplicate_rows} дубликатов. Они выделены оранжевым цветом и размещены вначале.")
+                st.warning(f"⚠️ Найдено {duplicate_rows} дубликатов. Они будут выделены оранжевым цветом в скачанном файле и размещены вначале.")
             else:
                 st.success("✅ Дубликаты не найдены!")
 
-            # Создаем стилизованный DataFrame для отображения
-            def highlight_duplicates(row):
-                if row.name < duplicate_rows:
-                    return ['background-color: #FFA500; color: white'] * len(row)
-                return [''] * len(row)
-
-            styled_df = final_df.style.apply(highlight_duplicates, axis=1)
-
             st.markdown("### 👀 Превью объединенного файла")
-            st.dataframe(styled_df, use_container_width=True, height=400)
+            st.info(f"ℹ️ Первые {duplicate_rows} строк - дубликаты (будут выделены оранжевым в Excel)")
+            st.dataframe(final_df, use_container_width=True, height=400)
 
             # Кнопка скачивания
             output = io.BytesIO()
