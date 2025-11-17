@@ -3849,11 +3849,14 @@ st.markdown("""
 Инструменты для сверки данных с различными клиентами. Выберите нужную сверку ниже.
 """)
 
-# Стили для кнопки копирования в блоке кода
+# Открываем контейнер для стилизации блоков кода
+st.markdown('<div class="matrix-code-section">', unsafe_allow_html=True)
+
+# Стили для кнопки копирования в блоке кода и стиль Матрицы
 st.markdown("""
 <style>
 /* Стиль для кнопки копирования в блоке кода */
-div[data-testid="stCodeBlock"] button {
+.matrix-code-section div[data-testid="stCodeBlock"] button {
     background-color: #f4301f !important;
     color: white !important;
     border: 2px solid #c42d1a !important;
@@ -3861,30 +3864,54 @@ div[data-testid="stCodeBlock"] button {
     transition: all 0.3s ease !important;
     padding: 8px 16px !important;
 }
-div[data-testid="stCodeBlock"] button:hover {
+.matrix-code-section div[data-testid="stCodeBlock"] button:hover {
     background-color: #c42d1a !important;
     transform: scale(1.05) !important;
     box-shadow: 0 4px 12px rgba(244, 48, 31, 0.4) !important;
 }
 
 /* Ограничиваем высоту блока кода */
-div[data-testid="stCodeBlock"] {
+.matrix-code-section div[data-testid="stCodeBlock"] {
     max-height: 250px !important;
     overflow-y: auto !important;
+    background-color: #000000 !important;
+    border: 1px solid #00FF00 !important;
 }
 
-/* Стиль Матрицы для поля кода */
-div[data-testid="stCodeBlock"] pre {
+/* Стиль Матрицы для поля кода - максимальная специфичность */
+.matrix-code-section div[data-testid="stCodeBlock"] pre,
+.matrix-code-section div[data-testid="stCodeBlock"] pre[class],
+.matrix-code-section [data-testid="stCodeBlock"] pre {
     background-color: #000000 !important;
+    background: #000000 !important;
     color: #00FF00 !important;
     font-family: 'Courier New', Consolas, Monaco, monospace !important;
     text-shadow: 0 0 5px #00FF00 !important;
 }
 
-div[data-testid="stCodeBlock"] code {
+.matrix-code-section div[data-testid="stCodeBlock"] code,
+.matrix-code-section div[data-testid="stCodeBlock"] code[class],
+.matrix-code-section [data-testid="stCodeBlock"] code {
     background-color: #000000 !important;
+    background: #000000 !important;
     color: #00FF00 !important;
     font-family: 'Courier New', Consolas, Monaco, monospace !important;
+}
+
+.matrix-code-section div[data-testid="stCodeBlock"] pre code,
+.matrix-code-section [data-testid="stCodeBlock"] pre code {
+    background-color: #000000 !important;
+    background: #000000 !important;
+    color: #00FF00 !important;
+}
+
+/* Переопределяем стили для всех дочерних элементов */
+.matrix-code-section [data-testid="stCodeBlock"] * {
+    background-color: #000000 !important;
+}
+
+.matrix-code-section [data-testid="stCodeBlock"] span {
+    color: #00FF00 !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -3952,6 +3979,9 @@ with st.expander("Ростелеком", expanded=False):
 
 with st.expander("Ингосстрах", expanded=False):
     st.info("Сверка для этого клиента находится в разработке")
+
+# Закрываем контейнер matrix-code-section
+st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("---")
 st.markdown(
