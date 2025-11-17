@@ -1616,28 +1616,70 @@ if hh_areas:
     st.markdown('<div id="проверка-гео"></div>', unsafe_allow_html=True)
     st.header("🔍 Проверка гео и выгрузка базы")
 
-    col1, col2 = st.columns([3, 1])
-    
-    with col1:
-        # Получаем только города России
-        russia_cities = []
-        for city_name, city_info in hh_areas.items():
-            if city_info.get('root_parent_id') == '113':
-                russia_cities.append(city_name)
-        
-        search_geo = st.selectbox(
-            "Выберите город для проверки:",
-            options=[""] + sorted(russia_cities),
-            key="geo_checker",
-            help="Начните вводить название города"
-        )
-    
-    with col2:
-        if search_geo:
-            city_info = hh_areas[search_geo]
-            st.success("✅ Найдено")
-            st.info(f"**ID HH:** {city_info['id']}")
-            st.info(f"**Регион:** {city_info['parent']}")
+    # Получаем только города России
+    russia_cities = []
+    for city_name, city_info in hh_areas.items():
+        if city_info.get('root_parent_id') == '113':
+            russia_cities.append(city_name)
+
+    # Мультиселект для выбора городов
+    selected_cities = st.multiselect(
+        "Выберите город(а) для проверки и выгрузки:",
+        options=sorted(russia_cities),
+        key="geo_checker",
+        help="Выберите один или несколько городов"
+    )
+
+    # Показываем информацию о выбранных городах
+    if selected_cities:
+        st.markdown(f"**Выбрано городов:** {len(selected_cities)}")
+
+        # Создаем DataFrame для выбранных городов
+        selected_cities_data = []
+        for city_name in selected_cities:
+            city_info = hh_areas[city_name]
+            selected_cities_data.append({
+                'Город': city_name,
+                'ID HH': city_info['id'],
+                'Регион': city_info['parent']
+            })
+
+        selected_cities_df = pd.DataFrame(selected_cities_data)
+        st.dataframe(selected_cities_df, use_container_width=True, hide_index=True)
+
+        # Кнопка выгрузки выбранных городов
+        col1, col2 = st.columns(2)
+        with col1:
+            # Для публикатора (только названия городов)
+            publisher_df = pd.DataFrame({'Город': selected_cities_df['Город']})
+            output_pub = io.BytesIO()
+            with pd.ExcelWriter(output_pub, engine='openpyxl') as writer:
+                publisher_df.to_excel(writer, index=False, header=False, sheet_name='Гео')
+            output_pub.seek(0)
+            st.download_button(
+                label=f"📤 Для публикатора ({len(selected_cities)} городов)",
+                data=output_pub,
+                file_name="selected_cities_publisher.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
+                type="primary",
+                key="download_selected_publisher"
+            )
+        with col2:
+            # Полный отчет с ID и регионами
+            output_full = io.BytesIO()
+            with pd.ExcelWriter(output_full, engine='openpyxl') as writer:
+                selected_cities_df.to_excel(writer, index=False, sheet_name='Города')
+            output_full.seek(0)
+            st.download_button(
+                label=f"📥 Полный отчет ({len(selected_cities)} городов)",
+                data=output_full,
+                file_name="selected_cities.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
+                type="primary",
+                key="download_selected_full"
+            )
 
     # КНОПКА ВЫГРУЗКИ ВСЕХ ГОРОДОВ
     st.markdown("")
