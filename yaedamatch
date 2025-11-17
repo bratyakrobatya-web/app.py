@@ -1,0 +1,1386 @@
+# -*- coding: utf-8 -*-
+"""
+Скрипт для сопоставления external_id между файлами ВНУТРЕННИЙ и БИЛЛИНГ
+Сопоставление по: ФИО (name), Дата попадания на стейт (lead_date), Город (city)
+"""
+
+# ============================================
+# УСТАНОВКА БИБЛИОТЕК (выполнить в отдельной ячейке)
+# ============================================
+# !pip install pandas openpyxl fuzzywuzzy python-Levenshtein
+
+# ============================================
+# ИМПОРТ БИБЛИОТЕК
+# ============================================
+import pandas as pd
+import numpy as np
+from datetime import datetime
+import re
+from fuzzywuzzy import fuzz
+from google.colab import files
+import os
+
+# ============================================
+# ЗАГРУЗКА ФАЙЛОВ
+# ============================================
+print("Загрузите ВСЕ файлы (ВНУТРЕННИЙ, БИЛЛИНГ и ЛК ЯЕДА):")
+uploaded_files = files.upload()
+
+df_internal = None
+df_billing = None
+df_lk_yeda = None
+internal_filename = None
+billing_filename = None
+lk_yeda_filename = None
+
+for filename in uploaded_files.keys():
+    print(f"\nОбрабатываем файл: {filename}")
+    
+    if "ООО Хэдхантер Биллинг" in filename or "Биллинг" in filename:
+        print(f"  -> Определен как БИЛЛИНГ")
+        billing_filename = filename
+        # Читаем файл, пропуская первую строку (содержит "ООО «Хэдхантер»")
+        df_billing = pd.read_excel(filename, skiprows=1)
+        print(f"  -> Загружено {len(df_billing)} строк")
+        print(f"  -> Колонки: {list(df_billing.columns)}")
+        
+    elif "Отчет-по-откликам-по-проектам-работодателя" in filename:
+        print(f"  -> Определен как ВНУТРЕННИЙ")
+        internal_filename = filename
+        # Первая строка - заголовки
+        df_internal = pd.read_excel(filename)
+        print(f"  -> Загружено {len(df_internal)} строк")
+        print(f"  -> Колонки: {list(df_internal.columns)}")
+    
+    elif "Leads_" in filename:
+        print(f"  -> Определен как ЛК ЯЕДА")
+        lk_yeda_filename = filename
+        # CSV или Excel файл
+        if filename.endswith('.csv'):
+            df_lk_yeda = pd.read_csv(filename)
+        elif filename.endswith('.xlsx') or filename.endswith('.xls'):
+            df_lk_yeda = pd.read_excel(filename)
+        else:
+            # Пробуем сначала как CSV, потом как Excel
+            try:
+                df_lk_yeda = pd.read_csv(filename)
+            except:
+                df_lk_yeda = pd.read_excel(filename)
+        print(f"  -> Загружено {len(df_lk_yeda)} строк")
+        print(f"  -> Колонки: {list(df_lk_yeda.columns)}")
+    else:
+        print(f"  -> ВНИМАНИЕ: Не удалось определить тип файла!")
+        print(f"     Ожидается 'ООО Хэдхантер Биллинг', 'Отчет-по-откликам-по-проектам-работодателя' или 'Leads_' в названии")
+
+if df_internal is None:
+    raise ValueError("Файл ВНУТРЕННИЙ не найден! Убедитесь, что в названии есть 'Отчет-по-откликам-по-проектам-работодателя'")
+if df_billing is None:
+    raise ValueError("Файл БИЛЛИНГ не найден! Убедитесь, что в названии есть 'ООО Хэдхантер Биллинг'")
+if df_lk_yeda is None:
+    print("\n⚠️ ВНИМАНИЕ: Файл ЛК ЯЕДА не найден! Дополнительная проверка по телефону будет пропущена.")
+else:
+    print(f"\n✅ Файл ЛК ЯЕДА загружен для дополнительной проверки")
+
+# ============================================
+# НАСТРОЙКА НАЗВАНИЙ КОЛОНОК
+# ============================================
+# Для файла ВНУТРЕННИЙ:
+COL_INTERNAL_FIO = 'ФИО'
+COL_INTERNAL_DATE = 'Дата попадания на стейт'
+COL_INTERNAL_CITY = 'Проживание'
+COL_INTERNAL_PHONE = 'Телефон'
+
+# Для файла БИЛЛИНГ:
+COL_BILLING_FIO = 'name'
+COL_BILLING_DATE = 'lead_date'
+COL_BILLING_CITY = 'city'
+COL_BILLING_EXTERNAL_ID = 'external_id'
+COL_BILLING_PAYMENT = 'payment'
+COL_BILLING_N_ORDERS = 'n_orders_20_days'
+COL_BILLING_FIRST_ORDER_DATE = 'first_order_date'
+
+# Для файла ЛК ЯЕДА:
+COL_LK_EXTERNAL_ID = 'external_id'
+COL_LK_DATE = 'lead_created_at'
+COL_LK_FIRST_NAME = 'first_name'
+COL_LK_LAST_NAME = 'last_name'
+COL_LK_PHONE = 'phone'
+
+print("\n" + "="*50)
+print("ПРОВЕРКА КОЛОНОК")
+print("="*50)
+
+# Проверка наличия колонок
+errors = []
+if COL_INTERNAL_FIO not in df_internal.columns:
+    errors.append(f"Колонка '{COL_INTERNAL_FIO}' не найдена в файле ВНУТРЕННИЙ")
+if COL_INTERNAL_DATE not in df_internal.columns:
+    errors.append(f"Колонка '{COL_INTERNAL_DATE}' не найдена в файле ВНУТРЕННИЙ")
+if COL_INTERNAL_CITY not in df_internal.columns:
+    errors.append(f"Колонка '{COL_INTERNAL_CITY}' не найдена в файле ВНУТРЕННИЙ")
+if COL_INTERNAL_PHONE not in df_internal.columns:
+    errors.append(f"Колонка '{COL_INTERNAL_PHONE}' не найдена в файле ВНУТРЕННИЙ")
+
+if COL_BILLING_FIO not in df_billing.columns:
+    errors.append(f"Колонка '{COL_BILLING_FIO}' не найдена в файле БИЛЛИНГ")
+if COL_BILLING_DATE not in df_billing.columns:
+    errors.append(f"Колонка '{COL_BILLING_DATE}' не найдена в файле БИЛЛИНГ")
+if COL_BILLING_CITY not in df_billing.columns:
+    errors.append(f"Колонка '{COL_BILLING_CITY}' не найдена в файле БИЛЛИНГ")
+if COL_BILLING_EXTERNAL_ID not in df_billing.columns:
+    errors.append(f"Колонка '{COL_BILLING_EXTERNAL_ID}' не найдена в файле БИЛЛИНГ")
+if COL_BILLING_PAYMENT not in df_billing.columns:
+    errors.append(f"Колонка '{COL_BILLING_PAYMENT}' не найдена в файле БИЛЛИНГ")
+if COL_BILLING_N_ORDERS not in df_billing.columns:
+    errors.append(f"Колонка '{COL_BILLING_N_ORDERS}' не найдена в файле БИЛЛИНГ")
+if COL_BILLING_FIRST_ORDER_DATE not in df_billing.columns:
+    errors.append(f"Колонка '{COL_BILLING_FIRST_ORDER_DATE}' не найдена в файле БИЛЛИНГ")
+
+# Проверка ЛК ЯЕДА если загружен
+if df_lk_yeda is not None:
+    if COL_LK_EXTERNAL_ID not in df_lk_yeda.columns:
+        errors.append(f"Колонка '{COL_LK_EXTERNAL_ID}' не найдена в файле ЛК ЯЕДА")
+    if COL_LK_DATE not in df_lk_yeda.columns:
+        errors.append(f"Колонка '{COL_LK_DATE}' не найдена в файле ЛК ЯЕДА")
+    if COL_LK_FIRST_NAME not in df_lk_yeda.columns:
+        errors.append(f"Колонка '{COL_LK_FIRST_NAME}' не найдена в файле ЛК ЯЕДА")
+    if COL_LK_LAST_NAME not in df_lk_yeda.columns:
+        errors.append(f"Колонка '{COL_LK_LAST_NAME}' не найдена в файле ЛК ЯЕДА")
+    if COL_LK_PHONE not in df_lk_yeda.columns:
+        errors.append(f"Колонка '{COL_LK_PHONE}' не найдена в файле ЛК ЯЕДА")
+
+if errors:
+    print("❌ ОШИБКИ:")
+    for err in errors:
+        print(f"  - {err}")
+    raise ValueError("Проверьте структуру файлов")
+else:
+    print("✅ Все необходимые колонки найдены!")
+
+print(f"\nИспользуются колонки:")
+print(f"  ВНУТРЕННИЙ: {COL_INTERNAL_FIO}, {COL_INTERNAL_DATE}, {COL_INTERNAL_CITY}, {COL_INTERNAL_PHONE}")
+print(f"  БИЛЛИНГ: {COL_BILLING_FIO}, {COL_BILLING_DATE}, {COL_BILLING_CITY}, {COL_BILLING_EXTERNAL_ID}")
+print(f"  Дополнительно из БИЛЛИНГ: {COL_BILLING_PAYMENT}, {COL_BILLING_N_ORDERS}, {COL_BILLING_FIRST_ORDER_DATE}")
+if df_lk_yeda is not None:
+    print(f"  ЛК ЯЕДА: {COL_LK_EXTERNAL_ID}, {COL_LK_DATE}, {COL_LK_FIRST_NAME}, {COL_LK_LAST_NAME}, {COL_LK_PHONE}")
+
+# ============================================
+# ФУНКЦИИ ДЛЯ НОРМАЛИЗАЦИИ ДАННЫХ
+# ============================================
+
+def normalize_fio(fio):
+    """Нормализация ФИО: убираем лишние пробелы, приводим к нижнему регистру"""
+    if pd.isna(fio):
+        return ""
+    fio = str(fio).strip().lower()
+    # Убираем множественные пробелы
+    fio = re.sub(r'\s+', ' ', fio)
+    return fio
+
+def get_fio_parts(fio):
+    """Разбиваем ФИО на части и сортируем для сравнения"""
+    if not fio:
+        return set(), []
+    parts = fio.split()
+    return set(parts), sorted(parts)
+
+def normalize_city(city):
+    """Нормализация города: убираем лишние пробелы, приводим к нижнему регистру"""
+    if pd.isna(city):
+        return ""
+    city = str(city).strip().lower()
+    # Убираем скобки и содержимое в них (например, "Московская область")
+    city = re.sub(r'\s*\([^)]*\)', '', city)
+    # Убираем "г.", "город", "пос.", "п.", "с." в начале
+    city = re.sub(r'^(г\.|город|пос\.|п\.|с\.|село|поселок)\s*', '', city)
+    # Убираем "область", "край", "республика" и т.д. в конце
+    city = re.sub(r'\s+(область|край|республика|округ|район)$', '', city)
+    city = city.strip()
+    return city
+
+def extract_city_root(city):
+    """Извлекаем корень города для более гибкого сравнения"""
+    if not city:
+        return ""
+    # Берем первое слово (обычно это название города)
+    parts = city.split()
+    if parts:
+        root = parts[0]
+        # Убираем окончания (-ский, -ская, -ское, -ий, -ая, -ое)
+        root = re.sub(r'(ский|ская|ское|ий|ая|ое|ый)$', '', root)
+        return root
+    return city
+
+def normalize_date(date_val):
+    """Нормализация даты: приводим к формату YYYY-MM-DD"""
+    if pd.isna(date_val):
+        return None
+    
+    # Если уже datetime
+    if isinstance(date_val, (datetime, pd.Timestamp)):
+        return date_val.strftime('%Y-%m-%d')
+    
+    # Если строка
+    date_str = str(date_val).strip()
+    
+    # Пробуем разные форматы
+    formats = [
+        '%d-%m-%Y %H:%M:%S',
+        '%d.%m.%Y %H:%M:%S',
+        '%Y-%m-%d %H:%M:%S',
+        '%d-%m-%Y',
+        '%d.%m.%Y',
+        '%Y-%m-%d',
+    ]
+    
+    for fmt in formats:
+        try:
+            dt = datetime.strptime(date_str.split()[0] if ' ' in date_str else date_str, fmt.split()[0])
+            return dt.strftime('%Y-%m-%d')
+        except:
+            continue
+    
+    # Если не удалось распарсить, пробуем pandas
+    try:
+        return pd.to_datetime(date_val).strftime('%Y-%m-%d')
+    except:
+        return str(date_val)
+
+def compare_fio(fio1, fio2, threshold=85):
+    """Сравнение ФИО с учетом возможных опечаток"""
+    if not fio1 or not fio2:
+        return False
+    
+    # Точное совпадение
+    if fio1 == fio2:
+        return True
+    
+    # Fuzzy matching
+    ratio = fuzz.ratio(fio1, fio2)
+    if ratio >= threshold:
+        return True
+    
+    # Сравнение по отдельным словам (фамилия, имя, отчество)
+    words1 = set(fio1.split())
+    words2 = set(fio2.split())
+    
+    # Если совпадают минимум 2 слова из 3
+    common_words = words1.intersection(words2)
+    if len(common_words) >= 2:
+        return True
+    
+    return False
+
+def compare_city(city1, city2):
+    """Сравнение городов"""
+    if not city1 or not city2:
+        return False
+    
+    # Точное совпадение
+    if city1 == city2:
+        return True
+    
+    # Один город содержит другой
+    if city1 in city2 or city2 in city1:
+        return True
+    
+    # Fuzzy matching для городов
+    ratio = fuzz.ratio(city1, city2)
+    if ratio >= 80:
+        return True
+    
+    return False
+
+def compare_city_flexible(city1, city2):
+    """Более гибкое сравнение городов"""
+    if not city1 or not city2:
+        return False
+    
+    # Базовое сравнение
+    if compare_city(city1, city2):
+        return True
+    
+    # Сравнение корней
+    root1 = extract_city_root(city1)
+    root2 = extract_city_root(city2)
+    
+    if root1 and root2:
+        if root1 == root2:
+            return True
+        if root1 in root2 or root2 in root1:
+            return True
+        if fuzz.ratio(root1, root2) >= 75:
+            return True
+    
+    # Частичное совпадение токенов
+    token_ratio = fuzz.token_set_ratio(city1, city2)
+    if token_ratio >= 70:
+        return True
+    
+    return False
+
+def normalize_phone(phone):
+    """Нормализация телефона: оставляем только цифры"""
+    if pd.isna(phone):
+        return ""
+    phone_str = str(phone)
+    # Убираем все кроме цифр
+    digits = re.sub(r'\D', '', phone_str)
+    # Убираем ведущую 7 или 8 если есть
+    if len(digits) >= 11 and digits[0] in ['7', '8']:
+        digits = digits[1:]
+    return digits
+
+def extract_phone_last_digits(masked_phone):
+    """Извлекает последние цифры из маскированного номера типа +7******0057"""
+    if pd.isna(masked_phone):
+        return ""
+    phone_str = str(masked_phone)
+    # Убираем все кроме цифр
+    digits = re.sub(r'\D', '', phone_str)
+    # Берем последние 4 цифры
+    if len(digits) >= 4:
+        return digits[-4:]
+    return digits
+
+def compare_phone_with_mask(full_phone, masked_phone):
+    """Сравнивает полный номер с маскированным (последние 4 цифры)"""
+    if not full_phone or not masked_phone:
+        return False
+    
+    # Нормализуем полный номер
+    full_digits = normalize_phone(full_phone)
+    # Извлекаем последние цифры из маскированного
+    last_digits = extract_phone_last_digits(masked_phone)
+    
+    if len(full_digits) >= 4 and len(last_digits) >= 4:
+        return full_digits[-4:] == last_digits[-4:]
+    
+    return False
+
+# ============================================
+# НОРМАЛИЗАЦИЯ ДАННЫХ
+# ============================================
+print("\nНормализация данных...")
+
+# Нормализация ВНУТРЕННИЙ
+df_internal['_norm_fio'] = df_internal[COL_INTERNAL_FIO].apply(normalize_fio)
+df_internal['_norm_date'] = df_internal[COL_INTERNAL_DATE].apply(normalize_date)
+df_internal['_norm_city'] = df_internal[COL_INTERNAL_CITY].apply(normalize_city)
+
+# Нормализация БИЛЛИНГ
+df_billing['_norm_fio'] = df_billing[COL_BILLING_FIO].apply(normalize_fio)
+df_billing['_norm_date'] = df_billing[COL_BILLING_DATE].apply(normalize_date)
+df_billing['_norm_city'] = df_billing[COL_BILLING_CITY].apply(normalize_city)
+
+print("Нормализация завершена!")
+
+# ============================================
+# СОПОСТАВЛЕНИЕ (ОПТИМИЗИРОВАННАЯ ВЕРСИЯ)
+# ============================================
+print("\nСоздаем индексы для быстрого поиска...")
+
+# Создаем словарь для быстрого поиска по ФИО + город
+billing_index = {}
+for bill_idx, bill_row in df_billing.iterrows():
+    key = (bill_row['_norm_fio'], bill_row['_norm_city'])
+    if key not in billing_index:
+        billing_index[key] = []
+    billing_index[key].append({
+        'external_id': bill_row[COL_BILLING_EXTERNAL_ID],
+        'date': bill_row['_norm_date'],
+        'original_fio': bill_row[COL_BILLING_FIO],
+        'original_city': bill_row[COL_BILLING_CITY],
+        'payment': bill_row[COL_BILLING_PAYMENT],
+        'n_orders_20_days': bill_row[COL_BILLING_N_ORDERS],
+        'first_order_date': bill_row[COL_BILLING_FIRST_ORDER_DATE],
+        'lead_date': bill_row[COL_BILLING_DATE]
+    })
+
+# Индекс только по ФИО
+billing_by_fio = {}
+for bill_idx, bill_row in df_billing.iterrows():
+    fio = bill_row['_norm_fio']
+    if fio not in billing_by_fio:
+        billing_by_fio[fio] = []
+    billing_by_fio[fio].append({
+        'external_id': bill_row[COL_BILLING_EXTERNAL_ID],
+        'date': bill_row['_norm_date'],
+        'city': bill_row['_norm_city'],
+        'original_fio': bill_row[COL_BILLING_FIO],
+        'original_city': bill_row[COL_BILLING_CITY],
+        'payment': bill_row[COL_BILLING_PAYMENT],
+        'n_orders_20_days': bill_row[COL_BILLING_N_ORDERS],
+        'first_order_date': bill_row[COL_BILLING_FIRST_ORDER_DATE],
+        'lead_date': bill_row[COL_BILLING_DATE]
+    })
+
+# Индекс по отсортированным частям ФИО
+billing_by_fio_sorted = {}
+for bill_idx, bill_row in df_billing.iterrows():
+    fio = bill_row['_norm_fio']
+    _, sorted_parts = get_fio_parts(fio)
+    key = tuple(sorted_parts)
+    if key not in billing_by_fio_sorted:
+        billing_by_fio_sorted[key] = []
+    billing_by_fio_sorted[key].append({
+        'external_id': bill_row[COL_BILLING_EXTERNAL_ID],
+        'date': bill_row['_norm_date'],
+        'city': bill_row['_norm_city'],
+        'original_fio': bill_row[COL_BILLING_FIO],
+        'original_city': bill_row[COL_BILLING_CITY],
+        'norm_fio': fio,
+        'payment': bill_row[COL_BILLING_PAYMENT],
+        'n_orders_20_days': bill_row[COL_BILLING_N_ORDERS],
+        'first_order_date': bill_row[COL_BILLING_FIRST_ORDER_DATE],
+        'lead_date': bill_row[COL_BILLING_DATE]
+    })
+
+# Индекс по корню города
+billing_by_city_root = {}
+for bill_idx, bill_row in df_billing.iterrows():
+    city_root = extract_city_root(bill_row['_norm_city'])
+    if city_root not in billing_by_city_root:
+        billing_by_city_root[city_root] = []
+    billing_by_city_root[city_root].append({
+        'external_id': bill_row[COL_BILLING_EXTERNAL_ID],
+        'date': bill_row['_norm_date'],
+        'city': bill_row['_norm_city'],
+        'fio': bill_row['_norm_fio'],
+        'original_fio': bill_row[COL_BILLING_FIO],
+        'original_city': bill_row[COL_BILLING_CITY],
+        'payment': bill_row[COL_BILLING_PAYMENT],
+        'n_orders_20_days': bill_row[COL_BILLING_N_ORDERS],
+        'first_order_date': bill_row[COL_BILLING_FIRST_ORDER_DATE],
+        'lead_date': bill_row[COL_BILLING_DATE]
+    })
+
+# Полный список записей БИЛЛИНГ для двойной проверки
+billing_full_list = []
+for bill_idx, bill_row in df_billing.iterrows():
+    billing_full_list.append({
+        'external_id': bill_row[COL_BILLING_EXTERNAL_ID],
+        'date': bill_row['_norm_date'],
+        'city': bill_row['_norm_city'],
+        'fio': bill_row['_norm_fio'],
+        'original_fio': bill_row[COL_BILLING_FIO],
+        'original_city': bill_row[COL_BILLING_CITY],
+        'payment': bill_row[COL_BILLING_PAYMENT],
+        'n_orders_20_days': bill_row[COL_BILLING_N_ORDERS],
+        'first_order_date': bill_row[COL_BILLING_FIRST_ORDER_DATE],
+        'lead_date': bill_row[COL_BILLING_DATE]
+    })
+
+unique_billing_fios = list(billing_by_fio.keys())
+
+print(f"Создано {len(billing_index)} уникальных комбинаций ФИО+Город")
+print(f"Уникальных ФИО в БИЛЛИНГ: {len(unique_billing_fios)}")
+print(f"Уникальных корней городов: {len(billing_by_city_root)}")
+
+# ============================================
+# СОЗДАНИЕ ИНДЕКСА ДЛЯ ЛК ЯЕДА (для дополнительной проверки)
+# ============================================
+lk_yeda_index = {}
+lk_yeda_by_phone = {}  # Индекс по последним 4 цифрам телефона
+lk_yeda_by_date = {}   # Индекс по дате
+
+if df_lk_yeda is not None:
+    print("\nСоздаем индекс для ЛК ЯЕДА...")
+    
+    for lk_idx, lk_row in df_lk_yeda.iterrows():
+        ext_id = lk_row[COL_LK_EXTERNAL_ID]
+        
+        # Формируем ФИО из first_name + last_name
+        first_name = str(lk_row[COL_LK_FIRST_NAME]) if pd.notna(lk_row[COL_LK_FIRST_NAME]) else ""
+        last_name = str(lk_row[COL_LK_LAST_NAME]) if pd.notna(lk_row[COL_LK_LAST_NAME]) else ""
+        lk_fio = f"{last_name} {first_name}".strip().lower()
+        lk_fio = re.sub(r'\s+', ' ', lk_fio)
+        
+        # Нормализуем дату
+        lk_date = normalize_date(lk_row[COL_LK_DATE])
+        
+        # Извлекаем последние 4 цифры телефона
+        lk_phone_last4 = extract_phone_last_digits(lk_row[COL_LK_PHONE])
+        
+        lk_data = {
+            'external_id': ext_id,
+            'fio': lk_fio,
+            'date': lk_date,
+            'phone_last4': lk_phone_last4,
+            'first_name': first_name.lower(),
+            'last_name': last_name.lower()
+        }
+        
+        # Основной индекс по external_id
+        lk_yeda_index[ext_id] = lk_data
+        
+        # Индекс по телефону (для быстрого поиска)
+        if lk_phone_last4:
+            if lk_phone_last4 not in lk_yeda_by_phone:
+                lk_yeda_by_phone[lk_phone_last4] = []
+            lk_yeda_by_phone[lk_phone_last4].append(lk_data)
+        
+        # Индекс по дате
+        if lk_date:
+            if lk_date not in lk_yeda_by_date:
+                lk_yeda_by_date[lk_date] = []
+            lk_yeda_by_date[lk_date].append(lk_data)
+    
+    print(f"Создан индекс ЛК ЯЕДА: {len(lk_yeda_index)} записей")
+    print(f"  - По телефону: {len(lk_yeda_by_phone)} уникальных номеров")
+    print(f"  - По дате: {len(lk_yeda_by_date)} уникальных дат")
+
+# Нормализуем телефоны во ВНУТРЕННИЙ файле
+print("\nНормализация телефонов...")
+df_internal['_norm_phone'] = df_internal[COL_INTERNAL_PHONE].apply(normalize_phone)
+
+print("\nНачинаем сопоставление...")
+
+# Добавляем колонки для результатов
+df_internal['external_id'] = None
+df_internal['score'] = 0
+df_internal['match_details'] = None
+
+# Счетчики
+total_matches = 0
+stats = {
+    'exact_all': 0,
+    'exact_fio_city': 0,
+    'exact_fio_fuzzy_city': 0,
+    'sorted_fio_match': 0,
+    'fuzzy_fio_city': 0,
+    'fio_only': 0,
+    'lk_yeda_match': 0,
+    'lk_yeda_direct': 0,
+    'double_check': 0,
+    'no_match': 0
+}
+
+# Добавляем колонки для результатов
+df_internal['external_id'] = None
+df_internal['payment'] = None
+df_internal['n_orders_20_days'] = None
+df_internal['Через сколько заказ'] = None
+df_internal['score'] = 0
+df_internal['match_details'] = None
+
+def calculate_match_score(internal_fio, internal_city, internal_date, 
+                          billing_fio, billing_city, billing_date):
+    """Вычисляет score совпадения от 0 до 100"""
+    score = 0
+    details = []
+    
+    # ФИО (максимум 50 баллов)
+    if internal_fio == billing_fio:
+        score += 50
+        details.append("ФИО:точное")
+    else:
+        fio_ratio = fuzz.ratio(internal_fio, billing_fio)
+        internal_set, _ = get_fio_parts(internal_fio)
+        billing_set, _ = get_fio_parts(billing_fio)
+        common_words = len(internal_set.intersection(billing_set))
+        
+        # Бонус за общие слова
+        word_score = common_words * 15  # до 45 за 3 слова
+        fuzzy_score = fio_ratio * 0.05  # до 5 за 100% fuzzy
+        fio_score = min(45, word_score + fuzzy_score)
+        score += fio_score
+        details.append(f"ФИО:fuzzy({common_words}слов,{fio_ratio}%)")
+    
+    # Город (максимум 30 баллов)
+    if internal_city == billing_city:
+        score += 30
+        details.append("Город:точный")
+    elif compare_city_flexible(internal_city, billing_city):
+        city_ratio = fuzz.ratio(internal_city, billing_city)
+        city_score = 15 + (city_ratio * 0.15)  # 15-30 баллов
+        score += city_score
+        details.append(f"Город:похож({city_ratio}%)")
+    else:
+        details.append("Город:нет")
+    
+    # Дата (максимум 20 баллов)
+    if internal_date and billing_date and internal_date == billing_date:
+        score += 20
+        details.append("Дата:точная")
+    elif internal_date and billing_date:
+        # Проверяем близость дат (±3 дня)
+        try:
+            d1 = datetime.strptime(internal_date, '%Y-%m-%d')
+            d2 = datetime.strptime(billing_date, '%Y-%m-%d')
+            diff = abs((d1 - d2).days)
+            if diff <= 3:
+                date_score = 15 - diff * 3
+                score += date_score
+                details.append(f"Дата:близко({diff}дн)")
+            else:
+                details.append("Дата:нет")
+        except:
+            details.append("Дата:ошибка")
+    else:
+        details.append("Дата:нет")
+    
+    return score, " | ".join(details)
+
+def double_check_match(internal_fio, internal_city, internal_date, current_best):
+    """Двойная проверка для низких score - полный перебор всех записей БИЛЛИНГ
+    ТРЕБУЕТСЯ: точное совпадение даты И точное совпадение города
+    """
+    best_score = current_best['score'] if current_best else 0
+    best_match = current_best
+    
+    internal_set, internal_sorted = get_fio_parts(internal_fio)
+    
+    for bill in billing_full_list:
+        # ОБЯЗАТЕЛЬНО: точное совпадение даты
+        if bill['date'] != internal_date:
+            continue
+        
+        # ОБЯЗАТЕЛЬНО: точное совпадение города (после нормализации)
+        if bill['city'] != internal_city:
+            continue
+        
+        billing_set, billing_sorted = get_fio_parts(bill['fio'])
+        
+        # Проверяем ФИО - должно быть хоть одно общее слово
+        if not internal_set.intersection(billing_set):
+            continue
+        
+        score, details = calculate_match_score(
+            internal_fio, internal_city, internal_date,
+            bill['fio'], bill['city'], bill['date']
+        )
+        
+        if score > best_score:
+            best_score = score
+            best_match = {
+                'external_id': bill['external_id'],
+                'score': score,
+                'details': f"[DOUBLE_CHECK] {details} | Биллинг: {bill['original_fio']} / {bill['original_city']}",
+                'payment': bill['payment'],
+                'n_orders_20_days': bill['n_orders_20_days'],
+                'first_order_date': bill['first_order_date'],
+                'lead_date': bill['lead_date']
+            }
+    
+    return best_match
+
+def calculate_days_to_order(first_order_date, lead_date):
+    """Вычисляет количество дней между lead_date и first_order_date"""
+    if pd.isna(first_order_date) or pd.isna(lead_date):
+        return None
+    
+    try:
+        # Преобразуем в datetime если нужно
+        if isinstance(first_order_date, str):
+            first_order_date = pd.to_datetime(first_order_date)
+        if isinstance(lead_date, str):
+            lead_date = pd.to_datetime(lead_date)
+        
+        if isinstance(first_order_date, (datetime, pd.Timestamp)) and isinstance(lead_date, (datetime, pd.Timestamp)):
+            diff = (first_order_date - lead_date).days
+            return diff
+    except:
+        pass
+    
+    return None
+
+# Основной цикл сопоставления
+total_rows = len(df_internal)
+for idx, row in df_internal.iterrows():
+    if idx % 100 == 0:
+        print(f"Обработано {idx}/{total_rows} строк... ({idx*100//total_rows}%)")
+    
+    internal_fio = row['_norm_fio']
+    internal_date = row['_norm_date']
+    internal_city = row['_norm_city']
+    internal_city_root = extract_city_root(internal_city)
+    internal_fio_set, internal_fio_sorted = get_fio_parts(internal_fio)
+    
+    best_match = None
+    
+    # СТРАТЕГИЯ 1: Точное совпадение ФИО + Город
+    exact_key = (internal_fio, internal_city)
+    if exact_key in billing_index:
+        candidates = billing_index[exact_key]
+        best_cand = None
+        best_score = 0
+        
+        for cand in candidates:
+            score, details = calculate_match_score(
+                internal_fio, internal_city, internal_date,
+                internal_fio, internal_city, cand['date']
+            )
+            if score > best_score:
+                best_score = score
+                best_cand = cand
+                best_details = details
+        
+        if best_cand:
+            best_match = {
+                'external_id': best_cand['external_id'],
+                'score': best_score,
+                'details': f"[EXACT_ALL] {best_details}",
+                'payment': best_cand['payment'],
+                'n_orders_20_days': best_cand['n_orders_20_days'],
+                'first_order_date': best_cand['first_order_date'],
+                'lead_date': best_cand['lead_date']
+            }
+            stats['exact_all'] += 1
+    
+    # СТРАТЕГИЯ 2: Точное ФИО + похожий город
+    if not best_match and internal_fio in billing_by_fio:
+        candidates = billing_by_fio[internal_fio]
+        for cand in candidates:
+            if compare_city_flexible(internal_city, cand['city']):
+                score, details = calculate_match_score(
+                    internal_fio, internal_city, internal_date,
+                    internal_fio, cand['city'], cand['date']
+                )
+                if not best_match or score > best_match['score']:
+                    best_match = {
+                        'external_id': cand['external_id'],
+                        'score': score,
+                        'details': f"[EXACT_FIO_FUZZY_CITY] {details} | Биллинг: {cand['original_city']}",
+                        'payment': cand['payment'],
+                        'n_orders_20_days': cand['n_orders_20_days'],
+                        'first_order_date': cand['first_order_date'],
+                        'lead_date': cand['lead_date']
+                    }
+        if best_match:
+            stats['exact_fio_fuzzy_city'] += 1
+    
+    # СТРАТЕГИЯ 3: ФИО с другим порядком слов + город
+    if not best_match:
+        sorted_key = tuple(internal_fio_sorted)
+        if sorted_key in billing_by_fio_sorted:
+            candidates = billing_by_fio_sorted[sorted_key]
+            for cand in candidates:
+                if compare_city_flexible(internal_city, cand['city']):
+                    score, details = calculate_match_score(
+                        internal_fio, internal_city, internal_date,
+                        cand['norm_fio'], cand['city'], cand['date']
+                    )
+                    if not best_match or score > best_match['score']:
+                        best_match = {
+                            'external_id': cand['external_id'],
+                            'score': score,
+                            'details': f"[SORTED_FIO] {details} | Биллинг: {cand['original_fio']} / {cand['original_city']}",
+                            'payment': cand['payment'],
+                            'n_orders_20_days': cand['n_orders_20_days'],
+                            'first_order_date': cand['first_order_date'],
+                            'lead_date': cand['lead_date']
+                        }
+            if best_match:
+                stats['sorted_fio_match'] += 1
+    
+    # СТРАТЕГИЯ 4: Fuzzy ФИО + город (по корню города)
+    if not best_match and internal_city_root in billing_by_city_root:
+        candidates = billing_by_city_root[internal_city_root]
+        for cand in candidates:
+            if not compare_city_flexible(internal_city, cand['city']):
+                continue
+            
+            cand_fio_set, _ = get_fio_parts(cand['fio'])
+            common = internal_fio_set.intersection(cand_fio_set)
+            
+            if len(common) >= 2:
+                score, details = calculate_match_score(
+                    internal_fio, internal_city, internal_date,
+                    cand['fio'], cand['city'], cand['date']
+                )
+                if not best_match or score > best_match['score']:
+                    best_match = {
+                        'external_id': cand['external_id'],
+                        'score': score,
+                        'details': f"[FUZZY_FIO_CITY] {details} | Биллинг: {cand['original_fio']} / {cand['original_city']}",
+                        'payment': cand['payment'],
+                        'n_orders_20_days': cand['n_orders_20_days'],
+                        'first_order_date': cand['first_order_date'],
+                        'lead_date': cand['lead_date']
+                    }
+        if best_match:
+            stats['fuzzy_fio_city'] += 1
+    
+    # СТРАТЕГИЯ 5: Только по ФИО (если уникальное)
+    if not best_match and internal_fio in billing_by_fio:
+        candidates = billing_by_fio[internal_fio]
+        if len(candidates) == 1:
+            cand = candidates[0]
+            score, details = calculate_match_score(
+                internal_fio, internal_city, internal_date,
+                internal_fio, cand['city'], cand['date']
+            )
+            best_match = {
+                'external_id': cand['external_id'],
+                'score': score,
+                'details': f"[FIO_ONLY_UNIQUE] {details} | Биллинг: {cand['original_city']}",
+                'payment': cand['payment'],
+                'n_orders_20_days': cand['n_orders_20_days'],
+                'first_order_date': cand['first_order_date'],
+                'lead_date': cand['lead_date']
+            }
+            stats['fio_only'] += 1
+    
+    # СТРАТЕГИЯ 6: Поиск через ЛК ЯЕДА (по телефону + ФИО + дате)
+    if not best_match and df_lk_yeda is not None and len(lk_yeda_by_phone) > 0:
+        internal_phone = row['_norm_phone']
+        internal_fio_parts = set(internal_fio.split())
+        
+        # Быстрый поиск по телефону (O(1) вместо O(n))
+        if internal_phone and len(internal_phone) >= 4:
+            phone_key = internal_phone[-4:]
+            
+            if phone_key in lk_yeda_by_phone:
+                # Нашли кандидатов по телефону!
+                for lk_data in lk_yeda_by_phone[phone_key]:
+                    # Проверяем дату
+                    if internal_date != lk_data['date']:
+                        continue
+                    
+                    # Проверяем ФИО
+                    lk_first_name = lk_data['first_name']
+                    lk_last_name = lk_data['last_name']
+                    lk_parts = set([lk_first_name, lk_last_name]) - {''}
+                    
+                    name_match = False
+                    if lk_first_name and lk_first_name in internal_fio:
+                        name_match = True
+                    if lk_last_name and lk_last_name in internal_fio:
+                        name_match = True
+                    common_parts = internal_fio_parts.intersection(lk_parts)
+                    if len(common_parts) >= 1:
+                        name_match = True
+                    
+                    if not name_match:
+                        continue
+                    
+                    # Нашли совпадение! Ищем в БИЛЛИНГ по external_id
+                    ext_id = lk_data['external_id']
+                    for bill in billing_full_list:
+                        if bill['external_id'] == ext_id:
+                            score = 100
+                            details = f"Телефон:совпал(***{phone_key}) | Дата:точная | ФИО:частично(ЛК:{lk_last_name} {lk_first_name})"
+                            
+                            best_match = {
+                                'external_id': ext_id,
+                                'score': score,
+                                'details': f"[LK_YEDA_PHONE] {details} | Биллинг: {bill['original_fio']} / {bill['original_city']}",
+                                'payment': bill['payment'],
+                                'n_orders_20_days': bill['n_orders_20_days'],
+                                'first_order_date': bill['first_order_date'],
+                                'lead_date': bill['lead_date']
+                            }
+                            stats['lk_yeda_match'] += 1
+                            break
+                    
+                    if best_match:
+                        break
+    
+    # СТРАТЕГИЯ 7: Прямой поиск external_id из ЛК ЯЕДА в БИЛЛИНГ (по дате + телефону, без строгой проверки ФИО)
+    if not best_match and df_lk_yeda is not None and len(lk_yeda_by_phone) > 0:
+        internal_phone = row['_norm_phone']
+        
+        # Быстрый поиск по телефону
+        if internal_phone and len(internal_phone) >= 4:
+            phone_key = internal_phone[-4:]
+            
+            if phone_key in lk_yeda_by_phone:
+                for lk_data in lk_yeda_by_phone[phone_key]:
+                    # Проверяем дату
+                    if internal_date != lk_data['date']:
+                        continue
+                    
+                    # Нашли совпадение по телефону и дате! Ищем в БИЛЛИНГ
+                    ext_id = lk_data['external_id']
+                    for bill in billing_full_list:
+                        if bill['external_id'] == ext_id:
+                            score = 95
+                            details = f"Телефон:совпал(***{phone_key}) | Дата:точная | ФИО:не проверено"
+                            
+                            best_match = {
+                                'external_id': ext_id,
+                                'score': score,
+                                'details': f"[LK_YEDA_PHONE_DATE] {details} | Биллинг: {bill['original_fio']} / {bill['original_city']}",
+                                'payment': bill['payment'],
+                                'n_orders_20_days': bill['n_orders_20_days'],
+                                'first_order_date': bill['first_order_date'],
+                                'lead_date': bill['lead_date']
+                            }
+                            stats['lk_yeda_direct'] += 1
+                            break
+                    
+                    if best_match:
+                        break
+    
+    # ДВОЙНАЯ ПРОВЕРКА для низких score (< 95)
+    if best_match and best_match['score'] < 95:
+        improved_match = double_check_match(internal_fio, internal_city, internal_date, best_match)
+        if improved_match and improved_match['score'] > best_match['score']:
+            best_match = improved_match
+            stats['double_check'] += 1
+    
+    # Если вообще ничего не нашли - делаем полный перебор (только с точной датой и городом)
+    if not best_match:
+        best_match = double_check_match(internal_fio, internal_city, internal_date, None)
+        if best_match and best_match['score'] >= 70:  # Минимальный порог для DOUBLE_CHECK = 70
+            stats['double_check'] += 1
+        else:
+            best_match = None
+            stats['no_match'] += 1
+    
+    # ФИНАЛЬНАЯ ВАЛИДАЦИЯ: проверяем score и точность совпадений
+    if best_match:
+        # Для DOUBLE_CHECK требуем score >= 70 (уже проверено выше, но на всякий случай)
+        if '[DOUBLE_CHECK]' in best_match['details'] and best_match['score'] < 70:
+            best_match = None
+            stats['no_match'] += 1
+        # Для score < 95 ТРЕБУЕМ точное совпадение даты И города
+        elif best_match['score'] < 95:
+            has_exact_date = "Дата:точная" in best_match['details']
+            has_exact_city = "Город:точный" in best_match['details']
+            
+            if not (has_exact_date and has_exact_city):
+                # Отклоняем совпадение - риск дубликата
+                best_match = None
+                stats['no_match'] += 1
+    
+    # Записываем результат
+    if best_match:
+        df_internal.at[idx, 'external_id'] = best_match['external_id']
+        df_internal.at[idx, 'payment'] = best_match['payment']
+        df_internal.at[idx, 'n_orders_20_days'] = best_match['n_orders_20_days']
+        df_internal.at[idx, 'score'] = best_match['score']
+        df_internal.at[idx, 'match_details'] = best_match['details']
+        
+        # Вычисляем "Через сколько заказ"
+        days_to_order = calculate_days_to_order(
+            best_match['first_order_date'], 
+            best_match['lead_date']
+        )
+        df_internal.at[idx, 'Через сколько заказ'] = days_to_order
+        
+        total_matches += 1
+    else:
+        df_internal.at[idx, 'score'] = 0
+        df_internal.at[idx, 'match_details'] = "НЕ НАЙДЕНО"
+
+print(f"\n{'='*50}")
+print("РЕЗУЛЬТАТЫ СОПОСТАВЛЕНИЯ")
+print(f"{'='*50}")
+print(f"Всего строк: {total_rows}")
+print(f"Найдено совпадений: {total_matches} ({total_matches*100//total_rows}%)")
+print(f"\nПо стратегиям:")
+print(f"  - Точное ФИО + точный город: {stats['exact_all']}")
+print(f"  - Точное ФИО + похожий город: {stats['exact_fio_fuzzy_city']}")
+print(f"  - ФИО (другой порядок) + город: {stats['sorted_fio_match']}")
+print(f"  - Fuzzy ФИО + город: {stats['fuzzy_fio_city']}")
+print(f"  - Только по ФИО (уникальное): {stats['fio_only']}")
+print(f"  - Через ЛК ЯЕДА (телефон+дата+ФИО): {stats['lk_yeda_match']}")
+print(f"  - Через ЛК ЯЕДА (телефон+дата): {stats['lk_yeda_direct']}")
+print(f"  - Улучшено двойной проверкой: {stats['double_check']}")
+print(f"Не найдено: {stats['no_match']}")
+
+# ============================================
+# ФИНАЛЬНАЯ СВЕРКА: НЕНАЙДЕННЫЕ ЗАПИСИ ИЗ БИЛЛИНГ
+# ============================================
+print(f"\n{'='*50}")
+print("ФИНАЛЬНАЯ СВЕРКА НЕНАЙДЕННЫХ ЗАПИСЕЙ ИЗ БИЛЛИНГ")
+print(f"{'='*50}")
+
+# Получаем все external_id которые были найдены
+matched_external_ids = set(df_internal[df_internal['external_id'].notna()]['external_id'].unique())
+all_billing_ids = set(df_billing[COL_BILLING_EXTERNAL_ID].unique())
+
+# Находим ненайденные
+unmatched_billing_ids = all_billing_ids - matched_external_ids
+print(f"Всего записей в БИЛЛИНГ: {len(all_billing_ids)}")
+print(f"Найдено совпадений: {len(matched_external_ids)}")
+print(f"НЕ найдено записей из БИЛЛИНГ: {len(unmatched_billing_ids)}")
+
+if len(unmatched_billing_ids) > 0 and df_lk_yeda is not None:
+    print(f"\nПроводим дополнительную проверку ненайденных записей...")
+    
+    # ОПТИМИЗАЦИЯ: Создаем индексы для быстрого поиска
+    print("  Создаем индексы для быстрого поиска...")
+    
+    # Индекс по последним 4 цифрам телефона
+    internal_by_phone = {}
+    # Индекс по дате
+    internal_by_date = {}
+    
+    for idx, row in df_internal.iterrows():
+        # Пропускаем уже найденные
+        if pd.notna(df_internal.at[idx, 'external_id']):
+            continue
+        
+        # Нормализуем один раз
+        internal_phone = normalize_phone(row[COL_INTERNAL_PHONE])
+        internal_date = normalize_date(row[COL_INTERNAL_DATE])
+        internal_city = normalize_city(str(row[COL_INTERNAL_CITY]))
+        internal_fio = normalize_fio(str(row[COL_INTERNAL_FIO]))
+        
+        record = {
+            'idx': idx,
+            'phone': internal_phone,
+            'date': internal_date,
+            'city': internal_city,
+            'fio': internal_fio,
+            'fio_parts': set(internal_fio.split())
+        }
+        
+        # Индекс по телефону (последние 4 цифры)
+        if internal_phone and len(internal_phone) >= 4:
+            phone_key = internal_phone[-4:]
+            if phone_key not in internal_by_phone:
+                internal_by_phone[phone_key] = []
+            internal_by_phone[phone_key].append(record)
+        
+        # Индекс по дате
+        if internal_date:
+            if internal_date not in internal_by_date:
+                internal_by_date[internal_date] = []
+            internal_by_date[internal_date].append(record)
+    
+    print(f"  Создано индексов: по телефону={len(internal_by_phone)}, по дате={len(internal_by_date)}")
+    
+    additional_matches = 0
+    
+    # Для каждой ненайденной записи из БИЛЛИНГ
+    for ext_id in unmatched_billing_ids:
+        billing_row = df_billing[df_billing[COL_BILLING_EXTERNAL_ID] == ext_id].iloc[0]
+        billing_city = normalize_city(str(billing_row[COL_BILLING_CITY]))
+        billing_date = normalize_date(billing_row[COL_BILLING_DATE])
+        billing_fio = normalize_fio(str(billing_row[COL_BILLING_FIO]))
+        billing_fio_parts = set(billing_fio.split())
+        
+        match_found = False
+        
+        # Проверяем есть ли этот external_id в ЛК ЯЕДА
+        if ext_id in lk_yeda_index:
+            lk_data = lk_yeda_index[ext_id]
+            lk_phone_last4 = lk_data['phone_last4']
+            lk_date = lk_data['date']
+            lk_first_name = lk_data['first_name']
+            lk_last_name = lk_data['last_name']
+            lk_parts = set([lk_first_name, lk_last_name]) - {''}
+            
+            # Стратегия 1: Поиск по телефону (быстро!)
+            if lk_phone_last4 and lk_phone_last4 in internal_by_phone:
+                candidates = internal_by_phone[lk_phone_last4]
+                
+                for record in candidates:
+                    # Проверяем дату
+                    date_match = (record['date'] == lk_date) or (record['date'] == billing_date)
+                    if not date_match:
+                        continue
+                    
+                    # Проверяем город или ФИО
+                    city_match = compare_city_flexible(record['city'], billing_city)
+                    
+                    common_billing = record['fio_parts'].intersection(billing_fio_parts)
+                    common_lk = record['fio_parts'].intersection(lk_parts)
+                    fio_match = len(common_billing) >= 1 or len(common_lk) >= 1
+                    
+                    if city_match or fio_match:
+                        score = 90
+                        details_parts = [f"Телефон:совпал(***{lk_phone_last4})", "Дата:точная"]
+                        if city_match:
+                            details_parts.append("Город:совпал")
+                        if fio_match:
+                            details_parts.append("ФИО:частично")
+                        
+                        idx = record['idx']
+                        df_internal.at[idx, 'external_id'] = ext_id
+                        df_internal.at[idx, 'payment'] = billing_row[COL_BILLING_PAYMENT]
+                        df_internal.at[idx, 'n_orders_20_days'] = billing_row[COL_BILLING_N_ORDERS]
+                        df_internal.at[idx, 'score'] = score
+                        df_internal.at[idx, 'match_details'] = f"[FINAL_RECONCILIATION] {' | '.join(details_parts)} | Биллинг: {billing_row[COL_BILLING_FIO]} / {billing_row[COL_BILLING_CITY]}"
+                        df_internal.at[idx, 'Через сколько заказ'] = calculate_days_to_order(billing_row[COL_BILLING_FIRST_ORDER_DATE], billing_row[COL_BILLING_DATE])
+                        
+                        additional_matches += 1
+                        total_matches += 1
+                        match_found = True
+                        break
+        
+        # Стратегия 2: Поиск по дате + город + ФИО (если не нашли по телефону)
+        if not match_found and billing_date and billing_date in internal_by_date:
+            candidates = internal_by_date[billing_date]
+            
+            for record in candidates:
+                # Пропускаем если уже найдено
+                if pd.notna(df_internal.at[record['idx'], 'external_id']):
+                    continue
+                
+                city_match = compare_city_flexible(record['city'], billing_city)
+                common_billing = record['fio_parts'].intersection(billing_fio_parts)
+                fio_match = len(common_billing) >= 2  # Требуем минимум 2 общих слова
+                
+                if city_match and fio_match:
+                    score = 85
+                    details = f"Дата:точная | Город:совпал | ФИО:частично({len(common_billing)}слов)"
+                    
+                    idx = record['idx']
+                    df_internal.at[idx, 'external_id'] = ext_id
+                    df_internal.at[idx, 'payment'] = billing_row[COL_BILLING_PAYMENT]
+                    df_internal.at[idx, 'n_orders_20_days'] = billing_row[COL_BILLING_N_ORDERS]
+                    df_internal.at[idx, 'score'] = score
+                    df_internal.at[idx, 'match_details'] = f"[FINAL_RECONCILIATION_NO_LK] {details} | Биллинг: {billing_row[COL_BILLING_FIO]} / {billing_row[COL_BILLING_CITY]}"
+                    df_internal.at[idx, 'Через сколько заказ'] = calculate_days_to_order(billing_row[COL_BILLING_FIRST_ORDER_DATE], billing_row[COL_BILLING_DATE])
+                    
+                    additional_matches += 1
+                    total_matches += 1
+                    match_found = True
+                    break
+    
+    print(f"Дополнительно найдено через финальную сверку: {additional_matches}")
+    print(f"Итого совпадений: {total_matches}")
+    
+    # Обновляем статистику
+    stats['final_reconciliation'] = additional_matches
+else:
+    stats['final_reconciliation'] = 0
+    if len(unmatched_billing_ids) > 0:
+        print("Файл ЛК ЯЕДА не загружен, дополнительная проверка пропущена")
+
+# Финальная статистика по ненайденным
+matched_external_ids_final = set(df_internal[df_internal['external_id'].notna()]['external_id'].unique())
+final_unmatched = all_billing_ids - matched_external_ids_final
+print(f"\nОСТАЛОСЬ ненайденных записей из БИЛЛИНГ: {len(final_unmatched)}")
+if len(final_unmatched) > 0 and len(final_unmatched) <= 20:
+    print("Список ненайденных external_id:")
+    for ext_id in list(final_unmatched)[:20]:
+        billing_row = df_billing[df_billing[COL_BILLING_EXTERNAL_ID] == ext_id].iloc[0]
+        print(f"  {ext_id} | {billing_row[COL_BILLING_FIO]} | {billing_row[COL_BILLING_CITY]} | {billing_row[COL_BILLING_DATE]}")
+
+# Статистика по score
+print(f"\nРаспределение по score:")
+score_ranges = [
+    (95, 100, "Отличное совпадение"),
+    (80, 94, "Хорошее совпадение"),
+    (60, 79, "Среднее совпадение"),
+    (50, 59, "Слабое совпадение"),
+    (0, 49, "Не найдено / очень слабое")
+]
+for low, high, label in score_ranges:
+    count = len(df_internal[(df_internal['score'] >= low) & (df_internal['score'] <= high)])
+    print(f"  {low}-{high} ({label}): {count}")
+
+# ============================================
+# УДАЛЕНИЕ ВРЕМЕННЫХ КОЛОНОК
+# ============================================
+cols_to_drop = ['_norm_fio', '_norm_date', '_norm_city', '_norm_phone']
+# Удаляем только те колонки, которые существуют
+cols_to_drop = [col for col in cols_to_drop if col in df_internal.columns]
+df_internal = df_internal.drop(columns=cols_to_drop)
+
+# ============================================
+# ПРОВЕРКА И УДАЛЕНИЕ ДУБЛЕЙ ПО EXTERNAL_ID
+# ============================================
+print("\nПроверка на дубликаты external_id...")
+
+# Находим дубли (только среди найденных совпадений)
+matched_mask = df_internal['external_id'].notna()
+duplicates = df_internal[matched_mask].duplicated(subset=['external_id'], keep=False)
+duplicate_ids = df_internal[matched_mask][duplicates]['external_id'].unique()
+
+if len(duplicate_ids) > 0:
+    print(f"Найдено {len(duplicate_ids)} external_id с дублями")
+    
+    removed_count = 0
+    for ext_id in duplicate_ids:
+        # Находим все строки с этим external_id
+        mask = df_internal['external_id'] == ext_id
+        indices = df_internal[mask].index.tolist()
+        
+        if len(indices) > 1:
+            # Находим индекс с максимальным score
+            scores = df_internal.loc[indices, 'score'].tolist()
+            max_score_idx = indices[scores.index(max(scores))]
+            
+            # Удаляем значения у остальных (оставляем только с максимальным score)
+            for idx in indices:
+                if idx != max_score_idx:
+                    df_internal.at[idx, 'external_id'] = None
+                    df_internal.at[idx, 'payment'] = None
+                    df_internal.at[idx, 'n_orders_20_days'] = None
+                    df_internal.at[idx, 'Через сколько заказ'] = None
+                    old_score = df_internal.at[idx, 'score']
+                    df_internal.at[idx, 'score'] = 0
+                    df_internal.at[idx, 'match_details'] = f"УДАЛЕН ДУБЛЬ (был score={old_score}, оставлен score={max(scores)})"
+                    removed_count += 1
+                    total_matches -= 1
+    
+    print(f"Удалено {removed_count} дублирующих записей")
+    print(f"Итого совпадений после удаления дублей: {total_matches}")
+else:
+    print("✅ Дубликатов не найдено!")
+
+# ============================================
+# СОРТИРОВКА ПО SCORE (по убыванию - лучшие совпадения вначале)
+# ============================================
+print("\nСортировка результатов по score...")
+df_internal = df_internal.sort_values(by='score', ascending=False).reset_index(drop=True)
+
+# ============================================
+# СОХРАНЕНИЕ РЕЗУЛЬТАТА
+# ============================================
+output_filename = 'ВНУТРЕННИЙ_с_external_id.xlsx'
+
+# Переупорядочиваем колонки: все исходные + новые в конце
+original_cols = [col for col in df_internal.columns if col not in ['external_id', 'payment', 'n_orders_20_days', 'Через сколько заказ', 'score', 'match_details']]
+new_cols = ['external_id', 'payment', 'n_orders_20_days', 'Через сколько заказ', 'score', 'match_details']
+df_internal = df_internal[original_cols + new_cols]
+
+# ============================================
+# СОЗДАНИЕ СВОДНОЙ ТАБЛИЦЫ
+# ============================================
+print("\nСоздание сводной таблицы...")
+
+# Добавляем колонку "Количество" для подсчета
+df_internal['Количество'] = 1
+
+# Добавляем колонку CR (payment / Количество)
+# CR будет рассчитан в сводной таблице
+
+# Создаем сводную таблицу по utm_content
+pivot_data = df_internal.groupby('utm_content').agg({
+    'Количество': 'sum',
+    'payment': 'sum',
+    'n_orders_20_days': 'sum'
+}).reset_index()
+
+# Рассчитываем CR
+pivot_data['CR'] = pivot_data['payment'] / pivot_data['Количество']
+
+# Сортируем по Количеству (убывание)
+pivot_data = pivot_data.sort_values('Количество', ascending=False)
+
+# Добавляем итоговую строку
+total_row = pd.DataFrame({
+    'utm_content': ['ИТОГО'],
+    'Количество': [pivot_data['Количество'].sum()],
+    'payment': [pivot_data['payment'].sum()],
+    'n_orders_20_days': [pivot_data['n_orders_20_days'].sum()],
+    'CR': [pivot_data['payment'].sum() / pivot_data['Количество'].sum() if pivot_data['Количество'].sum() > 0 else 0]
+})
+pivot_data = pd.concat([pivot_data, total_row], ignore_index=True)
+
+# Убираем временную колонку Количество из основного файла
+df_internal = df_internal.drop(columns=['Количество'])
+
+print(f"Сводная таблица создана: {len(pivot_data)-1} уникальных utm_content")
+
+# ============================================
+# СОХРАНЕНИЕ В EXCEL С ДВУМЯ ВКЛАДКАМИ
+# ============================================
+with pd.ExcelWriter(output_filename, engine='openpyxl') as writer:
+    # Основные данные
+    df_internal.to_excel(writer, sheet_name='Данные', index=False)
+    
+    # Сводная таблица
+    pivot_data.to_excel(writer, sheet_name='Сводка', index=False)
+    
+    # Форматируем колонки payment и CR как рубли
+    workbook = writer.book
+    worksheet = writer.sheets['Сводка']
+    
+    # Формат для рублей: # ##0,00 ₽
+    from openpyxl.styles import numbers
+    rub_format = '#,##0.00 ₽'
+    
+    # Применяем формат к колонкам C (payment) и E (CR)
+    for row in range(2, len(pivot_data) + 2):  # +2 потому что 1 - заголовок, и индексация с 1
+        worksheet.cell(row=row, column=3).number_format = rub_format  # payment
+        worksheet.cell(row=row, column=5).number_format = rub_format  # CR
+
+print(f"\nРезультат сохранен в файл: {output_filename}")
+print(f"  - Вкладка 'Данные': все исходные колонки + external_id, payment, n_orders_20_days, Через сколько заказ, score, match_details")
+print(f"  - Вкладка 'Сводка': utm_content, Количество, payment (₽), n_orders_20_days, CR (₽)")
+print(f"Сортировка данных: по убыванию score (лучшие совпадения вначале)")
+
+# Скачивание файла
+files.download(output_filename)
+
+# ============================================
+# ПРОСМОТР РЕЗУЛЬТАТОВ
+# ============================================
+print("\n" + "="*50)
+print("ПРИМЕРЫ ЛУЧШИХ СОВПАДЕНИЙ (score >= 95):")
+print("="*50)
+
+top_matches = df_internal[df_internal['score'] >= 95].head(5)
+if len(top_matches) > 0:
+    for idx, row in top_matches.iterrows():
+        print(f"  {row[COL_INTERNAL_FIO]} | {row[COL_INTERNAL_CITY]}")
+        print(f"    -> external_id: {row['external_id']}")
+        print(f"    -> score: {row['score']}")
+        print(f"    -> {row['match_details']}")
+        print()
+else:
+    print("  Нет совпадений с score >= 95")
+
+print("="*50)
+print("ПРИМЕРЫ СРЕДНИХ СОВПАДЕНИЙ (score 60-80):")
+print("="*50)
+
+mid_matches = df_internal[(df_internal['score'] >= 60) & (df_internal['score'] <= 80)].head(5)
+if len(mid_matches) > 0:
+    for idx, row in mid_matches.iterrows():
+        print(f"  {row[COL_INTERNAL_FIO]} | {row[COL_INTERNAL_CITY]}")
+        print(f"    -> external_id: {row['external_id']}")
+        print(f"    -> score: {row['score']}")
+        print(f"    -> {row['match_details']}")
+        print()
+else:
+    print("  Нет совпадений в этом диапазоне")
+
+print("="*50)
+print("ПРИМЕРЫ НЕ НАЙДЕННЫХ (score = 0):")
+print("="*50)
+
+no_matches_df = df_internal[df_internal['score'] == 0].head(10)
+if len(no_matches_df) > 0:
+    for idx, row in no_matches_df.iterrows():
+        print(f"  {row[COL_INTERNAL_FIO]} | {row[COL_INTERNAL_CITY]}")
+    print()
+else:
+    print("  Все записи сопоставлены!")
+
+print("\n" + "="*50)
+print("ГОТОВО!")
+print("="*50)
+print(f"\nФайл '{output_filename}' готов к скачиванию.")
+print("Рекомендация: проверьте записи с score < 80 на корректность сопоставления.")
+
+# ============================================
+# ОЧИСТКА ПАМЯТИ И СБРОС ПЕРЕМЕННЫХ
+# ============================================
+print("\nОчистка памяти...")
+
+# Удаляем все созданные переменные
+del df_internal
+del df_billing
+if df_lk_yeda is not None:
+    del df_lk_yeda
+del billing_index
+del billing_by_fio
+del billing_by_fio_sorted
+del billing_by_city_root
+del billing_full_list
+del unique_billing_fios
+if 'lk_yeda_index' in dir():
+    del lk_yeda_index
+if 'lk_yeda_by_phone' in dir():
+    del lk_yeda_by_phone
+if 'lk_yeda_by_date' in dir():
+    del lk_yeda_by_date
+if 'pivot_data' in dir():
+    del pivot_data
+
+# Очищаем память
+import gc
+gc.collect()
+
+print("✅ Скрипт завершен и готов к повторному запуску!")
+print("="*50)
