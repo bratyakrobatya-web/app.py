@@ -1744,7 +1744,7 @@ with st.sidebar:
         text-decoration: none ;
     }
     .nav-link:hover {
-        background: var(--gradient-main);
+        background: var(--button-hover);
         color: white ;
         transform: translateX(5px);
         border-left: 3px solid transparent;
@@ -1755,6 +1755,7 @@ with st.sidebar:
     <a href="#проверка-гео" class="nav-link">Проверка гео и выгрузка базы</a>
     <a href="#синхронизатор-городов" class="nav-link">Синхронизатор городов</a>
     <a href="#выбор-регионов-и-городов" class="nav-link">Выбор регионов и городов</a>
+    <a href="#объединитель-файлов" class="nav-link">Объединитель файлов</a>
     """, unsafe_allow_html=True)
 
     st.markdown("---")
@@ -3585,6 +3586,110 @@ if hh_areas is not None:
                 use_container_width=True,
                 key="download_regions_publisher"
             )
+
+# ============================================
+# БЛОК: ОБЪЕДИНИТЕЛЬ ФАЙЛОВ
+# ============================================
+st.markdown('<div id="объединитель-файлов"></div>', unsafe_allow_html=True)
+st.header("🔗 Объединитель файлов")
+
+st.markdown("""
+Загрузите несколько файлов с одинаковыми столбцами. Инструмент объединит их в один файл.
+Полные дубликаты будут выделены оранжевым цветом и размещены вначале.
+""")
+
+uploaded_files = st.file_uploader(
+    "Загрузите файлы для объединения",
+    type=['xlsx', 'xls', 'csv'],
+    accept_multiple_files=True,
+    key="file_merger_uploader",
+    help="Можно загрузить несколько файлов с одинаковыми столбцами"
+)
+
+if uploaded_files:
+    try:
+        with st.spinner("Обрабатываем файлы..."):
+            # Читаем все файлы
+            all_dataframes = []
+            for uploaded_file in uploaded_files:
+                if uploaded_file.name.endswith('.csv'):
+                    df = pd.read_csv(uploaded_file)
+                else:
+                    df = pd.read_excel(uploaded_file)
+                all_dataframes.append(df)
+                st.success(f"✅ Загружен: {uploaded_file.name} ({len(df)} строк)")
+
+            # Объединяем все файлы
+            merged_df = pd.concat(all_dataframes, ignore_index=True)
+
+            # Находим полные дубликаты
+            duplicates_mask = merged_df.duplicated(keep=False)
+            duplicates = merged_df[duplicates_mask].copy()
+            non_duplicates = merged_df[~duplicates_mask].copy()
+
+            # Создаем итоговый DataFrame: сначала дубликаты, затем остальные
+            final_df = pd.concat([duplicates, non_duplicates], ignore_index=True)
+
+            # Статистика
+            total_rows = len(merged_df)
+            duplicate_rows = len(duplicates)
+            unique_rows = len(non_duplicates)
+
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Всего строк", total_rows)
+            with col2:
+                st.metric("Дубликаты", duplicate_rows)
+            with col3:
+                st.metric("Уникальные", unique_rows)
+
+            if duplicate_rows > 0:
+                st.warning(f"⚠️ Найдено {duplicate_rows} дубликатов. Они выделены оранжевым цветом и размещены вначале.")
+            else:
+                st.success("✅ Дубликаты не найдены!")
+
+            # Создаем стилизованный DataFrame для отображения
+            def highlight_duplicates(row):
+                if row.name < duplicate_rows:
+                    return ['background-color: #FFA500; color: white'] * len(row)
+                return [''] * len(row)
+
+            styled_df = final_df.style.apply(highlight_duplicates, axis=1)
+
+            st.markdown("### 👀 Превью объединенного файла")
+            st.dataframe(styled_df, use_container_width=True, height=400)
+
+            # Кнопка скачивания
+            output = io.BytesIO()
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                final_df.to_excel(writer, index=False, sheet_name='Объединенные данные')
+
+                # Применяем оранжевый цвет к дубликатам в Excel
+                workbook = writer.book
+                worksheet = writer.sheets['Объединенные данные']
+
+                from openpyxl.styles import PatternFill
+                orange_fill = PatternFill(start_color='FFA500', end_color='FFA500', fill_type='solid')
+
+                # Выделяем дубликаты (начиная со строки 2, т.к. строка 1 - заголовок)
+                for row_idx in range(2, duplicate_rows + 2):
+                    for col_idx in range(1, len(final_df.columns) + 1):
+                        worksheet.cell(row=row_idx, column=col_idx).fill = orange_fill
+
+            output.seek(0)
+
+            st.download_button(
+                label=f"📥 Скачать объединенный файл ({total_rows} строк)",
+                data=output,
+                file_name=f"merged_file_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                use_container_width=True,
+                key="download_merged_file"
+            )
+
+    except Exception as e:
+        st.error(f"❌ Ошибка при обработке файлов: {str(e)}")
+        st.info("Убедитесь, что все файлы имеют одинаковые столбцы.")
 
 st.markdown("---")
 st.markdown(
