@@ -1733,13 +1733,13 @@ with st.sidebar:
         "проверка-гео": """
 ### 🔍 Проверка гео и выгрузка базы
 
-<p><span class="step-number">1</span> **Быстрая проверка города**</p>
+<p><span class="step-number">1</span> <strong>Быстрая проверка города</strong></p>
 
 - Введите название города в поисковое поле
 - Система покажет ID города в HH.ru и его регион
 - Используйте для быстрой проверки наличия города в справочнике
 
-<p><span class="step-number">2</span> **Выгрузка всех городов**</p>
+<p><span class="step-number">2</span> <strong>Выгрузка всех городов</strong></p>
 
 - Нажмите кнопку "Выгрузить ВСЕ города"
 - Получите Excel-файл со всеми городами России из справочника HH.ru
@@ -1749,19 +1749,19 @@ with st.sidebar:
         "синхронизатор-городов": """
 ### 📤 Синхронизатор городов
 
-<p><span class="step-number">1</span> **Простой сценарий (один столбец)**</p>
+<p><span class="step-number">1</span> <strong>Простой сценарий (один столбец)</strong></p>
 
 - Загрузите файл, где в первом столбце указаны города
 - Система автоматически сопоставит города со справочником HH.ru
 - Подходит для быстрой проверки списка городов
 
-<p><span class="step-number">2</span> **Сценарий со столбцом "Вакансия"**</p>
+<p><span class="step-number">2</span> <strong>Сценарий со столбцом "Вакансия"</strong></p>
 
 - Загрузите файл с колонкой "Вакансия"
 - Данные будут разделены по вакансиям и обработаны отдельно
 - Скачайте результат единым архивом или отдельными файлами
 
-<p><span class="step-number">3</span> **Сценарий с вкладками "вакансия"**</p>
+<p><span class="step-number">3</span> <strong>Сценарий с вкладками "вакансия"</strong></p>
 
 - Загрузите Excel с несколькими вкладками (названия начинаются на "вакансия")
 - Каждая вкладка обрабатывается как отдельная вакансия
@@ -1774,19 +1774,19 @@ with st.sidebar:
         "выбор-регионов-и-городов": """
 ### 🗺️ Выбор регионов и городов
 
-<p><span class="step-number">1</span> **Поиск по регионам**</p>
+<p><span class="step-number">1</span> <strong>Поиск по регионам</strong></p>
 
 - Выберите регионы из списка (можно несколько)
 - Получите Excel-файл со всеми городами выбранных регионов
 - Файл содержит полную информацию о городах
 
-<p><span class="step-number">2</span> **Поиск по городам**</p>
+<p><span class="step-number">2</span> <strong>Поиск по городам</strong></p>
 
 - Выберите конкретные города (можно несколько)
 - Получите информацию: ID, название, регион
 - Скачайте в формате Excel
 
-<p><span class="step-number">3</span> **Поиск по населению**</p>
+<p><span class="step-number">3</span> <strong>Поиск по населению</strong></p>
 
 - Укажите минимальное и максимальное население
 - Система найдет все города в указанном диапазоне
@@ -1796,19 +1796,19 @@ with st.sidebar:
         "объединитель-файлов": """
 ### 🔗 Объединитель файлов
 
-<p><span class="step-number">1</span> **Загрузите файлы**</p>
+<p><span class="step-number">1</span> <strong>Загрузите файлы</strong></p>
 
 - Поддерживаются форматы: Excel (xlsx, xls, xlsm, xlsb) и CSV
 - Можно загрузить несколько файлов одновременно
 - Все файлы должны иметь одинаковую структуру столбцов
 
-<p><span class="step-number">2</span> **Обработка**</p>
+<p><span class="step-number">2</span> <strong>Обработка</strong></p>
 
 - Система автоматически объединит все файлы
 - Полные дубликаты будут выделены оранжевым цветом
 - Дубликаты размещаются в начале файла для удобства
 
-<p><span class="step-number">3</span> **Скачивание**</p>
+<p><span class="step-number">3</span> <strong>Скачивание</strong></p>
 
 - Нажмите кнопку "Скачать объединенный файл"
 - Файл содержит статистику: общее количество, дубликаты, уникальные записи
@@ -1817,19 +1817,19 @@ with st.sidebar:
         "сверки-с-клиентами": """
 ### 🔄 Сверки с клиентами
 
-<p><span class="step-number">1</span> **Сверка Я.Еда**</p>
+<p><span class="step-number">1</span> <strong>Сверка Я.Еда</strong></p>
 
 - Нажмите на желтую карточку "Яндекс.Еда"
 - Скопируйте код установки библиотек (Блок 1)
 - Запустите его в Google Colab и дождитесь завершения
 
-<p><span class="step-number">2</span> **Основной код**</p>
+<p><span class="step-number">2</span> <strong>Основной код</strong></p>
 
 - Скопируйте основной код сверки (Блок 2)
 - Вставьте в новую ячейку Google Colab
 - Запустите и следуйте инструкциям на экране
 
-<p><span class="step-number">3</span> **Файлы**</p>
+<p><span class="step-number">3</span> <strong>Файлы</strong></p>
 
 Подготовьте файлы с названиями:
 - "ООО Хэдхантер Биллинг....." (отчет биллинг)
@@ -1842,84 +1842,46 @@ with st.sidebar:
 
     st.markdown("### 🧭 Навигация")
 
-    # Стили для навигации с иконками
+    # Стили для навигации
     st.markdown("""
     <style>
-    .nav-item {
-        display: flex;
-        align-items: center;
-        padding: 0.5rem 0.5rem;
+    .nav-link-simple {
+        display: block;
+        padding: 0.75rem 1rem;
         margin: 0.25rem 0;
         background: #f8f9fa;
         border-radius: 8px;
         border-left: 3px solid var(--ui-color);
-        transition: all 0.3s ease;
-    }
-    .nav-item:hover {
-        background: #e9ecef;
-    }
-    .nav-text {
-        flex: 1;
-        color: #1a1a1a;
+        text-decoration: none !important;
+        color: #1a1a1a !important;
         font-weight: normal;
-        text-decoration: none;
-        font-size: 14px;
-    }
-    .nav-text:hover {
-        color: #1a1a1a;
-        text-decoration: none;
-    }
-    .nav-icons {
-        display: flex;
-        gap: 5px;
-    }
-    .nav-icon-btn {
-        background: none;
-        border: none;
+        transition: all 0.3s ease;
         cursor: pointer;
-        font-size: 16px;
-        padding: 4px 8px;
-        border-radius: 4px;
-        transition: all 0.2s;
     }
-    .nav-icon-btn:hover {
-        background: #dee2e6;
-    }
-    .link-icon {
-        color: var(--ui-color);
-    }
-    .info-icon {
-        color: #6c757d;
+    .nav-link-simple:hover {
+        background: var(--button-hover);
+        color: white !important;
+        transform: translateX(5px);
+        border-left: 3px solid transparent;
     }
     </style>
     """, unsafe_allow_html=True)
 
     # Разделы навигации
     nav_items = [
-        ("🔍", "Проверка гео и выгрузка базы", "проверка-гео"),
-        ("📤", "Синхронизатор городов", "синхронизатор-городов"),
-        ("🗺️", "Выбор регионов и городов", "выбор-регионов-и-городов"),
-        ("🔗", "Объединитель файлов", "объединитель-файлов"),
-        ("🔄", "Сверки с клиентами", "сверки-с-клиентами")
+        ("🔍 Проверка гео и выгрузка базы", "проверка-гео"),
+        ("📤 Синхронизатор городов", "синхронизатор-городов"),
+        ("🗺️ Выбор регионов и городов", "выбор-регионов-и-городов"),
+        ("🔗 Объединитель файлов", "объединитель-файлов"),
+        ("🔄 Сверки с клиентами", "сверки-с-клиентами")
     ]
 
-    for emoji, name, anchor in nav_items:
-        cols = st.columns([0.1, 0.7, 0.2])
-
-        with cols[0]:
-            st.markdown(f"<div style='font-size: 20px;'>{emoji}</div>", unsafe_allow_html=True)
-
-        with cols[1]:
-            st.markdown(f"<a href='#{anchor}' class='nav-text'>{name}</a>", unsafe_allow_html=True)
-
-        with cols[2]:
-            col_link, col_info = st.columns(2)
-            with col_link:
-                st.markdown(f"<a href='#{anchor}' class='link-icon' title='Перейти к разделу'>🔗</a>", unsafe_allow_html=True)
-            with col_info:
-                if st.button("ℹ️", key=f"info_{anchor}", help="Показать инструкцию"):
-                    st.session_state.show_instruction = anchor
-                    st.rerun()
+    for name, anchor in nav_items:
+        if st.button(name, key=f"nav_{anchor}", use_container_width=True):
+            st.session_state.show_instruction = anchor
+            # Используем markdown для создания якорной ссылки
+            st.markdown(f'<a href="#{anchor}" style="display:none">Перейти</a>', unsafe_allow_html=True)
+            st.rerun()
 
     st.markdown("---")
 
@@ -1927,10 +1889,6 @@ with st.sidebar:
     if st.session_state.show_instruction:
         st.markdown("### 📖 Инструкция")
         st.markdown(instructions[st.session_state.show_instruction], unsafe_allow_html=True)
-
-        if st.button("Скрыть инструкцию", key="hide_instruction"):
-            st.session_state.show_instruction = None
-            st.rerun()
 
     st.markdown("---")
 
@@ -3833,17 +3791,17 @@ st.markdown("""
 Инструменты для сверки данных с различными клиентами. Выберите нужную сверку ниже.
 """)
 
-# Инициализация состояния для раскрытия блока Я.Еда
-if 'show_yaeda' not in st.session_state:
-    st.session_state.show_yaeda = False
+# Инициализация состояния для раскрытия блоков
+if 'show_reconciliation' not in st.session_state:
+    st.session_state.show_reconciliation = None
 
-# Стили для карточки и кнопки копирования
+# Стили для карточек и кнопки копирования
 st.markdown("""
 <style>
-.yaeda-card {
+.client-card {
     background: linear-gradient(135deg, #FCE000 0%, #FFD700 100%);
     border-radius: 16px;
-    padding: 40px 30px;
+    padding: 30px 20px;
     min-height: 140px;
     display: flex;
     flex-direction: column;
@@ -3854,29 +3812,29 @@ st.markdown("""
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     margin-bottom: 20px;
 }
-.yaeda-card:hover {
+.client-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 8px 24px rgba(0,0,0,0.25);
 }
-.yaeda-card img {
-    max-height: 80px;
-    max-width: 300px;
+.client-card img {
+    max-height: 60px;
+    max-width: 180px;
     margin-bottom: 10px;
 }
-.yaeda-info {
+.client-card-title {
+    font-size: 18px;
+    font-weight: 600;
     color: #333;
-    font-size: 14px;
-    margin-top: 12px;
+    margin-bottom: 8px;
+}
+.client-card-info {
+    color: #555;
+    font-size: 13px;
     font-weight: 500;
 }
-.yaeda-info .icon {
+.client-card-info .icon {
     color: #f4301f;
     margin-right: 4px;
-}
-
-/* Скрыть кнопку Toggle */
-button[data-testid="baseButton-secondary"]:has([data-testid="stMarkdownContainer"]:has-text("Toggle Я.Еда")) {
-    display: none !important;
 }
 
 /* Стиль для кнопки копирования в блоке кода */
@@ -3902,35 +3860,45 @@ div[data-testid="stCodeBlock"] {
 </style>
 """, unsafe_allow_html=True)
 
-# Сверка Я.Еда - Карточка
+# Карточки клиентов (4 в ряд)
 import base64
 
-# Читаем логотип и конвертируем в base64
+# Читаем логотип Я.Еды
 try:
     with open("yaedalogo.png", "rb") as f:
         logo_data = base64.b64encode(f.read()).decode()
-    logo_html = f'<img src="data:image/png;base64,{logo_data}" alt="Яндекс.Еда Logo">'
+    yaeda_logo = f'<img src="data:image/png;base64,{logo_data}" alt="Яндекс.Еда Logo">'
 except FileNotFoundError:
-    logo_html = '<div style="font-size: 48px;">🍔</div>'
+    yaeda_logo = '<div class="client-card-title">🍔 Я.Еда</div>'
 
-card_html = f"""
-<div class="yaeda-card" onclick="document.getElementById('yaeda_btn').click()">
-    {logo_html}
-    <div class="yaeda-info">
-        <span class="icon">⚡</span> 30 – 40 min
-    </div>
-</div>
-"""
+# Создаем 4 карточки в ряд
+col1, col2, col3, col4 = st.columns(4)
 
-st.markdown(card_html, unsafe_allow_html=True)
+clients = [
+    ("yaeda", yaeda_logo, "⚡ 30 – 40 min"),
+    ("pyaterochka", '<div class="client-card-title">🛒 Пятерочка</div>', "Скоро"),
+    ("rostelecom", '<div class="client-card-title">📡 Ростелеком</div>', "Скоро"),
+    ("ingosstrakh", '<div class="client-card-title">🏢 Ингосстрах</div>', "Скоро"),
+]
 
-# Скрытая кнопка для управления состоянием
-if st.button("Toggle Я.Еда", key="yaeda_btn", help="Показать/скрыть блок Я.Еда", type="secondary"):
-    st.session_state.show_yaeda = not st.session_state.show_yaeda
-    st.rerun()
+for col, (client_id, content, info) in zip([col1, col2, col3, col4], clients):
+    with col:
+        if st.button(f"client_{client_id}", key=f"card_{client_id}", use_container_width=True, label_visibility="collapsed"):
+            st.session_state.show_reconciliation = client_id
+            st.rerun()
 
-# Отображаем содержимое если карточка кликнута
-if st.session_state.show_yaeda:
+        # Показываем карточку
+        st.markdown(f"""
+        <div class="client-card">
+            {content}
+            <div class="client-card-info">
+                <span class="icon">⚡</span> {info}
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+# Отображаем содержимое для выбранного клиента
+if st.session_state.show_reconciliation == "yaeda":
     st.markdown("---")
 
     st.markdown("""
@@ -3964,39 +3932,35 @@ if st.session_state.show_yaeda:
     st.markdown("### 🚀 Блок 2: Основной код сверки")
     st.markdown("**Запустите этот код ВТОРЫМ после установки библиотек:**")
 
+    st.info("💡 **Кнопка копирования** в правом верхнем углу блока кода скопирует **весь код целиком**")
+
     # Читаем основной код из файла
     try:
         with open("yaedamatch", "r", encoding="utf-8") as f:
             full_code = f.read()
 
-        # Извлекаем код начиная с импорта библиотек (пропускаем комментарий про установку)
+        # Извлекаем код начиная с импорта библиотек
         main_code_start = full_code.find("# ============================================\n# ИМПОРТ БИБЛИОТЕК")
         if main_code_start != -1:
             main_code = full_code[main_code_start:]
         else:
             main_code = full_code
 
-        # Ограничиваем отображение кода до 15% (примерно)
+        # Показываем превью кода (15%)
         code_lines = main_code.split('\n')
-        display_lines = int(len(code_lines) * 0.15)  # 15% от общего количества строк
+        display_lines = int(len(code_lines) * 0.15)
         preview_code = '\n'.join(code_lines[:display_lines])
-        preview_code += f'\n\n# ... (еще {len(code_lines) - display_lines} строк кода)\n# Скопируйте весь код, нажав кнопку "Copy" в правом верхнем углу'
+        preview_code += f'\n\n# ... (еще {len(code_lines) - display_lines} строк кода)'
 
-        # Отображаем код с ограничением высоты
-        st.code(main_code, language="python", line_numbers=False)
-
-        st.info("💡 **Кнопка копирования** в правом верхнем углу блока кода скопирует **весь код целиком** (не только видимую часть)")
+        # Отображаем превью с полным кодом в копировании
+        with st.expander("Показать код", expanded=False):
+            st.code(main_code, language="python", line_numbers=False)
 
     except FileNotFoundError:
         st.error("Файл yaedamatch не найден. Обратитесь к администратору.")
 
-    st.markdown("---")
-    st.info("💡 **Совет:** Скопируйте каждый блок кода в отдельную ячейку Google Colab и запускайте последовательно.")
-
-    # Кнопка для скрытия блока
-    if st.button("Скрыть блок", key="hide_yaeda", type="secondary"):
-        st.session_state.show_yaeda = False
-        st.rerun()
+elif st.session_state.show_reconciliation in ["pyaterochka", "rostelecom", "ingosstrakh"]:
+    st.info(f"Сверка для этого клиента находится в разработке")
 
 st.markdown("---")
 st.markdown(
