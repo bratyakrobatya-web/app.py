@@ -2195,45 +2195,64 @@ if uploaded_files and hh_areas is not None:
                 pass
             else:
                 # Для остальных режимов показываем стандартные блоки
-              
-                    st.markdown("---")  
-                    st.subheader("📋 Таблица сопоставлений")  
-              
-                    st.text_input(  
-                        "🔍 Поиск по таблице",  
-                        key="search_query",
-                        placeholder="Начните вводить название города...",  
-                        label_visibility="visible"  
-                    )  
-              
-                    result_df['sort_priority'] = result_df.apply(  
-                        lambda row: 0 if row['Совпадение %'] == 0 else (1 if row['Изменение'] == 'Да' else 2),  
-                        axis=1  
-                    )  
-              
-                    result_df_sorted = result_df.sort_values(  
-                        by=['sort_priority', 'Совпадение %'],  
-                        ascending=[True, True]  
-                    ).reset_index(drop=True)  
-              
-                    if st.session_state.search_query and st.session_state.search_query.strip():  
-                        search_lower = st.session_state.search_query.lower().strip()  
-                        mask = result_df_sorted.apply(  
-                            lambda row: (  
-                                search_lower in str(row['Исходное название']).lower() or  
-                                search_lower in str(row['Итоговое гео']).lower() or  
-                                search_lower in str(row['Регион']).lower() or  
-                                search_lower in str(row['Статус']).lower()  
-                            ),  
-                            axis=1  
-                        )  
-                        result_df_filtered = result_df_sorted[mask]  
-                  
-                        if len(result_df_filtered) == 0:  
-                            st.warning(f"По запросу **'{st.session_state.search_query}'** ничего не найдено")  
-                        else:  
-                            st.info(f"Найдено совпадений: **{len(result_df_filtered)}** из {len(result_df_sorted)}")  
-                    else:  
+
+                    st.markdown("---")
+                    st.subheader("📋 Таблица сопоставлений")
+
+                    # Поле поиска и фильтры в двух колонках
+                    col_search, col_status = st.columns([2, 1])
+
+                    with col_search:
+                        st.text_input(
+                            "🔍 Поиск по таблице",
+                            key="search_query",
+                            placeholder="Начните вводить название города...",
+                            label_visibility="visible"
+                        )
+
+                    with col_status:
+                        # Определяем доступные статусы
+                        available_statuses = result_df['Статус'].unique().tolist()
+                        status_filter = st.multiselect(
+                            "📊 Фильтр по статусам",
+                            options=available_statuses,
+                            default=available_statuses,
+                            key="status_filter",
+                            label_visibility="visible"
+                        )
+
+                    result_df['sort_priority'] = result_df.apply(
+                        lambda row: 0 if row['Совпадение %'] == 0 else (1 if row['Изменение'] == 'Да' else 2),
+                        axis=1
+                    )
+
+                    result_df_sorted = result_df.sort_values(
+                        by=['sort_priority', 'Совпадение %'],
+                        ascending=[True, True]
+                    ).reset_index(drop=True)
+
+                    # Применяем фильтр по статусам
+                    if status_filter:
+                        result_df_sorted = result_df_sorted[result_df_sorted['Статус'].isin(status_filter)]
+
+                    if st.session_state.search_query and st.session_state.search_query.strip():
+                        search_lower = st.session_state.search_query.lower().strip()
+                        mask = result_df_sorted.apply(
+                            lambda row: (
+                                search_lower in str(row['Исходное название']).lower() or
+                                search_lower in str(row['Итоговое гео']).lower() or
+                                search_lower in str(row['Регион']).lower() or
+                                search_lower in str(row['Статус']).lower()
+                            ),
+                            axis=1
+                        )
+                        result_df_filtered = result_df_sorted[mask]
+
+                        if len(result_df_filtered) == 0:
+                            st.warning(f"По запросу **'{st.session_state.search_query}'** ничего не найдено")
+                        else:
+                            st.info(f"Найдено совпадений: **{len(result_df_filtered)}** из {len(result_df)}")
+                    else:
                         result_df_filtered = result_df_sorted  
               
                     display_df = result_df_filtered.copy()
