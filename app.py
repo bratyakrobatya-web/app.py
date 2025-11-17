@@ -3872,6 +3872,20 @@ div[data-testid="stCodeBlock"] {
     max-height: 250px !important;
     overflow-y: auto !important;
 }
+
+/* Стиль Матрицы для поля кода */
+div[data-testid="stCodeBlock"] pre {
+    background-color: #000000 !important;
+    color: #00FF00 !important;
+    font-family: 'Courier New', Consolas, Monaco, monospace !important;
+    text-shadow: 0 0 5px #00FF00 !important;
+}
+
+div[data-testid="stCodeBlock"] code {
+    background-color: #000000 !important;
+    color: #00FF00 !important;
+    font-family: 'Courier New', Consolas, Monaco, monospace !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
