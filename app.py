@@ -2216,7 +2216,7 @@ if uploaded_files and hh_areas is not None:
                         status_filter = st.multiselect(
                             "📊 Фильтр по статусам",
                             options=available_statuses,
-                            default=available_statuses,
+                            default=[],
                             key="status_filter",
                             label_visibility="visible"
                         )
