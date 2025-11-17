@@ -1840,29 +1840,29 @@ with st.sidebar:
         """
     }
 
-    st.markdown("### 🧭 Навигация")
+    st.markdown("### 🧭 Навигация и инструкции")
 
     # Стили для навигации
     st.markdown("""
     <style>
-    .nav-link-simple {
-        display: block;
-        padding: 0.75rem 1rem;
-        margin: 0.25rem 0;
-        background: #f8f9fa;
-        border-radius: 8px;
-        border-left: 3px solid var(--ui-color);
-        text-decoration: none !important;
+    /* Стилизация кнопок навигации */
+    div[data-testid="stVerticalBlock"] > div:has(button[kind="secondary"]) button {
+        background: transparent !important;
+        border: 1px solid #e0e0e0 !important;
         color: #1a1a1a !important;
-        font-weight: normal;
-        transition: all 0.3s ease;
-        cursor: pointer;
+        font-weight: normal !important;
+        padding: 0.75rem 1rem !important;
+        border-radius: 8px !important;
+        border-left: 3px solid var(--ui-color) !important;
+        transition: all 0.3s ease !important;
     }
-    .nav-link-simple:hover {
-        background: var(--button-hover);
+
+    div[data-testid="stVerticalBlock"] > div:has(button[kind="secondary"]) button:hover {
+        background: var(--button-hover) !important;
         color: white !important;
-        transform: translateX(5px);
-        border-left: 3px solid transparent;
+        transform: translateX(5px) !important;
+        border-left: 3px solid transparent !important;
+        border: 1px solid var(--button-hover) !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -1877,7 +1877,7 @@ with st.sidebar:
     ]
 
     for name, anchor in nav_items:
-        if st.button(name, key=f"nav_{anchor}", use_container_width=True):
+        if st.button(name, key=f"nav_{anchor}", use_container_width=True, type="secondary"):
             st.session_state.show_instruction = anchor
             # Используем markdown для создания якорной ссылки
             st.markdown(f'<a href="#{anchor}" style="display:none">Перейти</a>', unsafe_allow_html=True)
@@ -1892,20 +1892,27 @@ with st.sidebar:
 
     st.markdown("---")
 
-    st.markdown("### ⚙️ Настройки")
-    threshold = st.slider(
-        "Порог совпадения (%)",
-        min_value=50,
-        max_value=100,
-        value=85,
-        help="Минимальный процент совпадения"
-    )
+    # Блок настроек (скрыт при показе инструкции для Синхронизатора городов)
+    if st.session_state.show_instruction != "синхронизатор-городов":
+        st.markdown("### ⚙️ Настройки")
+        threshold = st.slider(
+            "Порог совпадения (%)",
+            min_value=50,
+            max_value=100,
+            value=85,
+            help="Минимальный процент совпадения"
+        )
+    else:
+        # Устанавливаем значение по умолчанию, если блок скрыт
+        threshold = 85
 
     st.markdown("---")
 
-    st.markdown("### ℹ️ Информация")
-    if hh_areas:
-        st.success(f"✅ Справочник HH загружен: **{len(hh_areas)}** городов")
+    # Блок информации (скрыт при показе инструкции для Проверки гео)
+    if st.session_state.show_instruction != "проверка-гео":
+        st.markdown("### ℹ️ Информация")
+        if hh_areas:
+            st.success(f"✅ Справочник HH загружен: **{len(hh_areas)}** городов")
 
 # ============================================
 # ЗАГРУЗКА И ОБРАБОТКА ФАЙЛОВ
@@ -3875,18 +3882,14 @@ except FileNotFoundError:
 col1, col2, col3, col4 = st.columns(4)
 
 clients = [
-    ("yaeda", yaeda_logo, "⚡ 30 – 40 min"),
-    ("pyaterochka", '<div class="client-card-title">🛒 Пятерочка</div>', "Скоро"),
-    ("rostelecom", '<div class="client-card-title">📡 Ростелеком</div>', "Скоро"),
-    ("ingosstrakh", '<div class="client-card-title">🏢 Ингосстрах</div>', "Скоро"),
+    ("yaeda", yaeda_logo, "⚡ 30 – 40 min", "Открыть"),
+    ("pyaterochka", '<div class="client-card-title">🛒 Пятерочка</div>', "Скоро", "Скоро"),
+    ("rostelecom", '<div class="client-card-title">📡 Ростелеком</div>', "Скоро", "Скоро"),
+    ("ingosstrakh", '<div class="client-card-title">🏢 Ингосстрах</div>', "Скоро", "Скоро"),
 ]
 
-for col, (client_id, content, info) in zip([col1, col2, col3, col4], clients):
+for col, (client_id, content, info, button_text) in zip([col1, col2, col3, col4], clients):
     with col:
-        if st.button(f"client_{client_id}", key=f"card_{client_id}", use_container_width=True, label_visibility="collapsed"):
-            st.session_state.show_reconciliation = client_id
-            st.rerun()
-
         # Показываем карточку
         st.markdown(f"""
         <div class="client-card">
@@ -3896,6 +3899,14 @@ for col, (client_id, content, info) in zip([col1, col2, col3, col4], clients):
             </div>
         </div>
         """, unsafe_allow_html=True)
+
+        # Кнопка под карточкой
+        if client_id == "yaeda":
+            if st.button(button_text, key=f"card_{client_id}", use_container_width=True):
+                st.session_state.show_reconciliation = client_id
+                st.rerun()
+        else:
+            st.button(button_text, key=f"card_{client_id}", use_container_width=True, disabled=True)
 
 # Отображаем содержимое для выбранного клиента
 if st.session_state.show_reconciliation == "yaeda":
