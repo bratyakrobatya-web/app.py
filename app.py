@@ -22,10 +22,10 @@ import os
 
 # Настройка страницы
 st.set_page_config(
-    page_title="Мультитул VR",
-    page_icon="🌍",
-    layout="wide"  
-)  
+    page_title="🪗 ГАРМОНЬ",
+    page_icon="🪗",
+    layout="wide"
+)
 
 # Кастомный CSS для современного дизайна
 st.markdown("""
@@ -1670,7 +1670,14 @@ except Exception as e:
 # ============================================
 # ГЛАВНЫЙ ЗАГОЛОВОК
 # ============================================
-st.markdown(f'<h1 style="text-align: left; color: #f4301f; margin-bottom: 1rem;"><span class="rotating-earth">{SYNC_ICON}</span> Мультитул VR</h1>', unsafe_allow_html=True)
+st.markdown('''
+<div style="margin-bottom: 2rem;">
+    <h1 style="text-align: left; color: #f4301f; margin-bottom: 0.3rem;">🪗 ГАРМОНЬ</h1>
+    <p style="text-align: left; color: #6c757d; font-size: 14px; margin-top: 0; font-style: italic;">
+        Слоган: "Сыграй порядок из хаоса"
+    </p>
+</div>
+''', unsafe_allow_html=True)
 st.markdown("---")
 
 # ============================================
