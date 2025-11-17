@@ -1840,34 +1840,33 @@ with st.sidebar:
         """
     }
 
-    st.markdown("### 🧭 Навигация и инструкции")
+    st.markdown("### 🧭 Навигация")
 
-    # Стили для навигации
+    # Стили для якорной навигации
     st.markdown("""
     <style>
-    /* Стилизация кнопок навигации */
-    div[data-testid="stVerticalBlock"] > div:has(button[kind="secondary"]) button {
-        background: transparent !important;
-        border: 1px solid #e0e0e0 !important;
+    .nav-link {
+        display: block;
+        padding: 0.75rem 1rem;
+        margin: 0.25rem 0;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border-left: 3px solid var(--ui-color);
+        text-decoration: none !important;
         color: #1a1a1a !important;
-        font-weight: normal !important;
-        padding: 0.75rem 1rem !important;
-        border-radius: 8px !important;
-        border-left: 3px solid var(--ui-color) !important;
-        transition: all 0.3s ease !important;
+        font-weight: normal;
+        transition: all 0.3s ease;
     }
-
-    div[data-testid="stVerticalBlock"] > div:has(button[kind="secondary"]) button:hover {
-        background: var(--button-hover) !important;
+    .nav-link:hover {
+        background: var(--button-hover);
         color: white !important;
-        transform: translateX(5px) !important;
-        border-left: 3px solid transparent !important;
-        border: 1px solid var(--button-hover) !important;
+        transform: translateX(5px);
+        border-left: 3px solid transparent;
     }
     </style>
     """, unsafe_allow_html=True)
 
-    # Разделы навигации
+    # Якорная навигация
     nav_items = [
         ("🔍 Проверка гео и выгрузка базы", "проверка-гео"),
         ("📤 Синхронизатор городов", "синхронизатор-городов"),
@@ -1877,42 +1876,32 @@ with st.sidebar:
     ]
 
     for name, anchor in nav_items:
-        if st.button(name, key=f"nav_{anchor}", use_container_width=True, type="secondary"):
-            st.session_state.show_instruction = anchor
-            # Используем markdown для создания якорной ссылки
-            st.markdown(f'<a href="#{anchor}" style="display:none">Перейти</a>', unsafe_allow_html=True)
-            st.rerun()
+        st.markdown(f'<a class="nav-link" href="#{anchor}">{name}</a>', unsafe_allow_html=True)
 
     st.markdown("---")
 
-    # Отображение инструкции
-    if st.session_state.show_instruction:
-        st.markdown("### 📖 Инструкция")
-        st.markdown(instructions[st.session_state.show_instruction], unsafe_allow_html=True)
+    # Инструкции в раскрывающихся блоках
+    st.markdown("### 📖 Инструкции")
+
+    with st.expander("🔍 Проверка гео и выгрузка базы"):
+        st.markdown(instructions["проверка-гео"], unsafe_allow_html=True)
+
+    with st.expander("📤 Синхронизатор городов"):
+        st.markdown(instructions["синхронизатор-городов"], unsafe_allow_html=True)
+
+    with st.expander("🗺️ Выбор регионов и городов"):
+        st.markdown(instructions["выбор-регионов-и-городов"], unsafe_allow_html=True)
+
+    with st.expander("🔗 Объединитель файлов"):
+        st.markdown(instructions["объединитель-файлов"], unsafe_allow_html=True)
+
+    with st.expander("🔄 Сверки с клиентами"):
+        st.markdown(instructions["сверки-с-клиентами"], unsafe_allow_html=True)
 
     st.markdown("---")
 
-    # Блок настроек (скрыт при показе инструкции для Синхронизатора городов)
-    if st.session_state.show_instruction != "синхронизатор-городов":
-        st.markdown("### ⚙️ Настройки")
-        threshold = st.slider(
-            "Порог совпадения (%)",
-            min_value=50,
-            max_value=100,
-            value=85,
-            help="Минимальный процент совпадения"
-        )
-    else:
-        # Устанавливаем значение по умолчанию, если блок скрыт
-        threshold = 85
-
-    st.markdown("---")
-
-    # Блок информации (скрыт при показе инструкции для Проверки гео)
-    if st.session_state.show_instruction != "проверка-гео":
-        st.markdown("### ℹ️ Информация")
-        if hh_areas:
-            st.success(f"✅ Справочник HH загружен: **{len(hh_areas)}** городов")
+# Устанавливаем порог совпадения как константу
+threshold = 85
 
 # ============================================
 # ЗАГРУЗКА И ОБРАБОТКА ФАЙЛОВ
@@ -3805,7 +3794,8 @@ if 'show_reconciliation' not in st.session_state:
 # Стили для карточек и кнопки копирования
 st.markdown("""
 <style>
-.client-card {
+/* Желтая карточка для Я.Еды */
+.client-card-yaeda {
     background: linear-gradient(135deg, #FCE000 0%, #FFD700 100%);
     border-radius: 16px;
     padding: 30px 20px;
@@ -3814,34 +3804,39 @@ st.markdown("""
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
     transition: transform 0.2s, box-shadow 0.2s;
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    margin-bottom: 20px;
+    margin-bottom: 10px;
+    cursor: pointer;
 }
-.client-card:hover {
+.client-card-yaeda:hover {
     transform: translateY(-4px);
     box-shadow: 0 8px 24px rgba(0,0,0,0.25);
 }
-.client-card img {
+
+/* Серая карточка для остальных клиентов */
+.client-card-gray {
+    background: #f0f0f0;
+    border-radius: 16px;
+    padding: 30px 20px;
+    min-height: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin-bottom: 10px;
+    opacity: 0.7;
+}
+
+.client-card-yaeda img, .client-card-gray img {
     max-height: 60px;
     max-width: 180px;
-    margin-bottom: 10px;
 }
 .client-card-title {
     font-size: 18px;
     font-weight: 600;
     color: #333;
-    margin-bottom: 8px;
-}
-.client-card-info {
-    color: #555;
-    font-size: 13px;
-    font-weight: 500;
-}
-.client-card-info .icon {
-    color: #f4301f;
-    margin-right: 4px;
 }
 
 /* Стиль для кнопки копирования в блоке кода */
@@ -3882,31 +3877,28 @@ except FileNotFoundError:
 col1, col2, col3, col4 = st.columns(4)
 
 clients = [
-    ("yaeda", yaeda_logo, "⚡ 30 – 40 min", "Открыть"),
-    ("pyaterochka", '<div class="client-card-title">🛒 Пятерочка</div>', "Скоро", "Скоро"),
-    ("rostelecom", '<div class="client-card-title">📡 Ростелеком</div>', "Скоро", "Скоро"),
-    ("ingosstrakh", '<div class="client-card-title">🏢 Ингосстрах</div>', "Скоро", "Скоро"),
+    ("yaeda", yaeda_logo, "client-card-yaeda", True),
+    ("pyaterochka", '<div class="client-card-title">Пятерочка</div>', "client-card-gray", False),
+    ("rostelecom", '<div class="client-card-title">Ростелеком</div>', "client-card-gray", False),
+    ("ingosstrakh", '<div class="client-card-title">Ингосстрах</div>', "client-card-gray", False),
 ]
 
-for col, (client_id, content, info, button_text) in zip([col1, col2, col3, col4], clients):
+for col, (client_id, content, card_class, is_active) in zip([col1, col2, col3, col4], clients):
     with col:
+        # Для активных клиентов - кликабельная область над карточкой
+        if is_active:
+            container = st.container()
+            with container:
+                if st.button(" ", key=f"card_{client_id}", use_container_width=True):
+                    st.session_state.show_reconciliation = client_id
+                    st.rerun()
+
         # Показываем карточку
         st.markdown(f"""
-        <div class="client-card">
+        <div class="{card_class}" style="margin-top: {'- 48px' if is_active else '0'};">
             {content}
-            <div class="client-card-info">
-                <span class="icon">⚡</span> {info}
-            </div>
         </div>
         """, unsafe_allow_html=True)
-
-        # Кнопка под карточкой
-        if client_id == "yaeda":
-            if st.button(button_text, key=f"card_{client_id}", use_container_width=True):
-                st.session_state.show_reconciliation = client_id
-                st.rerun()
-        else:
-            st.button(button_text, key=f"card_{client_id}", use_container_width=True, disabled=True)
 
 # Отображаем содержимое для выбранного клиента
 if st.session_state.show_reconciliation == "yaeda":
