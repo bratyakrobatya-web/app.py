@@ -1673,9 +1673,6 @@ except Exception as e:
 st.markdown('''
 <div style="margin-bottom: 2rem;">
     <h1 style="text-align: left; color: #f4301f; margin-bottom: 0.3rem;">Синхронизатор</h1>
-    <p style="text-align: left; color: #6c757d; font-size: 14px; margin-top: 0;">
-        Сыграй порядок из хаоса
-    </p>
 </div>
 ''', unsafe_allow_html=True)
 st.markdown("---")
