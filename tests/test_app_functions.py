@@ -40,6 +40,11 @@ class TestCachedFunctions:
 
     def test_get_russian_cities_cached_filters_correctly(self):
         """Проверка корректной фильтрации российских городов"""
+        from app import get_russian_cities_cached
+
+        # Очищаем кэш перед тестом (так как параметр с _ не влияет на кэш-ключ)
+        get_russian_cities_cached.clear()
+
         mock_hh_areas = {
             'Город1': {'root_parent_id': '113'},
             'Город2': {'root_parent_id': '113'},
@@ -47,7 +52,6 @@ class TestCachedFunctions:
             'Город4': {'root_parent_id': '113'}
         }
 
-        from app import get_russian_cities_cached
         result = get_russian_cities_cached(mock_hh_areas)
 
         assert len(result) == 3  # Только российские

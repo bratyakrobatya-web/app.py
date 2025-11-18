@@ -37,31 +37,33 @@ class TestSafeOpenImage:
         assert result is None
 
     @patch('safe_file_utils.Image.open')
-    @patch('safe_file_utils.validate_safe_path')
-    def test_valid_image_opens(self, mock_validate, mock_image_open):
+    @patch('security_utils.validate_safe_path')
+    @patch('pathlib.Path.exists')
+    def test_valid_image_opens(self, mock_exists, mock_validate, mock_image_open):
         """Проверка открытия валидного изображения"""
-        # Мокаем валидацию пути
-        mock_validate.return_value = True
+        # Мокаем существование файла
+        mock_exists.return_value = True
+
+        # Мокаем валидацию пути - возвращаем (True, None)
+        mock_validate.return_value = (True, None)
 
         # Мокаем Image.open
         mock_img = Mock(spec=Image.Image)
         mock_image_open.return_value = mock_img
 
-        # Создаем временный файл для теста
-        with patch('safe_file_utils.Path.exists', return_value=True):
-            result = safe_open_image("test.png", search_in_base=False)
-            # Результат должен быть объектом Image (или None если путь не валиден)
-            # В нашем случае validate_safe_path вернет True, и Image.open будет вызван
+        result = safe_open_image("test.png", search_in_base=False)
+        # Результат должен быть объектом Image
+        assert result is not None
 
     def test_empty_filename(self):
         """Проверка обработки пустого имени файла"""
         result = safe_open_image("")
         assert result is None
 
-    @patch('safe_file_utils.validate_safe_path')
+    @patch('security_utils.validate_safe_path')
     def test_invalid_path_rejected(self, mock_validate):
         """Проверка отклонения невалидного пути"""
-        mock_validate.return_value = False
+        mock_validate.return_value = (False, "Path traversal detected")
         result = safe_open_image("../../../test.png", search_in_base=False)
         assert result is None
 
@@ -69,19 +71,20 @@ class TestSafeOpenImage:
 class TestSafeReadCsv:
     """Тесты для функции safe_read_csv"""
 
-    @patch('safe_file_utils.validate_safe_path')
-    @patch('safe_file_utils.pd.read_csv')
-    def test_valid_csv_reads(self, mock_read_csv, mock_validate):
+    @patch('security_utils.validate_safe_path')
+    @patch('pandas.read_csv')
+    @patch('pathlib.Path.exists')
+    def test_valid_csv_reads(self, mock_exists, mock_read_csv, mock_validate):
         """Проверка чтения валидного CSV"""
-        mock_validate.return_value = True
+        mock_exists.return_value = True
+        mock_validate.return_value = (True, None)
         mock_df = pd.DataFrame({'col1': [1, 2, 3]})
         mock_read_csv.return_value = mock_df
 
-        with patch('safe_file_utils.Path.exists', return_value=True):
-            result = safe_read_csv("test.csv")
-            # Проверяем что функция возвращает DataFrame
-            if result is not None:
-                assert isinstance(result, pd.DataFrame)
+        result = safe_read_csv("test.csv")
+        # Проверяем что функция возвращает DataFrame
+        assert result is not None
+        assert isinstance(result, pd.DataFrame)
 
     def test_path_traversal_protection(self):
         """Проверка защиты от path traversal"""
@@ -93,44 +96,45 @@ class TestSafeReadCsv:
         result = safe_read_csv("nonexistent_file_12345.csv")
         assert result is None
 
-    @patch('safe_file_utils.validate_safe_path')
+    @patch('security_utils.validate_safe_path')
     def test_invalid_path_rejected(self, mock_validate):
         """Проверка отклонения невалидного пути"""
-        mock_validate.return_value = False
+        mock_validate.return_value = (False, "Path traversal detected")
         result = safe_read_csv("../../../test.csv")
         assert result is None
 
-    @patch('safe_file_utils.pd.read_csv')
-    @patch('safe_file_utils.validate_safe_path')
-    def test_encoding_parameter(self, mock_validate, mock_read_csv):
+    @patch('pandas.read_csv')
+    @patch('security_utils.validate_safe_path')
+    @patch('pathlib.Path.exists')
+    def test_encoding_parameter(self, mock_exists, mock_validate, mock_read_csv):
         """Проверка передачи параметра encoding"""
-        mock_validate.return_value = True
+        mock_exists.return_value = True
+        mock_validate.return_value = (True, None)
         mock_read_csv.return_value = pd.DataFrame()
 
-        with patch('safe_file_utils.Path.exists', return_value=True):
-            safe_read_csv("test.csv", encoding='utf-8')
-            # Проверяем что encoding был передан
-            if mock_read_csv.called:
-                call_kwargs = mock_read_csv.call_args[1]
-                assert 'encoding' in call_kwargs
+        safe_read_csv("test.csv", encoding='utf-8')
+        # Проверяем что encoding был передан
+        assert mock_read_csv.called
+        call_kwargs = mock_read_csv.call_args[1]
+        assert 'encoding' in call_kwargs
 
 
 class TestSafeReadFile:
     """Тесты для функции safe_read_file"""
 
-    @patch('safe_file_utils.validate_safe_path')
-    def test_valid_file_reads(self, mock_validate):
+    @patch('security_utils.validate_safe_path')
+    @patch('pathlib.Path.exists')
+    @patch('builtins.open', create=True)
+    def test_valid_file_reads(self, mock_open, mock_exists, mock_validate):
         """Проверка чтения валидного файла"""
-        mock_validate.return_value = True
+        mock_validate.return_value = (True, None)
+        mock_exists.return_value = True
+        mock_open.return_value.__enter__.return_value.read.return_value = "test content"
 
-        # Создаем временный файл для теста
-        with patch('builtins.open', create=True) as mock_open:
-            mock_open.return_value.__enter__.return_value.read.return_value = "test content"
-
-            with patch('safe_file_utils.Path.exists', return_value=True):
-                result = safe_read_file("test.txt")
-                if result is not None:
-                    assert isinstance(result, str)
+        result = safe_read_file("test.txt")
+        assert result is not None
+        assert isinstance(result, str)
+        assert result == "test content"
 
     def test_path_traversal_protection(self):
         """Проверка защиты от path traversal"""
@@ -142,43 +146,41 @@ class TestSafeReadFile:
         result = safe_read_file("nonexistent_file_12345.txt")
         assert result is None
 
-    @patch('safe_file_utils.validate_safe_path')
+    @patch('security_utils.validate_safe_path')
     def test_invalid_path_rejected(self, mock_validate):
         """Проверка отклонения невалидного пути"""
-        mock_validate.return_value = False
+        mock_validate.return_value = (False, "Path traversal detected")
         result = safe_read_file("../../../test.txt")
         assert result is None
 
-    @patch('safe_file_utils.validate_safe_path')
-    def test_encoding_parameter(self, mock_validate):
+    @patch('security_utils.validate_safe_path')
+    @patch('pathlib.Path.exists')
+    @patch('builtins.open', create=True)
+    def test_encoding_parameter(self, mock_open, mock_exists, mock_validate):
         """Проверка передачи параметра encoding"""
-        mock_validate.return_value = True
+        mock_validate.return_value = (True, None)
+        mock_exists.return_value = True
+        mock_open.return_value.__enter__.return_value.read.return_value = "test"
 
-        with patch('builtins.open', create=True) as mock_open:
-            mock_open.return_value.__enter__.return_value.read.return_value = "test"
-
-            with patch('safe_file_utils.Path.exists', return_value=True):
-                result = safe_read_file("test.txt", encoding='cp1251')
-                # Проверяем что encoding был передан при вызове open
-                if mock_open.called:
-                    call_args = mock_open.call_args
-                    # encoding может быть в args или kwargs
-                    assert 'encoding' in str(call_args) or len(call_args[0]) > 1
+        result = safe_read_file("test.txt", encoding='cp1251')
+        # Проверяем что encoding был передан при вызове open
+        assert mock_open.called
+        call_kwargs = mock_open.call_args[1]
+        assert call_kwargs['encoding'] == 'cp1251'
 
 
 class TestGetAssetPath:
     """Тесты для функции get_asset_path"""
 
-    @patch('safe_file_utils.validate_safe_path')
+    @patch('security_utils.validate_safe_path')
     def test_valid_asset_path(self, mock_validate):
         """Проверка получения пути к валидному asset"""
-        mock_validate.return_value = True
+        mock_validate.return_value = (True, None)
 
-        with patch('safe_file_utils.Path.exists', return_value=True):
-            result = get_asset_path("logo.png")
-            if result is not None:
-                assert isinstance(result, Path)
-                assert "assets" in str(result)
+        result = get_asset_path("logo.png")
+        assert result is not None
+        assert isinstance(result, Path)
+        assert "assets" in str(result)
 
     def test_path_traversal_protection(self):
         """Проверка защиты от path traversal"""
@@ -190,10 +192,10 @@ class TestGetAssetPath:
         result = get_asset_path("nonexistent_asset_12345.png")
         assert result is None
 
-    @patch('safe_file_utils.validate_safe_path')
+    @patch('security_utils.validate_safe_path')
     def test_invalid_path_rejected(self, mock_validate):
         """Проверка отклонения невалидного пути"""
-        mock_validate.return_value = False
+        mock_validate.return_value = (False, "Path traversal detected")
         result = get_asset_path("../../../test.png")
         assert result is None
 
@@ -206,16 +208,15 @@ class TestGetAssetPath:
 class TestGetDataPath:
     """Тесты для функции get_data_path"""
 
-    @patch('safe_file_utils.validate_safe_path')
+    @patch('security_utils.validate_safe_path')
     def test_valid_data_path(self, mock_validate):
         """Проверка получения пути к валидным данным"""
-        mock_validate.return_value = True
+        mock_validate.return_value = (True, None)
 
-        with patch('safe_file_utils.Path.exists', return_value=True):
-            result = get_data_path("data.csv")
-            if result is not None:
-                assert isinstance(result, Path)
-                assert "data" in str(result)
+        result = get_data_path("data.csv")
+        assert result is not None
+        assert isinstance(result, Path)
+        assert "data" in str(result)
 
     def test_path_traversal_protection(self):
         """Проверка защиты от path traversal"""
@@ -227,10 +228,10 @@ class TestGetDataPath:
         result = get_data_path("nonexistent_data_12345.csv")
         assert result is None
 
-    @patch('safe_file_utils.validate_safe_path')
+    @patch('security_utils.validate_safe_path')
     def test_invalid_path_rejected(self, mock_validate):
         """Проверка отклонения невалидного пути"""
-        mock_validate.return_value = False
+        mock_validate.return_value = (False, "Path traversal detected")
         result = get_data_path("../../../test.csv")
         assert result is None
 
