@@ -1061,10 +1061,59 @@ if uploaded_files and hh_areas is not None:
                         </style>
                         """, unsafe_allow_html=True)
 
+                        # ============================================
+                        # PAGINATION для улучшения производительности
+                        # ============================================
+                        CITIES_PER_PAGE = 10
+                        total_cities = len(editable_rows)
+                        total_pages = max(1, (total_cities + CITIES_PER_PAGE - 1) // CITIES_PER_PAGE)
+
+                        # Инициализация текущей страницы
+                        if 'edit_page' not in st.session_state:
+                            st.session_state.edit_page = 1
+
+                        # Ограничиваем страницу в допустимых пределах
+                        if st.session_state.edit_page > total_pages:
+                            st.session_state.edit_page = total_pages
+                        if st.session_state.edit_page < 1:
+                            st.session_state.edit_page = 1
+
+                        # Навигация: кнопки Назад/Вперед
+                        if total_pages > 1:
+                            nav_col1, nav_col2, nav_col3 = st.columns([1, 2, 1])
+
+                            with nav_col1:
+                                if st.button("◀ Назад", disabled=(st.session_state.edit_page == 1), key="edit_prev"):
+                                    st.session_state.edit_page -= 1
+                                    st.rerun()
+
+                            with nav_col2:
+                                st.markdown(f"<div style='text-align: center; padding-top: 5px;'><b>Страница {st.session_state.edit_page} из {total_pages}</b></div>", unsafe_allow_html=True)
+
+                            with nav_col3:
+                                if st.button("Вперед ▶", disabled=(st.session_state.edit_page == total_pages), key="edit_next"):
+                                    st.session_state.edit_page += 1
+                                    st.rerun()
+
+                            # Быстрая навигация через tabs
+                            if total_pages <= 10:  # Показываем табы только если страниц не больше 10
+                                page_tabs = st.tabs([f"📄 {i+1}" for i in range(total_pages)])
+                                selected_tab_idx = st.session_state.edit_page - 1
+                            else:
+                                page_tabs = None
+                                selected_tab_idx = None
+
+                        # Вычисляем диапазон строк для текущей страницы
+                        start_idx = (st.session_state.edit_page - 1) * CITIES_PER_PAGE
+                        end_idx = min(start_idx + CITIES_PER_PAGE, total_cities)
+                        page_rows = editable_rows.iloc[start_idx:end_idx]
+
+                        st.caption(f"Показано {start_idx + 1}-{end_idx} из {total_cities} городов")
+
                         # Обертка для черной окантовки
                         st.markdown('<div class="edit-cities-block">', unsafe_allow_html=True)
 
-                        for idx, row in editable_rows.iterrows():
+                        for idx, row in page_rows.iterrows():
                             with st.container():
                                 row_id = row['row_id']
                                 city_name = row['Исходное название']
@@ -1282,11 +1331,53 @@ if uploaded_files and hh_areas is not None:
                                 </style>
                                 """, unsafe_allow_html=True)
 
+                                # ============================================
+                                # PAGINATION для Split режима - tabs
+                                # ============================================
+                                CITIES_PER_PAGE_SPLIT = 10
+                                total_cities_split = len(editable_rows)
+                                total_pages_split = max(1, (total_cities_split + CITIES_PER_PAGE_SPLIT - 1) // CITIES_PER_PAGE_SPLIT)
+
+                                # Инициализация текущей страницы для этой вкладки
+                                page_key = f'edit_page_split_{sheet_name}'
+                                if page_key not in st.session_state:
+                                    st.session_state[page_key] = 1
+
+                                # Ограничиваем страницу в допустимых пределах
+                                if st.session_state[page_key] > total_pages_split:
+                                    st.session_state[page_key] = total_pages_split
+                                if st.session_state[page_key] < 1:
+                                    st.session_state[page_key] = 1
+
+                                # Навигация: кнопки Назад/Вперед
+                                if total_pages_split > 1:
+                                    nav_col1, nav_col2, nav_col3 = st.columns([1, 2, 1])
+
+                                    with nav_col1:
+                                        if st.button("◀ Назад", disabled=(st.session_state[page_key] == 1), key=f"split_prev_{sheet_name}_{tab_idx}"):
+                                            st.session_state[page_key] -= 1
+                                            st.rerun()
+
+                                    with nav_col2:
+                                        st.markdown(f"<div style='text-align: center; padding-top: 5px;'><b>Страница {st.session_state[page_key]} из {total_pages_split}</b></div>", unsafe_allow_html=True)
+
+                                    with nav_col3:
+                                        if st.button("Вперед ▶", disabled=(st.session_state[page_key] == total_pages_split), key=f"split_next_{sheet_name}_{tab_idx}"):
+                                            st.session_state[page_key] += 1
+                                            st.rerun()
+
+                                # Вычисляем диапазон строк для текущей страницы
+                                start_idx_split = (st.session_state[page_key] - 1) * CITIES_PER_PAGE_SPLIT
+                                end_idx_split = min(start_idx_split + CITIES_PER_PAGE_SPLIT, total_cities_split)
+                                page_rows_split = editable_rows.iloc[start_idx_split:end_idx_split]
+
+                                st.caption(f"Показано {start_idx_split + 1}-{end_idx_split} из {total_cities_split} городов")
+
                                 # Обертка для черной окантовки
                                 st.markdown('<div class="edit-cities-block">', unsafe_allow_html=True)
 
                                 # Для каждого города показываем выбор
-                                for idx, row in editable_rows.iterrows():
+                                for idx, row in page_rows_split.iterrows():
                                     row_id = row['row_id']
                                     city_name = row['Исходное название']
                                     current_value = row['Итоговое гео']
@@ -1519,8 +1610,54 @@ if uploaded_files and hh_areas is not None:
                                         if city_info.get('root_parent_id') == '113':
                                             russia_cities_for_select.append(city_name)
                                     russia_cities_for_select = sorted(russia_cities_for_select)
-                                    
-                                    for idx, row in editable_vacancy_rows.iterrows():
+
+                                    # ============================================
+                                    # PAGINATION для Split режима - columns (vacancy)
+                                    # ============================================
+                                    CITIES_PER_PAGE_VACANCY = 10
+                                    total_cities_vacancy = len(editable_vacancy_rows)
+                                    total_pages_vacancy = max(1, (total_cities_vacancy + CITIES_PER_PAGE_VACANCY - 1) // CITIES_PER_PAGE_VACANCY)
+
+                                    # Инициализация текущей страницы для этой вакансии
+                                    page_key_vacancy = f'edit_page_vacancy_{vacancy}_{tab_idx}'
+                                    if page_key_vacancy not in st.session_state:
+                                        st.session_state[page_key_vacancy] = 1
+
+                                    # Навигация: кнопки Назад/Вперед (если больше 1 страницы)
+                                    if total_pages_vacancy > 1:
+                                        nav_col1_v, nav_col2_v, nav_col3_v = st.columns([1, 2, 1])
+
+                                        with nav_col1_v:
+                                            if st.button("◀ Назад", disabled=(st.session_state[page_key_vacancy] == 1), key=f"vacancy_prev_{vacancy}_{tab_idx}"):
+                                                st.session_state[page_key_vacancy] -= 1
+                                                st.rerun()
+
+                                        with nav_col2_v:
+                                            st.markdown(f"<div style='text-align: center; padding-top: 5px;'><b>Страница {st.session_state[page_key_vacancy]} из {total_pages_vacancy}</b></div>", unsafe_allow_html=True)
+
+                                        with nav_col3_v:
+                                            if st.button("Вперед ▶", disabled=(st.session_state[page_key_vacancy] == total_pages_vacancy), key=f"vacancy_next_{vacancy}_{tab_idx}"):
+                                                st.session_state[page_key_vacancy] += 1
+                                                st.rerun()
+
+                                        # Опционально: показываем табы для быстрой навигации (если страниц ≤10)
+                                        if total_pages_vacancy <= 10:
+                                            page_tabs_v = st.tabs([str(i) for i in range(1, total_pages_vacancy + 1)])
+                                            for page_num_v, page_tab_v in enumerate(page_tabs_v, start=1):
+                                                with page_tab_v:
+                                                    if page_num_v != st.session_state[page_key_vacancy]:
+                                                        if st.button(f"Перейти на страницу {page_num_v}", key=f"vacancy_goto_{vacancy}_{tab_idx}_{page_num_v}"):
+                                                            st.session_state[page_key_vacancy] = page_num_v
+                                                            st.rerun()
+
+                                    # Вычисляем диапазон строк для текущей страницы
+                                    start_idx_vacancy = (st.session_state[page_key_vacancy] - 1) * CITIES_PER_PAGE_VACANCY
+                                    end_idx_vacancy = min(start_idx_vacancy + CITIES_PER_PAGE_VACANCY, total_cities_vacancy)
+                                    page_vacancy_rows = editable_vacancy_rows.iloc[start_idx_vacancy:end_idx_vacancy]
+
+                                    st.caption(f"Показано {start_idx_vacancy + 1}-{end_idx_vacancy} из {total_cities_vacancy} городов")
+
+                                    for idx, row in page_vacancy_rows.iterrows():
                                         col1, col2, col3 = st.columns([2, 3, 1])
                                         
                                         with col1:
