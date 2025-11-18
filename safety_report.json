@@ -1,0 +1,37 @@
+ModuleNotFoundError: No module named '_cffi_backend'
+thread '<unnamed>' panicked at /usr/share/cargo/registry/pyo3-0.20.2/src/err/mod.rs:788:5:
+Python API call failed
+stack backtrace:
+note: Some details are omitted, run with `RUST_BACKTRACE=full` for a verbose backtrace.
+Traceback (most recent call last):
+  File "/usr/local/bin/safety", line 5, in <module>
+    from safety.cli import cli
+  File "/usr/local/lib/python3.11/dist-packages/safety/cli.py", line 24, in <module>
+    from safety import safety
+  File "/usr/local/lib/python3.11/dist-packages/safety/safety.py", line 33, in <module>
+    from .models import Vulnerability, CVE, Severity, Fix, is_pinned_requirement, SafetyRequirement
+  File "/usr/local/lib/python3.11/dist-packages/safety/models.py", line 458, in <module>
+    from safety.auth.models import Auth
+  File "/usr/local/lib/python3.11/dist-packages/safety/auth/__init__.py", line 1, in <module>
+    from .cli_utils import auth_options, build_client_session, proxy_options, \
+  File "/usr/local/lib/python3.11/dist-packages/safety/auth/cli_utils.py", line 6, in <module>
+    from .main import get_auth_info, get_host_config, get_organization, get_proxy_config, \
+  File "/usr/local/lib/python3.11/dist-packages/safety/auth/main.py", line 5, in <module>
+    from authlib.oidc.core import CodeIDToken
+  File "/usr/local/lib/python3.11/dist-packages/authlib/oidc/core/__init__.py", line 9, in <module>
+    from .claims import CodeIDToken
+  File "/usr/local/lib/python3.11/dist-packages/authlib/oidc/core/claims.py", line 5, in <module>
+    from authlib.jose import JWTClaims
+  File "/usr/local/lib/python3.11/dist-packages/authlib/jose/__init__.py", line 17, in <module>
+    from .rfc7517 import JsonWebKey
+  File "/usr/local/lib/python3.11/dist-packages/authlib/jose/rfc7517/__init__.py", line 10, in <module>
+    from ._cryptography_key import load_pem_key
+  File "/usr/local/lib/python3.11/dist-packages/authlib/jose/rfc7517/_cryptography_key.py", line 2, in <module>
+    from cryptography.hazmat.primitives.serialization import load_pem_private_key
+  File "/usr/lib/python3/dist-packages/cryptography/hazmat/primitives/serialization/__init__.py", line 7, in <module>
+    from cryptography.hazmat.primitives._serialization import (
+  File "/usr/lib/python3/dist-packages/cryptography/hazmat/primitives/_serialization.py", line 11, in <module>
+    from cryptography.hazmat.primitives.hashes import HashAlgorithm
+  File "/usr/lib/python3/dist-packages/cryptography/hazmat/primitives/hashes.py", line 10, in <module>
+    from cryptography.hazmat.bindings._rust import openssl as rust_openssl
+pyo3_runtime.PanicException: Python API call failed

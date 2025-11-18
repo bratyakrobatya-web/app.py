@@ -2288,7 +2288,10 @@ if uploaded_files and hh_areas is not None:
                                 # Кнопка скачивания
                                 st.markdown("---")
                                 safe_sheet_name = str(sheet_name).replace('/', '_').replace('\\', '_')[:50]
-                                
+
+                                # Санитизация данных перед экспортом (защита от CSV Injection)
+                                final_output = sanitize_csv_content(final_output)
+
                                 file_buffer = io.BytesIO()
                                 with pd.ExcelWriter(file_buffer, engine='openpyxl') as writer:
                                     final_output.to_excel(writer, index=False, header=True, sheet_name='Результат')
@@ -2616,7 +2619,10 @@ if uploaded_files and hh_areas is not None:
                                 # Кнопка выгрузки для этой вакансии
                                 st.markdown("---")
                                 safe_vacancy_name = str(vacancy).replace('/', '_').replace('\\', '_')[:50]
-                                
+
+                                # Санитизация данных перед экспортом (защита от CSV Injection)
+                                output_vacancy_df = sanitize_csv_content(output_vacancy_df)
+
                                 file_buffer = io.BytesIO()
                                 with pd.ExcelWriter(file_buffer, engine='openpyxl') as writer:
                                     output_vacancy_df.to_excel(writer, index=False, header=True, sheet_name='Результат')
@@ -2747,7 +2753,10 @@ if uploaded_files and hh_areas is not None:
                         output_df = remove_header_row_if_needed(output_df, first_col_name)
 
                         st.success(f"✅ Готово к выгрузке: **{len(output_df)}** уникальных городов")
-                        
+
+                        # Санитизация данных перед экспортом (защита от CSV Injection)
+                        output_df = sanitize_csv_content(output_df)
+
                         # Кнопка скачивания
                         output_all = io.BytesIO()
                         with pd.ExcelWriter(output_all, engine='openpyxl') as writer:
@@ -2856,7 +2865,10 @@ if uploaded_files and hh_areas is not None:
                     output_df = remove_header_row_if_needed(output_df, original_cols[0])
 
                     st.success(f"✅ Готово к выгрузке: **{len(output_df)}** уникальных городов")
-                
+
+                    # Санитизация данных перед экспортом (защита от CSV Injection)
+                    output_df = sanitize_csv_content(output_df)
+
                     # Кнопка скачивания одного файла
                     output_all = io.BytesIO()
                     with pd.ExcelWriter(output_all, engine='openpyxl') as writer:
@@ -2918,8 +2930,11 @@ if uploaded_files and hh_areas is not None:
                         publisher_df = publisher_df.drop_duplicates(subset=['_normalized'], keep='first')
                         publisher_df = publisher_df.drop(columns=['_normalized'])
 
-                    output_publisher = io.BytesIO()  
-                    with pd.ExcelWriter(output_publisher, engine='openpyxl') as writer:  
+                    # Санитизация данных перед экспортом (защита от CSV Injection)
+                    publisher_df = sanitize_csv_content(publisher_df)
+
+                    output_publisher = io.BytesIO()
+                    with pd.ExcelWriter(output_publisher, engine='openpyxl') as writer:
                         publisher_df.to_excel(writer, index=False, header=False, sheet_name='Результат')  
                     output_publisher.seek(0)  
                       
@@ -2940,10 +2955,14 @@ if uploaded_files and hh_areas is not None:
                     if st.session_state.added_cities:
                         st.caption(f"✅ Добавлено городов: {len(st.session_state.added_cities)}")
                   
-                with col2:  
-                    output = io.BytesIO()  
-                    export_full_df = final_result_df.drop(['row_id', 'sort_priority'], axis=1, errors='ignore')  
-                    with pd.ExcelWriter(output, engine='openpyxl') as writer:  
+                with col2:
+                    export_full_df = final_result_df.drop(['row_id', 'sort_priority'], axis=1, errors='ignore')
+
+                    # Санитизация данных перед экспортом (защита от CSV Injection)
+                    export_full_df = sanitize_csv_content(export_full_df)
+
+                    output = io.BytesIO()
+                    with pd.ExcelWriter(output, engine='openpyxl') as writer:
                         export_full_df.to_excel(writer, index=False, sheet_name='Результат')  
                     output.seek(0)  
                       
@@ -3272,9 +3291,12 @@ if hh_areas is not None:
 
         with col1:
             # Полный отчет
+            # Санитизация данных перед экспортом (защита от CSV Injection)
+            sanitized_cities_df = sanitize_csv_content(cities_df)
+
             output_full = io.BytesIO()
             with pd.ExcelWriter(output_full, engine='openpyxl') as writer:
-                cities_df.to_excel(writer, index=False, sheet_name='Города')
+                sanitized_cities_df.to_excel(writer, index=False, sheet_name='Города')
             output_full.seek(0)
 
             st.download_button(
@@ -3289,6 +3311,10 @@ if hh_areas is not None:
         with col2:
             # Только названия городов для публикатора
             publisher_df = pd.DataFrame({'Город': cities_df['Город']})
+
+            # Санитизация данных перед экспортом (защита от CSV Injection)
+            publisher_df = sanitize_csv_content(publisher_df)
+
             output_publisher = io.BytesIO()
             with pd.ExcelWriter(output_publisher, engine='openpyxl') as writer:
                 publisher_df.to_excel(writer, index=False, header=False, sheet_name='Гео')
@@ -3390,10 +3416,13 @@ if uploaded_files:
             st.info(f"ℹ️ Первые {duplicate_rows} строк - дубликаты (будут выделены оранжевым в Excel)")
             st.dataframe(final_df, use_container_width=True, height=400)
 
+            # Санитизация данных перед экспортом (защита от CSV Injection)
+            sanitized_final_df = sanitize_csv_content(final_df)
+
             # Кнопка скачивания
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine='openpyxl') as writer:
-                final_df.to_excel(writer, index=False, sheet_name='Объединенные данные')
+                sanitized_final_df.to_excel(writer, index=False, sheet_name='Объединенные данные')
 
                 # Применяем оранжевый цвет к дубликатам в Excel
                 workbook = writer.book
