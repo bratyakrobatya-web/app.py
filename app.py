@@ -64,6 +64,15 @@ from modules.city_matcher import (
     merge_cities_files
 )
 
+# Export utilities module
+from modules.export_utils import (
+    create_excel_buffer,
+    create_publisher_excel,
+    create_full_report_excel,
+    create_zip_archive,
+    create_result_excel
+)
+
 # Version: 3.3.2 - Fixed: corrected all indentation in single mode block
 
 # ============================================
