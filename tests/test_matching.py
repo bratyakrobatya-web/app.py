@@ -5,10 +5,10 @@ import pytest
 import sys
 import os
 
-# Добавляем родительскую директорию в путь для импорта app
+# Добавляем родительскую директорию в путь для импорта modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from app import normalize_city_name, get_candidates_by_word, extract_city_and_region
+from modules.matching import normalize_city_name, get_candidates_by_word, extract_city_and_region
 
 
 class TestNormalizeCityName:
