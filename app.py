@@ -44,10 +44,10 @@ from safe_file_utils import (
 
 # Настройка страницы
 st.set_page_config(
-    page_title="Мультитул VR",
+    page_title="Синхронизатор",
     page_icon="🌍",
-    layout="wide"  
-)  
+    layout="wide"
+)
 
 # Кастомный CSS для современного дизайна
 # Безопасная загрузка CSS из отдельного файла
@@ -56,6 +56,7 @@ if css_content:
     st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
 else:
     logger.error("Не удалось загрузить static/styles.css, стили не применены")
+
 
 # Инициализация session_state
 if 'result_df' not in st.session_state:
@@ -1155,7 +1156,11 @@ hh_areas = get_hh_areas()
 # ============================================
 # ГЛАВНЫЙ ЗАГОЛОВОК
 # ============================================
-st.markdown(f'<h1 style="text-align: left; color: #f4301f; margin-bottom: 1rem;"><span class="rotating-earth">{SYNC_ICON}</span> Мультитул VR</h1>', unsafe_allow_html=True)
+st.markdown('''
+<div style="margin-bottom: 2rem;">
+    <h1 style="text-align: left; color: #f4301f; margin-bottom: 0.3rem;">Синхронизатор</h1>
+</div>
+''', unsafe_allow_html=True)
 st.markdown("---")
 
 # ============================================
@@ -3429,31 +3434,8 @@ st.markdown("""
 Инструменты для сверки данных с различными клиентами. Выберите нужную сверку ниже.
 """)
 
-# Стили для кнопки копирования в блоке кода
-st.markdown("""
-<style>
-/* Стиль для кнопки копирования в блоке кода */
-div[data-testid="stCodeBlock"] button {
-    background-color: #f4301f !important;
-    color: white !important;
-    border: 2px solid #c42d1a !important;
-    font-weight: bold !important;
-    transition: all 0.3s ease !important;
-    padding: 8px 16px !important;
-}
-div[data-testid="stCodeBlock"] button:hover {
-    background-color: #c42d1a !important;
-    transform: scale(1.05) !important;
-    box-shadow: 0 4px 12px rgba(244, 48, 31, 0.4) !important;
-}
-
-/* Ограничиваем высоту блока кода */
-div[data-testid="stCodeBlock"] {
-    max-height: 250px !important;
-    overflow-y: auto !important;
-}
-</style>
-""", unsafe_allow_html=True)
+# Открываем контейнер для стилизации блоков кода
+st.markdown('<div class="matrix-code-section">', unsafe_allow_html=True)
 
 # Яндекс.Еда - активная сверка
 with st.expander("Яндекс.Еда", expanded=False):
@@ -3520,6 +3502,9 @@ with st.expander("Ростелеком", expanded=False):
 
 with st.expander("Ингосстрах", expanded=False):
     st.info("Сверка для этого клиента находится в разработке")
+
+# Закрываем контейнер matrix-code-section
+st.markdown('</div>', unsafe_allow_html=True)
 
 st.markdown("---")
 st.markdown(
