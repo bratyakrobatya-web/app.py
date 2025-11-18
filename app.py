@@ -22,8 +22,8 @@ import os
 
 # Настройка страницы
 st.set_page_config(
-    page_title="🪗 ГАРМОНЬ",
-    page_icon="🪗",
+    page_title="Синхронизатор",
+    page_icon="",
     layout="wide"
 )
 
