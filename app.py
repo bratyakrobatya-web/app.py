@@ -30,6 +30,15 @@ from safe_file_utils import (
     safe_read_file
 )
 
+# City matching module
+from modules.matching import (
+    normalize_city_name,
+    extract_city_and_region,
+    get_candidates_by_word,
+    PREFERRED_MATCHES,
+    EXCLUDED_EXACT_MATCHES
+)
+
 # Version: 3.3.2 - Fixed: corrected all indentation in single mode block
 
 # ============================================
@@ -133,40 +142,6 @@ FEDERAL_DISTRICTS = {
 }
 
 # ============================================
-# СПРАВОЧНИК ПРЕДПОЧТИТЕЛЬНЫХ СОВПАДЕНИЙ
-# ============================================
-PREFERRED_MATCHES = {
-    'иваново': 'Иваново (Ивановская область)',
-    'киров': 'Киров (Кировская область)',
-    'подольск': 'Подольск (Московская область)',
-    'троицк': 'Троицк (Москва)',
-    'железногорск': 'Железногорск (Красноярский край)',
-    'кировск': 'Кировск (Ленинградская область)',
-    'истра': 'Истра (Московская область)',
-    'красногорск': 'Красногорск (Московская область)',
-    'истра, деревня покровское': 'Покровское (городской округ Истра)',
-    'домодедово': 'Домодедово (Московская область)',
-    'клин': 'Клин (Московская область)',
-    'октябрьский': 'Октябрьский (Московская область, Люберецкий район)',
-    'советск': 'Советск (Калининградская область)',
-    'кировск Ленинградская': 'Кировск (Ленинградская область)',
-    'звенигород': 'Звенигород (Московская область)',
-    'радужный хмао': 'Радужный (Ханты-Мансийский АО - Югра)',
-    'радужный': 'Радужный (Ханты-Мансийский АО - Югра)',
-    'железногорск Курской области': 'Железногорск (Курская область)',
-    'воскресенск': 'Воскресенск (Московская область)',
-    'северск': 'Северск (Томская область)',
-    'егорьевск': 'Егорьевск (Московская область)',
-    'дмитров': 'Дмитров (Московская область)',
-    'волжский': 'Волжский (Самарская область)',
-}
-
-# Исключения - названия, которые НЕ должны совпадать (вернуть None)
-EXCLUDED_EXACT_MATCHES = {
-    'ленинградская',  # Точное совпадение с "Ленинградская" = Нет совпадения
-}
-
-# ============================================
 # ФУНКЦИИ
 # ============================================
 def get_russian_cities(hh_areas):
@@ -205,21 +180,6 @@ def remove_header_row_if_needed(df, first_col_name):
         df = df.iloc[1:].reset_index(drop=True)
 
     return df
-
-def normalize_city_name(text):
-    """Нормализует название города: ё->е, нижний регистр, убирает лишние пробелы"""
-    # Проверяем, что text это строка, иначе возвращаем пустую строку
-    if pd.isna(text) or not isinstance(text, str):
-        return ""
-    if not text:
-        return ""
-    # Заменяем ё на е
-    text = text.replace('ё', 'е').replace('Ё', 'Е')
-    # Приводим к нижнему регистру и убираем лишние пробелы
-    text = text.lower().strip()
-    # Заменяем множественные пробелы на один
-    text = re.sub(r'\s+', ' ', text)
-    return text
 
 @RateLimiter(max_calls=10, period=60)  # Rate limiting: макс 10 запросов в минуту
 @st.cache_data(ttl=3600)
@@ -587,61 +547,7 @@ def normalize_region_name(text):
     }  
     for old, new in replacements.items():  
         text = text.replace(old, new)  
-    return text.strip()  
-
-def extract_city_and_region(text):  
-    """Извлекает название города и региона из текста с учетом префиксов"""  
-    text_lower = text.lower()  
-    
-    # Префиксы населенных пунктов
-    city_prefixes = ['г.', 'п.', 'д.', 'с.', 'пос.', 'дер.', 'село', 'город', 'поселок', 'деревня']
-    
-    # Убираем всё после запятой (дополнительная информация типа "Истра, деревня Покровское")
-    if ',' in text:
-        text = text.split(',')[0].strip()
-      
-    region_keywords = [  
-        'област', 'край', 'республик', 'округ',  
-        'ленинград', 'москов', 'курск', 'кемеров',  
-        'свердлов', 'нижегород', 'новосибирск', 'тамбов',  
-        'красноярск'  
-    ]  
-    
-    # Удаляем префиксы в начале строки (с пробелом и без)
-    text_cleaned = text.strip()
-    for prefix in city_prefixes:
-        # Проверяем с пробелом: "г. Москва"
-        if text_cleaned.lower().startswith(prefix + ' '):
-            text_cleaned = text_cleaned[len(prefix) + 1:].strip()  # +1 для пробела
-            break
-        # Проверяем без пробела: "г.Москва"
-        elif text_cleaned.lower().startswith(prefix):
-            text_cleaned = text_cleaned[len(prefix):].strip()
-            break
-      
-    words = text_cleaned.split()  
-      
-    if len(words) == 1:  
-        return text_cleaned, None  
-      
-    city_words = []  
-    region_words = []  
-    region_found = False  
-      
-    for word in words:  
-        word_lower = word.lower()  
-        if not region_found and any(keyword in word_lower for keyword in region_keywords):  
-            region_found = True  
-            region_words.append(word)  
-        elif region_found:  
-            region_words.append(word)  
-        else:  
-            city_words.append(word)  
-      
-    city = ' '.join(city_words) if city_words else text_cleaned  
-    region = ' '.join(region_words) if region_words else None  
-      
-    return city, region  
+    return text.strip()
 
 def check_if_changed(original, matched):  
     """Проверяет, изменилось ли название города"""  
@@ -651,45 +557,7 @@ def check_if_changed(original, matched):
     original_clean = original.strip()  
     matched_clean = matched.strip()  
       
-    return original_clean != matched_clean  
-
-def get_candidates_by_word(client_city, hh_city_names, limit=20):
-    """Получает кандидатов по совпадению начального слова с применением PREFERRED_MATCHES"""
-    # Проверка на пустую строку
-    if not client_city or not client_city.strip():
-        return []
-
-    # Нормализуем исходное название для проверки исключений
-    client_city_normalized = normalize_city_name(client_city)
-
-    # Проверяем исключения - города, которые НЕ должны совпадать
-    if client_city_normalized in EXCLUDED_EXACT_MATCHES:
-        return []
-
-    # Проверяем предпочтительные совпадения
-    if client_city_normalized in PREFERRED_MATCHES:
-        preferred_match = PREFERRED_MATCHES[client_city_normalized]
-        if preferred_match in hh_city_names:
-            score = fuzz.WRatio(client_city_normalized, normalize_city_name(preferred_match))
-            # Возвращаем предпочтительное совпадение с наивысшим приоритетом
-            return [(preferred_match, score)]
-
-    words = client_city.split()
-    if not words:
-        return []
-
-    first_word = normalize_city_name(words[0])
-
-    candidates = []
-    for city_name in hh_city_names:
-        city_lower = normalize_city_name(city_name)
-        if first_word in city_lower:
-            score = fuzz.WRatio(client_city_normalized, city_lower)
-            candidates.append((city_name, score))
-
-    candidates.sort(key=lambda x: x[1], reverse=True)
-
-    return candidates[:limit]  
+    return original_clean != matched_clean
 
 def smart_match_city(client_city, hh_city_names, hh_areas, threshold=85):
     """Умное сопоставление города с сохранением кандидатов и учетом предпочтительных совпадений"""
