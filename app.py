@@ -906,35 +906,17 @@ if uploaded_files and hh_areas is not None:
                         st.info(f"Найдено **{len(editable_rows)}** городов, доступных для редактирования")
 
                         # ============================================
-                        # PAGINATION для улучшения производительности
+                        # CALLBACK для предотвращения полного rerun
                         # ============================================
-                        CITIES_PER_PAGE = 10
-                        total_cities = len(editable_rows)
-                        total_pages = (total_cities + CITIES_PER_PAGE - 1) // CITIES_PER_PAGE
-
-                        # Инициализация текущей страницы
-                        if 'edit_page' not in st.session_state:
-                            st.session_state.edit_page = 1
-
-                        if total_pages > 1:
-                            col_page1, col_page2, col_page3 = st.columns([1, 2, 1])
-                            with col_page2:
-                                current_page = st.number_input(
-                                    f"Страница (всего {total_pages}):",
-                                    min_value=1,
-                                    max_value=total_pages,
-                                    value=st.session_state.edit_page,
-                                    step=1,
-                                    key="edit_page_input"
-                                )
-                                st.session_state.edit_page = current_page
-
-                        # Вычисляем диапазон строк для текущей страницы
-                        start_idx = (st.session_state.edit_page - 1) * CITIES_PER_PAGE
-                        end_idx = min(start_idx + CITIES_PER_PAGE, total_cities)
-                        page_rows = editable_rows.iloc[start_idx:end_idx]
-
-                        st.caption(f"Показаны города {start_idx + 1}-{end_idx} из {total_cities}")
+                        def on_city_select(row_id, widget_key):
+                            """Callback вызывается только при изменении selectbox"""
+                            selected = st.session_state.get(widget_key)
+                            if selected == "❌ Нет совпадения":
+                                st.session_state.manual_selections[row_id] = "❌ Нет совпадения"
+                            elif selected:
+                                # Извлекаем название без процента
+                                selected_city = selected.rsplit(' (', 1)[0]
+                                st.session_state.manual_selections[row_id] = selected_city
 
                         # ============================================
                         # CSS вне цикла для улучшения производительности
@@ -954,7 +936,7 @@ if uploaded_files and hh_areas is not None:
                         # Обертка для черной окантовки
                         st.markdown('<div class="edit-cities-block">', unsafe_allow_html=True)
 
-                        for idx, row in page_rows.iterrows():
+                        for idx, row in editable_rows.iterrows():
                             with st.container():
                                 row_id = row['row_id']
                                 candidates = st.session_state.candidates_cache.get(row_id, [])
@@ -1014,19 +996,16 @@ if uploaded_files and hh_areas is not None:
                                     st.markdown(f"**{row['Исходное название']}**")
 
                                 with col2:
-                                    selected = st.selectbox(
+                                    widget_key = f"select_{row_id}"
+                                    st.selectbox(
                                         "Выберите город:",
                                         options=options,
                                         index=default_idx,
-                                        key=f"select_{row_id}",
-                                        label_visibility="collapsed"
+                                        key=widget_key,
+                                        label_visibility="collapsed",
+                                        on_change=on_city_select,
+                                        args=(row_id, widget_key)
                                     )
-
-                                    if selected == "❌ Нет совпадения":
-                                        st.session_state.manual_selections[row_id] = "❌ Нет совпадения"
-                                    else:
-                                        selected_city = selected.rsplit(' (', 1)[0]
-                                        st.session_state.manual_selections[row_id] = selected_city
 
                                 with col3:
                                     st.text(f"{row['Совпадение %']}%")
@@ -1180,36 +1159,17 @@ if uploaded_files and hh_areas is not None:
                                 st.warning(f"⚠️ Найдено **{len(editable_rows)}** городов для проверки")
 
                                 # ============================================
-                                # PAGINATION для улучшения производительности
+                                # CALLBACK для предотвращения полного rerun
                                 # ============================================
-                                CITIES_PER_PAGE = 10
-                                total_cities_tab = len(editable_rows)
-                                total_pages_tab = (total_cities_tab + CITIES_PER_PAGE - 1) // CITIES_PER_PAGE
-
-                                # Инициализация текущей страницы для каждой вкладки
-                                page_key = f'edit_page_{sheet_name}'
-                                if page_key not in st.session_state:
-                                    st.session_state[page_key] = 1
-
-                                if total_pages_tab > 1:
-                                    col_p1, col_p2, col_p3 = st.columns([1, 2, 1])
-                                    with col_p2:
-                                        current_page_tab = st.number_input(
-                                            f"Страница (всего {total_pages_tab}):",
-                                            min_value=1,
-                                            max_value=total_pages_tab,
-                                            value=st.session_state[page_key],
-                                            step=1,
-                                            key=f"edit_page_input_{sheet_name}_{tab_idx}"
-                                        )
-                                        st.session_state[page_key] = current_page_tab
-
-                                # Вычисляем диапазон строк для текущей страницы
-                                start_idx_tab = (st.session_state[page_key] - 1) * CITIES_PER_PAGE
-                                end_idx_tab = min(start_idx_tab + CITIES_PER_PAGE, total_cities_tab)
-                                page_rows_tab = editable_rows.iloc[start_idx_tab:end_idx_tab]
-
-                                st.caption(f"Показаны города {start_idx_tab + 1}-{end_idx_tab} из {total_cities_tab}")
+                                def on_city_select_tab(selection_key, widget_key):
+                                    """Callback для режима split - вызывается только при изменении"""
+                                    selected = st.session_state.get(widget_key)
+                                    if selected == "❌ Нет совпадения":
+                                        st.session_state.manual_selections[selection_key] = "❌ Нет совпадения"
+                                    elif selected:
+                                        # Извлекаем название без процента
+                                        city_match = selected.rsplit(' (', 1)[0]
+                                        st.session_state.manual_selections[selection_key] = city_match
 
                                 # ============================================
                                 # CSS вне цикла для улучшения производительности
@@ -1230,7 +1190,7 @@ if uploaded_files and hh_areas is not None:
                                 st.markdown('<div class="edit-cities-block">', unsafe_allow_html=True)
 
                                 # Для каждого города показываем выбор
-                                for idx, row in page_rows_tab.iterrows():
+                                for idx, row in editable_rows.iterrows():
                                     row_id = row['row_id']
                                     city_name = row['Исходное название']
 
@@ -1292,20 +1252,15 @@ if uploaded_files and hh_areas is not None:
                                         st.text(city_name)
 
                                     with col2:
-                                        selected = st.selectbox(
+                                        st.selectbox(
                                             "Выберите город:",
                                             options=options,
                                             index=default_idx,
                                             key=unique_key,
-                                            label_visibility="collapsed"
+                                            label_visibility="collapsed",
+                                            on_change=on_city_select_tab,
+                                            args=(selection_key, unique_key)
                                         )
-
-                                        if selected == "❌ Нет совпадения":
-                                            st.session_state.manual_selections[selection_key] = "❌ Нет совпадения"
-                                        else:
-                                            # Извлекаем название без процента
-                                            city_match = selected.rsplit(' (', 1)[0]
-                                            st.session_state.manual_selections[selection_key] = city_match
 
                                     with col3:
                                         st.text(f"{row['Совпадение %']:.1f}%")
