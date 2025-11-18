@@ -7,3 +7,13 @@ font = "hhsans-Regular"
 
 [server]
 maxUploadSize = 200
+enableCORS = false
+enableXsrfProtection = true
+maxMessageSize = 200
+
+[browser]
+gatherUsageStats = false
+
+[client]
+showErrorDetails = false
+toolbarMode = "minimal"
