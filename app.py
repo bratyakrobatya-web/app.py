@@ -197,6 +197,10 @@ def apply_manual_selections_cached(_result_df, manual_selections: dict, _hh_area
     for row_id, new_value in manual_selections.items():
         mask = final_df['row_id'] == row_id
 
+        # FIX: Проверяем что row_id существует в DataFrame
+        if mask.sum() == 0:
+            continue  # Пропускаем если строка не найдена
+
         if new_value == "❌ Нет совпадения":
             final_df.loc[mask, 'Итоговое гео'] = None
             final_df.loc[mask, 'ID HH'] = None
