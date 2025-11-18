@@ -95,6 +95,48 @@ def get_russian_cities_cached(_hh_areas: Dict) -> List[str]:
     return get_russian_cities(_hh_areas)
 
 
+@st.cache_data(show_spinner=False)
+def prepare_city_options(candidates: tuple, current_value: str, current_match: float, city_name: str) -> tuple:
+    """
+    Кэшированная подготовка options для selectbox.
+
+    ОПТИМИЗАЦИЯ: избегаем пересоздания списков и сортировки на каждом rerun.
+    Используется tuple для candidates чтобы можно было кэшировать.
+
+    Args:
+        candidates: Кортеж кандидатов (city_name, match_percent)
+        current_value: Текущее значение гео
+        current_match: Процент совпадения текущего значения
+        city_name: Исходное название города
+
+    Returns:
+        tuple: (options, candidates_dict)
+            - options: список для selectbox
+            - candidates_dict: {city_name: index} для O(1) поиска
+    """
+    candidates_list = list(candidates)
+
+    # Добавляем текущее значение если его нет
+    if current_value and current_value != city_name:
+        candidate_names = [c[0] for c in candidates_list]
+        if current_value not in candidate_names:
+            candidates_list.append((current_value, current_match))
+
+    # Сортируем по убыванию процента
+    candidates_list.sort(key=lambda x: x[1], reverse=True)
+
+    # Формируем options
+    if candidates_list:
+        options = ["❌ Нет совпадения"] + [f"{c[0]} ({c[1]:.1f}%)" for c in candidates_list[:20]]
+    else:
+        options = ["❌ Нет совпадения"]
+
+    # Создаём словарь для O(1) поиска индекса по названию города
+    candidates_dict = {c[0]: i + 1 for i, c in enumerate(candidates_list[:20])}
+
+    return tuple(options), candidates_dict
+
+
 @st.cache_data(show_spinner="Загрузка справочника HH.ru...", ttl=3600)
 def get_hh_areas_cached() -> Optional[Dict]:
     """
@@ -1012,52 +1054,35 @@ if uploaded_files and hh_areas is not None:
                         for idx, row in editable_rows.iterrows():
                             with st.container():
                                 row_id = row['row_id']
-                                candidates = st.session_state.candidates_cache.get(row_id, [])
-
-                                # Если кандидатов нет в кэше, получаем их заново
-                                if not candidates:
-                                    city_name = row['Исходное название']
-                                    # Используем кэшированную версию для производительности
-                                    candidates = get_candidates_by_word(city_name, get_russian_cities_cached(hh_areas), limit=20)
-
+                                city_name = row['Исходное название']
                                 current_value = row['Итоговое гео']
                                 current_match = row['Совпадение %']
 
-                                # Добавляем текущее значение в список, если его нет
-                                if current_value and current_value != row['Исходное название']:
-                                    candidate_names = [c[0] for c in candidates]
-                                    if current_value not in candidate_names:
-                                        candidates.append((current_value, current_match))
+                                # Получаем кандидатов из кэша или вычисляем
+                                candidates = st.session_state.candidates_cache.get(row_id, [])
+                                if not candidates:
+                                    candidates = get_candidates_by_word(city_name, get_russian_cities_cached(hh_areas), limit=20)
 
-                                # Сортируем кандидатов по убыванию процента совпадения
-                                candidates.sort(key=lambda x: x[1], reverse=True)
+                                # Кэшированная подготовка options (избегаем повторных вычислений)
+                                options, candidates_dict = prepare_city_options(
+                                    tuple(candidates),  # tuple для кэширования
+                                    current_value,
+                                    current_match,
+                                    city_name
+                                )
 
-                                # Формируем список опций с процентами
-                                if candidates:
-                                    options = ["❌ Нет совпадения"] + [f"{c[0]} ({c[1]:.1f}%)" for c in candidates[:20]]
-                                else:
-                                    options = ["❌ Нет совпадения"]
-
-                                # Определяем выбранный элемент - ЧИТАЕМ ИЗ ТЕКУЩЕГО ЗНАЧЕНИЯ SELECTBOX
+                                # Определяем выбранное значение
                                 widget_key = f"select_{row_id}"
-                                selected_value_in_widget = st.session_state.get(widget_key)
-
-                                # Определяем default index
                                 if row_id in st.session_state.manual_selections:
                                     selected_value = st.session_state.manual_selections[row_id]
                                 else:
                                     selected_value = current_value
 
-                                # Находим индекс в options
+                                # Быстрый поиск индекса O(1) вместо O(n)
                                 if selected_value == "❌ Нет совпадения":
                                     default_idx = 0
                                 else:
-                                    default_idx = 0
-                                    if selected_value:
-                                        for i, c in enumerate(candidates):
-                                            if c[0] == selected_value:
-                                                default_idx = i + 1
-                                                break
+                                    default_idx = candidates_dict.get(selected_value, 0)
 
                                 col1, col2, col3, col4 = st.columns([2, 3, 1, 1])
 
