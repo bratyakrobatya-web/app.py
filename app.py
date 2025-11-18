@@ -430,7 +430,8 @@ def get_cities_by_regions(hh_areas, selected_regions):
                         sign = 1 if utc_offset[0] == '+' else -1
                         hours = int(utc_offset[1:3])
                         city_offset_hours = sign * hours
-                    except:
+                    except (ValueError, IndexError, TypeError) as e:
+                        logger.warning(f"Не удалось распарсить UTC offset '{utc_offset}': {e}")
                         city_offset_hours = 0
 
                 diff_with_moscow = city_offset_hours - moscow_offset
@@ -529,7 +530,8 @@ def get_all_cities(hh_areas):
                 sign = 1 if utc_offset[0] == '+' else -1
                 hours = int(utc_offset[1:3])
                 city_offset_hours = sign * hours
-            except:
+            except (ValueError, IndexError, TypeError) as e:
+                logger.warning(f"Не удалось распарсить UTC offset '{utc_offset}': {e}")
                 city_offset_hours = 0
 
         diff_with_moscow = city_offset_hours - moscow_offset
@@ -3044,8 +3046,9 @@ if hh_areas is not None:
 
                     timezone_options_formatted.append(formatted)
                     timezone_mapping[formatted] = tz
-                except:
+                except (ValueError, IndexError, TypeError) as e:
                     # Если не удалось распарсить, добавляем как есть
+                    logger.warning(f"Не удалось распарсить timezone '{tz}': {e}")
                     timezone_options_formatted.append(tz)
                     timezone_mapping[tz] = tz
 
