@@ -2002,13 +2002,20 @@ if uploaded_files and hh_areas is not None:
                             sheet_selections,
                             hh_areas
                         )
-                        
+
+                        # DEBUG: Показываем статусы и количество перед фильтрацией
+                        status_counts = result_df_sheet['Статус'].value_counts()
+                        st.write(f"**DEBUG [{sheet_name}]** До фильтрации: {len(result_df_sheet)} строк")
+                        st.write(f"Статусы:", status_counts.to_dict())
+
                         # FIX: Формируем данные для публикатора (исключаем не найденные с эмодзи)
                         output_sheet = result_df_sheet[
                             (result_df_sheet['Итоговое гео'].notna()) &
                             (~result_df_sheet['Статус'].str.contains('❌ Не найдено', na=False)) &
                             (~result_df_sheet['Статус'].str.contains('Пустое значение', na=False))
                         ].copy()
+
+                        st.write(f"**DEBUG [{sheet_name}]** После фильтрации: {len(output_sheet)} строк")
 
                         if len(output_sheet) > 0:
                             # Получаем индексы из row_id
@@ -2118,13 +2125,20 @@ if uploaded_files and hh_areas is not None:
                 
                     # Формируем итоговый файл для скачивания (все вакансии вместе)
                     original_cols = st.session_state.original_df.columns.tolist()
-                
+
+                    # DEBUG: Показываем статусы и количество перед фильтрацией
+                    status_counts = final_result_df['Статус'].value_counts()
+                    st.write(f"**DEBUG [Columns]** До фильтрации: {len(final_result_df)} строк")
+                    st.write(f"Статусы:", status_counts.to_dict())
+
                     # FIX: Оставляем только строки с найденным гео (исключаем не найденные с эмодзи)
                     export_df = final_result_df[
                         (final_result_df['Итоговое гео'].notna()) &
                         (~final_result_df['Статус'].str.contains('❌ Не найдено', na=False)) &
                         (~final_result_df['Статус'].str.contains('Пустое значение', na=False))
                     ].copy()
+
+                    st.write(f"**DEBUG [Columns]** После фильтрации: {len(export_df)} строк")
                 
                     # Создаем итоговый DataFrame
                     output_df = pd.DataFrame()
