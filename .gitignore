@@ -35,3 +35,6 @@ coverage.xml
 # Logs
 logs/
 *.log
+
+# Security scan reports
+pip_audit_report.json
