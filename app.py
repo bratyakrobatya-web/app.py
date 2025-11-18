@@ -50,622 +50,13 @@ st.set_page_config(
 )
 
 # Кастомный CSS для современного дизайна
-st.markdown("""
-<style>
-    /* Подключение шрифта Golos Text через Google Fonts - ДОЛЖНО БЫТЬ ПЕРВЫМ */
-    @import url('https://fonts.googleapis.com/css2?family=Golos+Text:wght@400&display=swap');
+# Безопасная загрузка CSS из отдельного файла
+css_content = safe_read_file("static/styles.css")
+if css_content:
+    st.markdown(f"<style>{css_content}</style>", unsafe_allow_html=True)
+else:
+    logger.error("Не удалось загрузить static/styles.css, стили не применены")
 
-    /* =============================================== */
-    /* CSS ПЕРЕМЕННЫЕ ДЛЯ ГРАДИЕНТА */
-    /* =============================================== */
-    :root {
-        /* Базовый красный цвет для кнопок */
-        --button-color: #f4301f;
-        --button-hover: #d32f2f;
-
-        /* Цвета для UI элементов (красный) */
-        --ui-color: #f4301f;
-        --ui-shadow: rgba(244, 48, 31, 0.25);
-        --ui-shadow-hover: rgba(244, 48, 31, 0.35);
-
-        /* Цвета для кнопок (красный) */
-        --primary-color: #f4301f;
-        --primary-dark: #d32f2f;
-
-        /* Тени для кнопок - красный */
-        --shadow-primary: rgba(244, 48, 31, 0.25);
-        --shadow-hover: rgba(244, 48, 31, 0.35);
-        --shadow-glow: 0 6px 20px rgba(244, 48, 31, 0.35);
-
-        }
-
-    /* Анимация для логотипа */
-    @keyframes rotate {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
-
-    .rotating-earth {
-        display: inline-block;
-        animation: rotate 6s linear infinite;
-        vertical-align: middle;
-        margin-right: 8px;
-        width: 1em;
-        height: 1em;
-    }
-
-    .rotating-earth img {
-        width: 100%;
-        height: 100%;
-        display: block;
-        filter: brightness(0) saturate(100%) invert(24%) sepia(95%) saturate(3456%) hue-rotate(353deg) brightness(99%) contrast(93%);
-    }
-
-    /* Круги с цифрами с градиентом */
-    .step-number {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        background: transparent;
-        color: var(--ui-color);
-        border: 2px solid var(--ui-color);
-        border-radius: 50%;
-        font-family: 'Golos Text' !important;
-        font-weight: normal;
-        font-size: 16px;
-        margin-right: 8px;
-        vertical-align: middle;
-    }
-
-    /* Белая галочка в круге с градиентом */
-    .check-circle {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 20px;
-        height: 20px;
-        background: var(--ui-color);
-        color: white;
-        border-radius: 50%;
-        font-family: 'Golos Text' !important;
-        font-weight: normal;
-        font-size: 14px;
-        margin-right: 8px;
-        vertical-align: middle;
-    }
-
-    .main-title {
-        display: inline-block;
-        font-family: 'Golos Text' !important;
-        font-size: 3em;
-        font-weight: normal;
-        vertical-align: middle;
-        margin: 0;
-        color: var(--ui-color);
-    }
-
-    .title-container {
-        display: flex;
-        align-items: center;
-        margin-bottom: 20px;
-    }
-
-    /* Адаптация логотипа для sidebar */
-    [data-testid="stSidebar"] .rotating-earth {
-        width: 0.67em;
-        height: 0.67em;
-        margin-right: 6px;
-    }
-
-    [data-testid="stSidebar"] .main-title {
-        font-size: 1.5em;
-    }
-
-    /* Базовые стили */
-    html, body, [class*="css"] {
-        font-family: 'Golos Text' !important;
-        font-size: 14px;
-    }
-
-    /* Применяем шрифт ко всем элементам Streamlit, кроме иконок */
-    .stButton button, .stDownloadButton button,
-    .stTextInput input, .stSelectbox, .stMultiSelect,
-    .stTextArea textarea, .stNumberInput input,
-    [data-testid="stFileUploader"], .uploadedFileName,
-    p, div, label, h1, h2, h3, h4, h5, h6 {
-        font-family: 'Golos Text' !important;
-    }
-
-    /* Исключаем иконочные шрифты из глобального применения */
-    span[data-icon], span[class*="icon"], span.material-icons, span[class*="material"],
-    button span[data-icon], button span[class*="icon"],
-    [data-testid="collapsedControl"] span,
-    [data-testid="stSidebarCollapsedControl"] span {
-        font-family: 'Material Symbols Outlined', 'Material Icons', system-ui ;
-    }
-
-    /* Улучшение качества изображений - максимальная четкость */
-    img {
-        image-rendering: high-quality;
-        image-rendering: -webkit-optimize-contrast;
-        -ms-interpolation-mode: bicubic;
-        max-width: 100%;
-        height: auto;
-    }
-
-    /* Специально для логотипа в sidebar - ультра-качество */
-    [data-testid="stSidebar"] img {
-        image-rendering: high-quality ;
-        image-rendering: -webkit-optimize-contrast ;
-        backface-visibility: hidden;
-        transform: translateZ(0);
-        -webkit-font-smoothing: antialiased;
-        will-change: transform;
-        filter: contrast(1.02) saturate(1.05);
-    }
-
-    .block-container {
-        padding-top: 2rem;
-        padding-bottom: 2rem;
-        max-width: 1200px;
-    }
-
-    /* Заголовки */
-    h1 {
-        font-family: 'Golos Text' !important;
-        font-weight: normal;
-        color: #1a1a1a;
-        margin-bottom: 0.5rem;
-        font-size: 33px;
-    }
-
-    h2 {
-        font-family: 'Golos Text' !important;
-        font-weight: normal;
-        color: #2d2d2d;
-        margin-top: 2rem;
-        margin-bottom: 1rem;
-        font-size: 10px;
-    }
-
-    h3 {
-        font-family: 'Golos Text' !important;
-        font-weight: normal;
-        color: #4a4a4a;
-        font-size: 10px;
-    }
-
-    /* =============================================== */
-    /* СТИЛИ КНОПОК - ГРАДИЕНТНЫЙ СТИЛЬ ДЛЯ ВСЕХ КНОПОК */
-    /* =============================================== */
-
-    /* Все обычные кнопки (включая primary и secondary) - БАЗОВЫЙ КРАСНЫЙ */
-    .stButton>button {
-        border-radius: 20px ;
-        padding: 10px 20px ;
-        font-family: 'Golos Text' !important;
-        font-weight: normal ;
-        font-size: 14px ;
-        background: var(--button-color) ;
-        border: none ;
-        transition: all 0.3s ease ;
-        box-shadow: none ;
-        color: white ;
-        cursor: pointer ;
-    }
-
-    /* Текст внутри кнопок - Regular шрифт */
-    .stButton>button, .stButton>button span, .stButton>button p,
-    .stButton>button div, .stButton>button * {
-        font-family: 'Golos Text' !important;
-        font-weight: normal ;
-    }
-
-    .stButton>button:hover {
-        background: var(--button-hover) ;
-        transform: translateY(-2px) ;
-        box-shadow: var(--shadow-glow) ;
-        color: white ;
-    }
-
-    .stButton>button:active {
-        transform: translateY(0px) ;
-        box-shadow: none ;
-    }
-
-    /* Download кнопки - БАЗОВЫЙ КРАСНЫЙ */
-    .stDownloadButton>button {
-        border-radius: 20px ;
-        padding: 10px 20px ;
-        font-family: 'Golos Text' !important;
-        font-weight: normal ;
-        font-size: 14px ;
-        background: var(--button-color) ;
-        border: none ;
-        transition: all 0.3s ease ;
-        box-shadow: none ;
-        color: white ;
-        cursor: pointer ;
-    }
-
-    /* Текст внутри download кнопок - Regular шрифт */
-    .stDownloadButton>button, .stDownloadButton>button span, .stDownloadButton>button p,
-    .stDownloadButton>button div, .stDownloadButton>button * {
-        font-family: 'Golos Text' !important;
-        font-weight: normal ;
-    }
-
-    .stDownloadButton>button:hover {
-        background: var(--button-hover) ;
-        transform: translateY(-2px) ;
-        box-shadow: var(--shadow-glow) ;
-        color: white ;
-    }
-
-    .stDownloadButton>button:active {
-        transform: translateY(0px) ;
-        box-shadow: none ;
-    }
-
-    /* Tab кнопки - размер как обычные кнопки */
-    .stTabs [data-baseweb="tab-list"] button {
-        padding: 10px 20px ;
-        font-size: 14px ;
-        font-family: 'Golos Text' !important;
-        font-weight: normal ;
-    }
-
-    /* File Uploader */
-    [data-testid="stFileUploader"] {
-        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-        border: 2px dashed #adb5bd;
-        border-radius: 16px;
-        padding: 2.5rem;
-        transition: all 0.3s ease;
-    }
-
-    [data-testid="stFileUploader"]:hover {
-        border-color: var(--ui-color);
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-    }
-
-    /* Центрирование содержимого file uploader */
-    [data-testid="stFileUploader"] > div {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
-
-
-    .uploadedFileName {
-        color: var(--ui-color);
-        font-weight: normal;
-    }
-
-    /* Inputs - Selectbox с черной окантовкой */
-    div[data-baseweb="select"] > div,
-    .stSelectbox > div > div,
-    [data-testid="stSelectbox"] > div > div {
-        position: relative;
-        border: 2px solid #1a1a1a ;
-        border-radius: 10px ;
-        background: white ;
-        transition: all 0.3s ease ;
-        cursor: pointer ;
-    }
-
-    div[data-baseweb="select"] > div:hover,
-    .stSelectbox:hover > div > div,
-    [data-testid="stSelectbox"]:hover > div > div {
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-        filter: brightness(1.02);
-    }
-
-    div[data-baseweb="select"] > div:focus-within,
-    .stSelectbox > div > div:focus-within,
-    [data-testid="stSelectbox"] > div > div:focus-within {
-        box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1) ;
-    }
-
-    .stTextInput > div > div {
-        border-radius: 10px;
-        border: 1px solid #dee2e6;
-    }
-
-    /* MultiSelect с черной окантовкой */
-    [data-testid="stMultiSelect"] [data-baseweb="select"] > div {
-        border: 2px solid #1a1a1a ;
-        border-radius: 10px ;
-        background: white ;
-        transition: all 0.3s ease ;
-        cursor: pointer ;
-    }
-
-    [data-testid="stMultiSelect"] [data-baseweb="select"] > div:hover {
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-        filter: brightness(1.02);
-    }
-
-    /* Информационные блоки - С ГРАДИЕНТОМ */
-    .stInfo {
-        background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%) ;
-        border-left: 5px solid var(--ui-color) ;
-        border-radius: 10px;
-        padding: 1rem;
-    }
-
-    .stSuccess {
-        background: rgba(244, 48, 31, 0.1) ;
-        border: 2px solid var(--ui-color) ;
-        border-radius: 10px;
-        padding: 1rem;
-        color: #1a1a1a ;
-    }
-
-    .stSuccess > div {
-        color: #1a1a1a ;
-    }
-
-    .stSuccess p, .stSuccess strong {
-        color: #1a1a1a ;
-    }
-
-    .stWarning {
-        background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%) ;
-        border-left: 5px solid var(--ui-color) ;
-        border-radius: 10px;
-        padding: 1rem;
-    }
-
-    .stError {
-        background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%) ;
-        border-left: 5px solid var(--ui-color) ;
-        border-radius: 10px;
-        padding: 1rem;
-    }
-
-    /* Sidebar */
-    [data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
-        border-right: 1px solid #e9ecef;
-    }
-
-    [data-testid="stSidebar"] h1 {
-        font-size: 1.5rem;
-        padding-bottom: 1rem;
-        border-bottom: 2px solid var(--ui-color);
-    }
-
-    /* Expander */
-    .streamlit-expanderHeader {
-        background: #f8f9fa;
-        border-radius: 10px;
-        font-weight: normal;
-        border: 1px solid #e9ecef;
-    }
-
-    .streamlit-expanderHeader:hover {
-        background: #e9ecef;
-    }
-
-    /* Slider - простой стиль */
-    .stSlider > div > div {
-        background: #dee2e6 ;
-        height: 4px ;
-    }
-
-    /* Slider - активная часть с градиентом */
-    .stSlider > div > div > div {
-        background: var(--ui-color) ;
-    }
-
-    /* Тумблер слайдера - простой круг */
-    .stSlider > div > div > div > div {
-        background-color: white ;
-        border: 2px solid var(--ui-color) ;
-        height: 20px ;
-    }
-
-    .stSlider > div > div > div > div:hover {
-        background-color: white ;
-        box-shadow: 0 0 8px var(--ui-shadow) ;
-        border: 2px solid var(--ui-color) ;
-    }
-
-    /* Вкладки */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 12px;
-        background: transparent;
-    }
-
-    .stTabs [data-baseweb="tab"] {
-        height: 60px;
-        padding: 0px 24px;
-        border-radius: 10px 10px 0 0;
-        font-weight: normal;
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-bottom: none;
-        font-size: 20px;
-        transition: all 0.3s ease;
-    }
-
-    .stTabs [aria-selected="true"] {
-        background: var(--ui-color);
-        color: white;
-        border-bottom: 2px solid var(--ui-color);
-    }
-
-    .stTabs [data-baseweb="tab"]:hover {
-        background: #e9ecef;
-    }
-
-    .stTabs [aria-selected="true"]:hover {
-        filter: brightness(1.1);
-    }
-
-    /* DataFrame */
-    [data-testid="stDataFrame"] {
-        border-radius: 10px;
-        overflow: hidden;
-        border: 1px solid #e9ecef;
-    }
-
-    [data-testid="stDataFrameResizable"] {
-        border-radius: 10px;
-    }
-
-    /* Checkbox */
-    div.stCheckbox {
-        padding: 0.5rem;
-        border-radius: 8px;
-        transition: background 0.2s ease;
-    }
-
-    div.stCheckbox:hover {
-        background: #f8f9fa;
-    }
-
-    /* Метрики */
-    .stMetric {
-        background: white;
-        padding: 1rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-        border: 1px solid #f0f0f0;
-    }
-
-    /* Прогресс бар - базовый черный цвет вместо оранжевого */
-    .stProgress > div > div > div > div {
-        background-color: #1a1a1a ;
-    }
-
-    .stProgress [data-testid="stProgressBar"] > div > div {
-        background-color: #1a1a1a ;
-    }
-
-    /* Divider */
-    hr {
-        margin: 2rem 0;
-        border: none;
-        height: 2px;
-        background: linear-gradient(90deg, transparent 0%, #dee2e6 50%, transparent 100%);
-    }
-
-
-    /* Кнопка Browse files в File Uploader - базовый красный */
-    [data-testid="stFileUploader"] button {
-        background: var(--button-color) ;
-        border: none ;
-        color: white ;
-        border-radius: 20px ;
-        padding: 10px 20px ;
-        font-weight: normal ;
-        font-size: 14px ;
-        transition: all 0.3s ease ;
-        cursor: pointer ;
-    }
-
-    [data-testid="stFileUploader"] button:hover {
-        background: var(--button-hover) ;
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-glow) ;
-    }
-
-    /* Теги в мультиселекте - красный цвет вместо оранжевого */
-    [data-testid="stMultiSelect"] span[data-baseweb="tag"] {
-        background-color: var(--ui-color) ;
-        color: white ;
-        border-radius: 6px;
-    }
-
-    [data-testid="stMultiSelect"] span[data-baseweb="tag"]:hover {
-        background-color: #d42817 ;
-    }
-
-    /* Глобальные стили для ссылок - черный цвет вместо оранжевого */
-    a {
-        color: #1a1a1a ;
-        text-decoration: none;
-    }
-
-    a:hover {
-        color: #000000 ;
-        text-decoration: none ;
-    }
-
-    a:visited {
-        color: #1a1a1a ;
-    }
-
-    /* =============================================== */
-    /* СТИЛЬ МАТРИЦЫ ДЛЯ БЛОКА КОДА В СВЕРКАХ */
-    /* =============================================== */
-
-    /* Контейнер для блоков кода в стиле Матрицы */
-    .matrix-code-section div[data-testid="stCodeBlock"] {
-        max-height: 250px !important;
-        overflow-y: auto !important;
-        background-color: #000000 !important;
-        border: 1px solid #00FF00 !important;
-    }
-
-    /* Кнопка копирования */
-    .matrix-code-section div[data-testid="stCodeBlock"] button {
-        background-color: #f4301f !important;
-        color: white !important;
-        border: 2px solid #c42d1a !important;
-        font-weight: bold !important;
-        transition: all 0.3s ease !important;
-        padding: 8px 16px !important;
-    }
-
-    .matrix-code-section div[data-testid="stCodeBlock"] button:hover {
-        background-color: #c42d1a !important;
-        transform: scale(1.05) !important;
-        box-shadow: 0 4px 12px rgba(244, 48, 31, 0.4) !important;
-    }
-
-    /* Стиль Матрицы для поля кода - максимальная специфичность */
-    .matrix-code-section div[data-testid="stCodeBlock"] pre,
-    .matrix-code-section div[data-testid="stCodeBlock"] pre[class],
-    .matrix-code-section [data-testid="stCodeBlock"] pre {
-        background-color: #000000 !important;
-        background: #000000 !important;
-        color: #00FF00 !important;
-        font-family: 'Courier New', Consolas, Monaco, monospace !important;
-        text-shadow: 0 0 5px #00FF00 !important;
-    }
-
-    .matrix-code-section div[data-testid="stCodeBlock"] code,
-    .matrix-code-section div[data-testid="stCodeBlock"] code[class],
-    .matrix-code-section [data-testid="stCodeBlock"] code {
-        background-color: #000000 !important;
-        background: #000000 !important;
-        color: #00FF00 !important;
-        font-family: 'Courier New', Consolas, Monaco, monospace !important;
-    }
-
-    .matrix-code-section div[data-testid="stCodeBlock"] pre code,
-    .matrix-code-section [data-testid="stCodeBlock"] pre code {
-        background-color: #000000 !important;
-        background: #000000 !important;
-        color: #00FF00 !important;
-    }
-
-    /* Переопределяем стили для всех дочерних элементов */
-    .matrix-code-section [data-testid="stCodeBlock"] * {
-        background-color: #000000 !important;
-    }
-
-    .matrix-code-section [data-testid="stCodeBlock"] span {
-        color: #00FF00 !important;
-    }
-
-</style>
-""", unsafe_allow_html=True)
 
 # Инициализация session_state
 if 'result_df' not in st.session_state:
@@ -1040,7 +431,8 @@ def get_cities_by_regions(hh_areas, selected_regions):
                         sign = 1 if utc_offset[0] == '+' else -1
                         hours = int(utc_offset[1:3])
                         city_offset_hours = sign * hours
-                    except:
+                    except (ValueError, IndexError, TypeError) as e:
+                        logger.warning(f"Не удалось распарсить UTC offset '{utc_offset}': {e}")
                         city_offset_hours = 0
 
                 diff_with_moscow = city_offset_hours - moscow_offset
@@ -1139,7 +531,8 @@ def get_all_cities(hh_areas):
                 sign = 1 if utc_offset[0] == '+' else -1
                 hours = int(utc_offset[1:3])
                 city_offset_hours = sign * hours
-            except:
+            except (ValueError, IndexError, TypeError) as e:
+                logger.warning(f"Не удалось распарсить UTC offset '{utc_offset}': {e}")
                 city_offset_hours = 0
 
         diff_with_moscow = city_offset_hours - moscow_offset
@@ -1813,6 +1206,8 @@ if hh_areas:
         with col1:
             # Для публикатора (только названия городов)
             publisher_df = pd.DataFrame({'Город': selected_cities_df['Город']})
+            # Санитизация данных перед экспортом (защита от CSV Injection)
+            publisher_df = sanitize_csv_content(publisher_df)
             output_pub = io.BytesIO()
             with pd.ExcelWriter(output_pub, engine='openpyxl') as writer:
                 publisher_df.to_excel(writer, index=False, header=False, sheet_name='Гео')
@@ -1828,9 +1223,11 @@ if hh_areas:
             )
         with col2:
             # Полный отчет с ID и регионами
+            # Санитизация данных перед экспортом (защита от CSV Injection)
+            safe_cities_df = sanitize_csv_content(selected_cities_df.copy())
             output_full = io.BytesIO()
             with pd.ExcelWriter(output_full, engine='openpyxl') as writer:
-                selected_cities_df.to_excel(writer, index=False, sheet_name='Города')
+                safe_cities_df.to_excel(writer, index=False, sheet_name='Города')
             output_full.seek(0)
             st.download_button(
                 label=f"📥 Полный отчет ({len(selected_cities)} городов)",
@@ -1854,6 +1251,8 @@ if hh_areas:
                 col1, col2 = st.columns(2)
                 with col1:
                     publisher_df = pd.DataFrame({'Город': all_cities_df['Город']})
+                    # Санитизация данных перед экспортом (защита от CSV Injection)
+                    publisher_df = sanitize_csv_content(publisher_df)
                     output_pub = io.BytesIO()
                     with pd.ExcelWriter(output_pub, engine='openpyxl') as writer:
                         publisher_df.to_excel(writer, index=False, header=False, sheet_name='Гео')
@@ -1868,9 +1267,11 @@ if hh_areas:
                         key="download_all_publisher"
                     )
                 with col2:
+                    # Санитизация данных перед экспортом (защита от CSV Injection)
+                    safe_all_cities_df = sanitize_csv_content(all_cities_df.copy())
                     output_full = io.BytesIO()
                     with pd.ExcelWriter(output_full, engine='openpyxl') as writer:
-                        all_cities_df.to_excel(writer, index=False, sheet_name='Города')
+                        safe_all_cities_df.to_excel(writer, index=False, sheet_name='Города')
                     output_full.seek(0)
                     st.download_button(
                         label=f"📥 Скачать полный отчет ({len(all_cities_df)} городов)",
@@ -2048,32 +1449,7 @@ with st.sidebar:
 
     st.markdown("### 🧭 Навигация")
 
-    # Стили для якорной навигации
-    st.markdown("""
-    <style>
-    .nav-link {
-        display: block;
-        padding: 0.4rem 0.75rem;
-        margin: 0.2rem 0;
-        background: #f8f9fa;
-        border-radius: 6px;
-        border-left: 3px solid var(--ui-color);
-        text-decoration: none !important;
-        color: #1a1a1a !important;
-        font-weight: normal;
-        font-size: 0.9rem;
-        transition: all 0.3s ease;
-    }
-    .nav-link:hover {
-        background: var(--button-hover);
-        color: white !important;
-        transform: translateX(5px);
-        border-left: 3px solid transparent;
-    }
-    </style>
-    """, unsafe_allow_html=True)
-
-    # Якорная навигация
+    # Якорная навигация (стили в static/styles.css)
     nav_items = [
         ("Проверка гео и выгрузка базы", "проверка-гео"),
         ("Синхронизатор городов", "синхронизатор-городов"),
@@ -2124,6 +1500,28 @@ uploaded_files = st.file_uploader(
 
 if uploaded_files and hh_areas is not None:
     st.markdown("---")
+
+    # Валидация размера и расширения файлов
+    files_valid = True
+    for uploaded_file in uploaded_files:
+        # Проверка размера
+        is_valid_size, error_msg = validate_file_size(uploaded_file.size)
+        if not is_valid_size:
+            st.error(f"❌ {uploaded_file.name}: {error_msg}")
+            logger.warning(f"Файл отклонен (размер): {uploaded_file.name} ({uploaded_file.size} байт)")
+            log_security_event('file_size_exceeded', f"{uploaded_file.name}: {uploaded_file.size} байт", 'WARNING')
+            files_valid = False
+
+        # Проверка расширения
+        is_valid_ext, error_msg = validate_file_extension(uploaded_file.name, ['.xlsx', '.csv'])
+        if not is_valid_ext:
+            st.error(f"❌ {uploaded_file.name}: {error_msg}")
+            logger.warning(f"Файл отклонен (расширение): {uploaded_file.name}")
+            log_security_event('invalid_file_extension', uploaded_file.name, 'WARNING')
+            files_valid = False
+
+    if not files_valid:
+        st.stop()
 
     try:
         # Обрабатываем все загруженные файлы
@@ -3661,8 +3059,9 @@ if hh_areas is not None:
 
                     timezone_options_formatted.append(formatted)
                     timezone_mapping[formatted] = tz
-                except:
+                except (ValueError, IndexError, TypeError) as e:
                     # Если не удалось распарсить, добавляем как есть
+                    logger.warning(f"Не удалось распарсить timezone '{tz}': {e}")
                     timezone_options_formatted.append(tz)
                     timezone_mapping[tz] = tz
 
@@ -3924,6 +3323,28 @@ uploaded_files = st.file_uploader(
 )
 
 if uploaded_files:
+    # Валидация размера и расширения файлов
+    files_valid = True
+    for uploaded_file in uploaded_files:
+        # Проверка размера
+        is_valid_size, error_msg = validate_file_size(uploaded_file.size)
+        if not is_valid_size:
+            st.error(f"❌ {uploaded_file.name}: {error_msg}")
+            logger.warning(f"Файл отклонен (размер): {uploaded_file.name} ({uploaded_file.size} байт)")
+            log_security_event('file_size_exceeded', f"{uploaded_file.name}: {uploaded_file.size} байт", 'WARNING')
+            files_valid = False
+
+        # Проверка расширения
+        is_valid_ext, error_msg = validate_file_extension(uploaded_file.name, ['.xlsx', '.xls', '.xlsm', '.xlsb', '.csv'])
+        if not is_valid_ext:
+            st.error(f"❌ {uploaded_file.name}: {error_msg}")
+            logger.warning(f"Файл отклонен (расширение): {uploaded_file.name}")
+            log_security_event('invalid_file_extension', uploaded_file.name, 'WARNING')
+            files_valid = False
+
+    if not files_valid:
+        st.stop()
+
     try:
         with st.spinner("Обрабатываем файлы..."):
             # Читаем все файлы
