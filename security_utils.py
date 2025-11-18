@@ -244,6 +244,55 @@ def sanitize_html(text: str) -> str:
     return html.escape(str(text))
 
 
+def sanitize_user_input(text: str, max_length: int = 1000, allow_html: bool = False) -> str:
+    """
+    Комплексная санитизация пользовательского ввода
+
+    Защита от:
+    - XSS (Cross-Site Scripting)
+    - SQL Injection
+    - Command Injection
+    - Path Traversal
+    - Excessive length (DoS)
+
+    Args:
+        text: Входной текст от пользователя
+        max_length: Максимальная длина текста
+        allow_html: Разрешить HTML теги (по умолчанию False)
+
+    Returns:
+        Sanitized текст
+    """
+    if not text:
+        return ""
+
+    # Конвертируем в строку
+    text = str(text)
+
+    # Ограничиваем длину для защиты от DoS
+    if len(text) > max_length:
+        logger.warning(f"User input truncated from {len(text)} to {max_length} chars")
+        log_security_event('input_truncated', f"Length: {len(text)}", 'WARNING')
+        text = text[:max_length]
+
+    # Удаляем null bytes (защита от различных инъекций)
+    text = text.replace('\x00', '')
+
+    # Удаляем опасные последовательности для path traversal
+    dangerous_patterns = ['../', '..\\', '%2e%2e/', '%2e%2e\\']
+    for pattern in dangerous_patterns:
+        text = text.replace(pattern, '')
+
+    # Экранируем HTML если не разрешен
+    if not allow_html:
+        text = html.escape(text)
+
+    # Удаляем управляющие символы (кроме \n, \r, \t)
+    text = ''.join(char for char in text if char in '\n\r\t' or not (0 <= ord(char) < 32))
+
+    return text.strip()
+
+
 def sanitize_csv_content(df) -> Any:
     """
     Защита от CSV injection (формулы Excel)
@@ -563,3 +612,39 @@ def validate_dataframe_size(df, max_rows: int = MAX_ROWS_PER_FILE,
         error = f"Ошибка валидации DataFrame: {e}"
         logger.error(error, exc_info=True)
         return False, error
+
+
+# ============================================================================
+# PRODUCTION ERROR HANDLING
+# ============================================================================
+
+def handle_production_error(error: Exception, user_message: str = "Произошла ошибка при обработке данных",
+                           context: str = "") -> str:
+    """
+    Обработка ошибок для production режима с безопасными сообщениями
+
+    В production режиме скрывает технические детали от пользователя,
+    но полностью логирует ошибку для debugging.
+
+    Args:
+        error: Исключение
+        user_message: Безопасное сообщение для пользователя
+        context: Контекст где произошла ошибка
+
+    Returns:
+        Безопасное сообщение для отображения пользователю
+    """
+    # Полное логирование для админов
+    logger.error(f"Error in {context}: {type(error).__name__}: {str(error)}", exc_info=True)
+    log_security_event('production_error', f"Context: {context}, Type: {type(error).__name__}", 'ERROR')
+
+    # Безопасное сообщение для пользователя (без технических деталей)
+    import os
+    is_production = os.getenv('STREAMLIT_ENV', 'production') == 'production'
+
+    if is_production:
+        # Production: показываем только общее сообщение
+        return f"⚠️ {user_message}. Пожалуйста, попробуйте снова или обратитесь в поддержку."
+    else:
+        # Development: показываем детали для debugging
+        return f"⚠️ {user_message}\n\nДетали (dev mode): {type(error).__name__}: {str(error)}"
