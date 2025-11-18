@@ -205,6 +205,8 @@ if 'processed' not in st.session_state:
     st.session_state.processed = False
 if 'manual_selections' not in st.session_state:
     st.session_state.manual_selections = {}
+if 'pending_selections' not in st.session_state:
+    st.session_state.pending_selections = {}  # Временное хранилище для выборов БЕЗ rerun
 if 'candidates_cache' not in st.session_state:
     st.session_state.candidates_cache = {}
 if 'search_query' not in st.session_state:
@@ -992,17 +994,20 @@ if uploaded_files and hh_areas is not None:
                         st.info(f"Найдено **{len(editable_rows)}** городов, доступных для редактирования")
 
                         # ============================================
-                        # CALLBACK для предотвращения полного rerun
+                        # CALLBACK - сохраняет выбор БЕЗ rerun
                         # ============================================
                         def on_city_select(row_id, widget_key):
-                            """Callback вызывается только при изменении selectbox"""
+                            """
+                            Сохраняет выбор в ВРЕМЕННОЕ хранилище БЕЗ rerun.
+                            Изменения применятся только после нажатия кнопки "Применить".
+                            """
                             selected = st.session_state.get(widget_key)
                             if selected == "❌ Нет совпадения":
-                                st.session_state.manual_selections[row_id] = "❌ Нет совпадения"
+                                st.session_state.pending_selections[row_id] = "❌ Нет совпадения"
                             elif selected:
                                 # Извлекаем название без процента
                                 selected_city = selected.rsplit(' (', 1)[0]
-                                st.session_state.manual_selections[row_id] = selected_city
+                                st.session_state.pending_selections[row_id] = selected_city
 
                         # ============================================
                         # CSS вне цикла для улучшения производительности
@@ -1051,22 +1056,26 @@ if uploaded_files and hh_areas is not None:
                                 else:
                                     options = ["❌ Нет совпадения"]
 
-                                # Определяем выбранный элемент
-                                if row_id in st.session_state.manual_selections:
+                                # Определяем выбранный элемент (ПРИОРИТЕТ: pending > manual > current)
+                                selected_value = None
+                                if row_id in st.session_state.pending_selections:
+                                    # Показываем pending выбор (еще не применен)
+                                    selected_value = st.session_state.pending_selections[row_id]
+                                elif row_id in st.session_state.manual_selections:
+                                    # Показываем применённый выбор
                                     selected_value = st.session_state.manual_selections[row_id]
-                                    if selected_value == "❌ Нет совпадения":
-                                        default_idx = 0
-                                    else:
-                                        default_idx = 0
-                                        for i, c in enumerate(candidates):
-                                            if c[0] == selected_value:
-                                                default_idx = i + 1
-                                                break
+                                else:
+                                    # Показываем текущее совпадение
+                                    selected_value = current_value
+
+                                # Находим индекс в options
+                                if selected_value == "❌ Нет совпадения":
+                                    default_idx = 0
                                 else:
                                     default_idx = 0
-                                    if current_value:
+                                    if selected_value:
                                         for i, c in enumerate(candidates):
-                                            if c[0] == current_value:
+                                            if c[0] == selected_value:
                                                 default_idx = i + 1
                                                 break
 
@@ -1103,6 +1112,31 @@ if uploaded_files and hh_areas is not None:
 
                         # Закрываем обертку для черной окантовки
                         st.markdown('</div>', unsafe_allow_html=True)
+
+                        # ============================================
+                        # БЛОК: ПРИМЕНЕНИЕ ИЗМЕНЕНИЙ (без rerun на каждый выбор)
+                        # ============================================
+                        st.markdown("---")
+
+                        col_apply, col_info = st.columns([1, 2])
+                        with col_apply:
+                            pending_count = len(st.session_state.pending_selections)
+                            button_label = f"✅ Применить изменения ({pending_count})" if pending_count > 0 else "✅ Применить изменения"
+
+                            if st.button(button_label, use_container_width=True, type="primary", disabled=(pending_count == 0)):
+                                # Transfer pending selections to manual selections
+                                st.session_state.manual_selections.update(st.session_state.pending_selections)
+                                applied_count = len(st.session_state.pending_selections)
+                                st.session_state.pending_selections = {}
+                                st.success(f"✅ Применено изменений: {applied_count}")
+                                st.rerun()
+
+                        with col_info:
+                            pending_count = len(st.session_state.pending_selections)
+                            if pending_count > 0:
+                                st.info(f"📝 Выбрано городов: **{pending_count}**. Нажмите кнопку для применения.")
+                            else:
+                                st.info("ℹ️ Выберите города выше, затем примените изменения кнопкой.")
 
                         # ============================================
                         # БЛОК: ДОБАВЛЕНИЕ ЛЮБОГО ГОРОДА (только для НЕ split режима)
