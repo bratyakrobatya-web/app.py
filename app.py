@@ -8,6 +8,21 @@ import zipfile
 from datetime import datetime
 import os
 
+# Security utilities
+from security_utils import (
+    RateLimiter,
+    logger,
+    log_security_event,
+    sanitize_html,
+    sanitize_csv_content,
+    validate_file_size,
+    validate_file_extension,
+    MAX_FILE_SIZE,
+    MAX_FILES_COUNT,
+    ALLOWED_FILE_EXTENSIONS
+)
+from requests.exceptions import RequestException, Timeout, HTTPError
+
 # Version: 3.3.2 - Fixed: corrected all indentation in single mode block
 
 # ============================================
@@ -743,12 +758,79 @@ def normalize_city_name(text):
     text = re.sub(r'\s+', ' ', text)
     return text
 
-@st.cache_data(ttl=3600)  
-def get_hh_areas():  
-    """Получает справочник HH.ru"""  
-    response = requests.get('https://api.hh.ru/areas')  
-    data = response.json()  
-      
+@RateLimiter(max_calls=10, period=60)  # Rate limiting: макс 10 запросов в минуту
+@st.cache_data(ttl=3600)
+def get_hh_areas():
+    """
+    Получает справочник регионов из API HeadHunter
+
+    Returns:
+        dict: Справочник регионов или None в случае ошибки
+    """
+    url = 'https://api.hh.ru/areas'
+
+    try:
+        logger.info(f"Запрос к API HH: {url}")
+
+        # Безопасный HTTP запрос
+        response = requests.get(
+            url,
+            timeout=10,          # Защита от зависания
+            verify=True,         # Проверка SSL сертификата
+            headers={
+                'User-Agent': 'VRMultitool/3.3.2',
+                'Accept': 'application/json'
+            }
+        )
+
+        # Проверка HTTP статуса
+        response.raise_for_status()
+
+        # Валидация Content-Type
+        content_type = response.headers.get('Content-Type', '')
+        if 'application/json' not in content_type:
+            raise ValueError(f"Неверный Content-Type: {content_type}")
+
+        data = response.json()
+
+        # Валидация структуры данных
+        if not isinstance(data, list):
+            raise ValueError("API вернул некорректную структуру данных")
+
+        logger.info(f"Успешно получены данные от API HH ({len(data)} регионов)")
+
+    except Timeout:
+        error_msg = "Превышено время ожидания ответа от API HH.ru"
+        logger.error(error_msg)
+        log_security_event('api_timeout', url, 'ERROR')
+        st.error(f"⏱️ {error_msg}. Попробуйте позже.")
+        return None
+
+    except HTTPError as e:
+        error_msg = f"Ошибка HTTP {e.response.status_code}"
+        logger.error(f"{error_msg}: {url}")
+        log_security_event('api_http_error', f"{url}: {error_msg}", 'ERROR')
+        st.error(f"🌐 Не удалось получить данные от HH.ru (код {e.response.status_code})")
+        return None
+
+    except ValueError as e:
+        logger.error(f"Ошибка валидации данных от API: {e}")
+        log_security_event('api_validation_error', str(e), 'ERROR')
+        st.error("📊 Получены некорректные данные от API")
+        return None
+
+    except RequestException as e:
+        logger.error(f"Ошибка сети при запросе к API: {e}")
+        log_security_event('api_network_error', str(e), 'ERROR')
+        st.error("🌐 Ошибка сети. Проверьте подключение к интернету.")
+        return None
+
+    except Exception as e:
+        logger.critical(f"Неожиданная ошибка при запросе к API: {e}", exc_info=True)
+        log_security_event('api_unexpected_error', str(e), 'CRITICAL')
+        st.error("❌ Произошла неожиданная ошибка")
+        return None
+
     areas_dict = {}  
       
     def parse_areas(areas, parent_name="", parent_id="", root_parent_id=""):
@@ -1596,12 +1678,8 @@ except Exception as e:
     # Fallback если файл не найден
     SYNC_ICON = '🔄'
 
-# Загрузка справочника HH
-try:
-    hh_areas = get_hh_areas()
-except Exception as e:
-    st.error(f"❌ Ошибка загрузки справочника: {str(e)}")
-    hh_areas = None
+# Загрузка справочника HH (функция сама обрабатывает ошибки и логирует)
+hh_areas = get_hh_areas()
 
 # ============================================
 # ГЛАВНЫЙ ЗАГОЛОВОК
