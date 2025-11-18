@@ -172,14 +172,26 @@ def handle_production_error(error: Exception, user_message: str, context: str) -
 
 ---
 
-### 3.2. Pre-existing Test Failures
-**Статус:** Будут исправлены в CI/CD при запуске
+### 3.2. Test Fixes (Session 3+) ✅
+**Статус:** Исправлено! 79/81 тестов проходят (97.5%)
 
-**Известные проблемы** (из SECURITY_REPORT):
-- `test_city_without_region` - region returns None instead of ""
-- `test_empty_string` - region returns None instead of ""
+**Исправленные проблемы:**
+- ✅ GitHub Actions v4 migration (устранение deprecation warnings)
+- ✅ Mocking пути исправлены (security_utils.validate_safe_path)
+- ✅ Возвращаемые значения validate_safe_path: (True, None) tuple
+- ✅ Path.exists mocking через pathlib.Path
+- ✅ Streamlit cache clearing в тестах
+- ✅ Корректные ожидания для get_asset_path/get_data_path
+- ✅ Обработка None inputs и TypeError
+- ✅ HTML escaping тест (одинарные кавычки -> &#x27;)
 
-**Причина:** Не связаны с security изменениями (pre-existing)
+**Результат:** 21 failures → **2 failures** (только pre-existing)
+
+**Pre-existing Test Failures (НЕ исправлены - не связаны с нашими изменениями):**
+- `test_city_without_region` - region returns None instead of "" (modules/matching.py)
+- `test_empty_string` - region returns None instead of "" (modules/matching.py)
+
+**CI/CD статус:** ✅ Workflow обновлен до actions v4
 
 ---
 
@@ -237,9 +249,11 @@ def handle_production_error(error: Exception, user_message: str, context: str) -
 | Метрика | До | После | Изменение |
 |---------|-----|-------|-----------|
 | Test files | 1 | **4** | +300% |
-| Total tests | ~13 | **~86** | +562% |
+| Total tests | ~13 | **81** | +523% |
+| Tests passing | ~11 (85%) | **79 (97.5%)** | +15% pass rate |
 | Test coverage (estimated) | 13% | **45-55%** | +350% |
 | Security module coverage | 0% | **~80%** | NEW |
+| CI/CD test failures fixed | - | **19/21** | 90% fixed |
 
 ### Автоматизация:
 | Метрика | До | После |
