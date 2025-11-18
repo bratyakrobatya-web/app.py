@@ -1059,11 +1059,10 @@ if uploaded_files and hh_areas is not None:
 
                     st.dataframe(display_df, use_container_width=True, height=400, hide_index=True)  
               
-                    # FIX: Exclude duplicates AND "Not found" cities from editing
+                    # ИЗМЕНЕНО: Исключаем дубликаты из редактирования
                     editable_rows = result_df_sorted[
                         (result_df_sorted['Совпадение %'] <= 90) &
-                        (~result_df_sorted['Статус'].str.contains('Дубликат', na=False)) &
-                        (~result_df_sorted['Статус'].str.contains('❌ Не найдено', na=False))
+                        (~result_df_sorted['Статус'].str.contains('Дубликат', na=False))
                     ].copy()
 
                     # Сортируем: сначала "Нет совпадения", затем по возрастанию процента
@@ -1306,11 +1305,10 @@ if uploaded_files and hh_areas is not None:
                             result_df_sheet = sheet_result['result_df']
                             original_df_sheet = st.session_state.sheets_data[sheet_name]['df']
 
-                            # FIX: Exclude duplicates AND "Not found" cities from editing
+                            # Блок редактирования городов с совпадением ≤ 90%
                             editable_rows = result_df_sheet[
                                 (result_df_sheet['Совпадение %'] <= 90) &
-                                (~result_df_sheet['Статус'].str.contains('Дубликат', na=False)) &
-                                (~result_df_sheet['Статус'].str.contains('❌ Не найдено', na=False))
+                                (~result_df_sheet['Статус'].str.contains('Дубликат', na=False))
                             ].copy()
                             
                             if len(editable_rows) > 0:
@@ -1479,10 +1477,10 @@ if uploaded_files and hh_areas is not None:
                                 hh_areas
                             )
                             
-                            # Формируем итоговый файл для этой вкладки
+                            # FIX: Формируем итоговый файл для публикатора (исключаем не найденные)
                             output_sheet_df = result_df_sheet_final[
                                 (result_df_sheet_final['Итоговое гео'].notna()) &
-                                (~result_df_sheet_final['Статус'].str.contains('Не найдено', na=False)) &
+                                (~result_df_sheet_final['Статус'].str.contains('❌ Не найдено', na=False)) &
                                 (~result_df_sheet_final['Статус'].str.contains('Пустое значение', na=False))
                             ].copy()
                             
@@ -1615,11 +1613,7 @@ if uploaded_files and hh_areas is not None:
                                 # Показываем таблицу с возможностью редактирования
                                 st.markdown("#### Города для редактирования (совпадение ≤ 90%)")
                                 
-                                # FIX: Exclude "Not found" cities from editing
-                                editable_vacancy_rows = vacancy_df[
-                                    (vacancy_df['Совпадение %'] <= 90) &
-                                    (~vacancy_df['Статус'].str.contains('❌ Не найдено', na=False))
-                                ].copy()
+                                editable_vacancy_rows = vacancy_df[vacancy_df['Совпадение %'] <= 90].copy()
                                 
                                 # Убираем дубликаты по исходному названию для редактирования
                                 if len(editable_vacancy_rows) > 0:
@@ -1867,8 +1861,11 @@ if uploaded_files and hh_areas is not None:
                                     hh_areas
                                 )
                                 
-                                # Исключаем не найденные
-                                vacancy_final_df = vacancy_final_df[vacancy_final_df['Итоговое гео'].notna()].copy()
+                                # FIX: Исключаем не найденные (❌ Не найдено) для публикатора
+                                vacancy_final_df = vacancy_final_df[
+                                    (vacancy_final_df['Итоговое гео'].notna()) &
+                                    (~vacancy_final_df['Статус'].str.contains('❌ Не найдено', na=False))
+                                ].copy()
                                 
                                 # Формируем DataFrame для выгрузки
                                 output_vacancy_df = pd.DataFrame()
@@ -2178,12 +2175,13 @@ if uploaded_files and hh_areas is not None:
                 # ОБЫЧНЫЙ РЕЖИМ (как было раньше)
                 col1, col2 = st.columns(2)
                 
-                with col1:  
+                with col1:
                     # Формируем файл для публикатора с исходными столбцами
-                    # Исключаем не найденные и дубликаты
+                    # FIX: Исключаем не найденные (❌ Не найдено) и дубликаты
                     export_df = final_result_df[
-                        (~final_result_df['Статус'].str.contains('Дубликат', na=False)) & 
-                        (final_result_df['Итоговое гео'].notna())
+                        (~final_result_df['Статус'].str.contains('Дубликат', na=False)) &
+                        (final_result_df['Итоговое гео'].notna()) &
+                        (~final_result_df['Статус'].str.contains('❌ Не найдено', na=False))
                     ].copy()
                     
                     # Получаем названия столбцов из исходного файла
