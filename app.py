@@ -95,6 +95,48 @@ def get_russian_cities_cached(_hh_areas: Dict) -> List[str]:
     return get_russian_cities(_hh_areas)
 
 
+@st.cache_data(show_spinner=False)
+def prepare_city_options(candidates: tuple, current_value: str, current_match: float, city_name: str) -> tuple:
+    """
+    Кэшированная подготовка options для selectbox.
+
+    ОПТИМИЗАЦИЯ: избегаем пересоздания списков и сортировки на каждом rerun.
+    Используется tuple для candidates чтобы можно было кэшировать.
+
+    Args:
+        candidates: Кортеж кандидатов (city_name, match_percent)
+        current_value: Текущее значение гео
+        current_match: Процент совпадения текущего значения
+        city_name: Исходное название города
+
+    Returns:
+        tuple: (options, candidates_dict)
+            - options: список для selectbox
+            - candidates_dict: {city_name: index} для O(1) поиска
+    """
+    candidates_list = list(candidates)
+
+    # Добавляем текущее значение если его нет
+    if current_value and current_value != city_name:
+        candidate_names = [c[0] for c in candidates_list]
+        if current_value not in candidate_names:
+            candidates_list.append((current_value, current_match))
+
+    # Сортируем по убыванию процента
+    candidates_list.sort(key=lambda x: x[1], reverse=True)
+
+    # Формируем options
+    if candidates_list:
+        options = ["❌ Нет совпадения"] + [f"{c[0]} ({c[1]:.1f}%)" for c in candidates_list[:20]]
+    else:
+        options = ["❌ Нет совпадения"]
+
+    # Создаём словарь для O(1) поиска индекса по названию города
+    candidates_dict = {c[0]: i + 1 for i, c in enumerate(candidates_list[:20])}
+
+    return tuple(options), candidates_dict
+
+
 @st.cache_data(show_spinner="Загрузка справочника HH.ru...", ttl=3600)
 def get_hh_areas_cached() -> Optional[Dict]:
     """
@@ -1012,52 +1054,35 @@ if uploaded_files and hh_areas is not None:
                         for idx, row in editable_rows.iterrows():
                             with st.container():
                                 row_id = row['row_id']
-                                candidates = st.session_state.candidates_cache.get(row_id, [])
-
-                                # Если кандидатов нет в кэше, получаем их заново
-                                if not candidates:
-                                    city_name = row['Исходное название']
-                                    # Используем кэшированную версию для производительности
-                                    candidates = get_candidates_by_word(city_name, get_russian_cities_cached(hh_areas), limit=20)
-
+                                city_name = row['Исходное название']
                                 current_value = row['Итоговое гео']
                                 current_match = row['Совпадение %']
 
-                                # Добавляем текущее значение в список, если его нет
-                                if current_value and current_value != row['Исходное название']:
-                                    candidate_names = [c[0] for c in candidates]
-                                    if current_value not in candidate_names:
-                                        candidates.append((current_value, current_match))
+                                # Получаем кандидатов из кэша или вычисляем
+                                candidates = st.session_state.candidates_cache.get(row_id, [])
+                                if not candidates:
+                                    candidates = get_candidates_by_word(city_name, get_russian_cities_cached(hh_areas), limit=20)
 
-                                # Сортируем кандидатов по убыванию процента совпадения
-                                candidates.sort(key=lambda x: x[1], reverse=True)
+                                # Кэшированная подготовка options (избегаем повторных вычислений)
+                                options, candidates_dict = prepare_city_options(
+                                    tuple(candidates),  # tuple для кэширования
+                                    current_value,
+                                    current_match,
+                                    city_name
+                                )
 
-                                # Формируем список опций с процентами
-                                if candidates:
-                                    options = ["❌ Нет совпадения"] + [f"{c[0]} ({c[1]:.1f}%)" for c in candidates[:20]]
-                                else:
-                                    options = ["❌ Нет совпадения"]
-
-                                # Определяем выбранный элемент - ЧИТАЕМ ИЗ ТЕКУЩЕГО ЗНАЧЕНИЯ SELECTBOX
+                                # Определяем выбранное значение
                                 widget_key = f"select_{row_id}"
-                                selected_value_in_widget = st.session_state.get(widget_key)
-
-                                # Определяем default index
                                 if row_id in st.session_state.manual_selections:
                                     selected_value = st.session_state.manual_selections[row_id]
                                 else:
                                     selected_value = current_value
 
-                                # Находим индекс в options
+                                # Быстрый поиск индекса O(1) вместо O(n)
                                 if selected_value == "❌ Нет совпадения":
                                     default_idx = 0
                                 else:
-                                    default_idx = 0
-                                    if selected_value:
-                                        for i, c in enumerate(candidates):
-                                            if c[0] == selected_value:
-                                                default_idx = i + 1
-                                                break
+                                    default_idx = candidates_dict.get(selected_value, 0)
 
                                 col1, col2, col3, col4 = st.columns([2, 3, 1, 1])
 
@@ -1251,33 +1276,22 @@ if uploaded_files and hh_areas is not None:
                                 for idx, row in editable_rows.iterrows():
                                     row_id = row['row_id']
                                     city_name = row['Исходное название']
+                                    current_value = row['Итоговое гео']
+                                    current_match = row['Совпадение %']
 
                                     # Используем кэш кандидатов из smart_match_city
                                     cache_key = (sheet_name, row_id)
                                     candidates = st.session_state.candidates_cache.get(cache_key, [])
-
-                                    # Если кэша нет, ищем заново (для обратной совместимости)
                                     if not candidates:
-                                        # Используем кэшированную версию для производительности
                                         candidates = get_candidates_by_word(city_name, get_russian_cities_cached(hh_areas), limit=20)
 
-                                    current_value = row['Итоговое гео']
-                                    current_match = row['Совпадение %']
-
-                                    # Если есть текущее значение - добавляем в список
-                                    if current_value and current_value != city_name:
-                                        candidate_names = [c[0] for c in candidates]
-                                        if current_value not in candidate_names:
-                                            candidates.append((current_value, current_match))
-
-                                    # Сортируем кандидатов по убыванию процента совпадения
-                                    candidates.sort(key=lambda x: x[1], reverse=True)
-
-                                    # Формируем опции
-                                    if candidates:
-                                        options = ["❌ Нет совпадения"] + [f"{c[0]} ({c[1]:.1f}%)" for c in candidates[:20]]
-                                    else:
-                                        options = ["❌ Нет совпадения"]
+                                    # Кэшированная подготовка options (избегаем повторных вычислений)
+                                    options, candidates_dict = prepare_city_options(
+                                        tuple(candidates),
+                                        current_value,
+                                        current_match,
+                                        city_name
+                                    )
 
                                     # Определяем текущий выбор
                                     unique_key = f"select_{sheet_name}_{row_id}_{tab_idx}"
@@ -1285,24 +1299,14 @@ if uploaded_files and hh_areas is not None:
 
                                     if selection_key in st.session_state.manual_selections:
                                         selected_value = st.session_state.manual_selections[selection_key]
-                                        default_idx = 0
-                                        for i, opt in enumerate(options):
-                                            if selected_value in opt or opt.startswith(selected_value):
-                                                default_idx = i
-                                                break
                                     else:
-                                        default_idx = 0
-                                        if current_value:
-                                            for i, opt in enumerate(options):
-                                                if opt.startswith(current_value) or current_value in opt:
-                                                    default_idx = i
-                                                    break
+                                        selected_value = current_value
 
-                                    # Определяем цвет окантовки
-                                    if default_idx == 0:
-                                        border_color = "#ea3324"  # Красная для "Нет совпадения"
+                                    # Быстрый поиск индекса O(1)
+                                    if selected_value == "❌ Нет совпадения":
+                                        default_idx = 0
                                     else:
-                                        border_color = "#ea3324"  # Оранжевая для городов с процентом
+                                        default_idx = candidates_dict.get(selected_value, 0)
 
                                     col1, col2, col3 = st.columns([2, 3, 1])
 
@@ -1328,29 +1332,24 @@ if uploaded_files and hh_areas is not None:
                                 # Закрываем обертку для черной окантовки
                                 st.markdown('</div>', unsafe_allow_html=True)
 
-                            # Применяем ручные изменения
-                            result_df_sheet_final = result_df_sheet.copy()
+                            # Применяем ручные изменения через КЭШИРОВАННУЮ функцию
+                            # Фильтруем только изменения для текущей вкладки
+                            sheet_selections = {}
                             for selection_key, new_value in st.session_state.manual_selections.items():
-                                # selection_key это кортеж (sheet_name, row_id) или просто row_id для старых данных
                                 if isinstance(selection_key, tuple):
                                     key_sheet_name, row_id = selection_key
-                                    # Применяем только для текущей вкладки
-                                    if key_sheet_name != sheet_name:
-                                        continue
+                                    if key_sheet_name == sheet_name:
+                                        sheet_selections[row_id] = new_value
                                 else:
-                                    # Для обратной совместимости - применяем как раньше
-                                    row_id = selection_key
+                                    # Для обратной совместимости
+                                    sheet_selections[selection_key] = new_value
 
-                                if row_id in result_df_sheet_final['row_id'].values:
-                                    mask = result_df_sheet_final['row_id'] == row_id
-
-                                    if new_value == "❌ Нет совпадения":
-                                        result_df_sheet_final.loc[mask, 'Итоговое гео'] = None
-                                    else:
-                                        result_df_sheet_final.loc[mask, 'Итоговое гео'] = new_value
-                                        if new_value in hh_areas:
-                                            result_df_sheet_final.loc[mask, 'ID HH'] = hh_areas[new_value]['id']
-                                            result_df_sheet_final.loc[mask, 'Регион'] = hh_areas[new_value]['parent']
+                            # Используем кэшированную функцию вместо цикла
+                            result_df_sheet_final = apply_manual_selections_cached(
+                                result_df_sheet,
+                                sheet_selections,
+                                hh_areas
+                            )
                             
                             # Формируем итоговый файл для этой вкладки
                             output_sheet_df = result_df_sheet_final[
@@ -1653,31 +1652,24 @@ if uploaded_files and hh_areas is not None:
                                 
                                 st.markdown("---")
                                 
-                                # Формируем итоговый DataFrame для этой вакансии
-                                vacancy_final_df = vacancy_df.copy()
-                                
-                                # Применяем ручные изменения ТОЛЬКО для строк этой вакансии
+                                # Применяем ручные изменения через КЭШИРОВАННУЮ функцию
+                                # Фильтруем только изменения для текущей вакансии
+                                vacancy_selections = {}
                                 for selection_key, new_value in st.session_state.manual_selections.items():
-                                    # selection_key это кортеж (vacancy, row_id) или просто row_id для старых данных
                                     if isinstance(selection_key, tuple):
                                         key_vacancy, row_id = selection_key
-                                        # Применяем только для текущей вакансии
-                                        if key_vacancy != vacancy:
-                                            continue
+                                        if key_vacancy == vacancy:
+                                            vacancy_selections[row_id] = new_value
                                     else:
-                                        # Для обратной совместимости - применяем как раньше
-                                        row_id = selection_key
+                                        # Для обратной совместимости
+                                        vacancy_selections[selection_key] = new_value
 
-                                    if row_id in vacancy_final_df['row_id'].values:
-                                        mask = vacancy_final_df['row_id'] == row_id
-
-                                        if new_value == "❌ Нет совпадения":
-                                            vacancy_final_df.loc[mask, 'Итоговое гео'] = None
-                                        else:
-                                            vacancy_final_df.loc[mask, 'Итоговое гео'] = new_value
-                                            if new_value in hh_areas:
-                                                vacancy_final_df.loc[mask, 'ID HH'] = hh_areas[new_value]['id']
-                                                vacancy_final_df.loc[mask, 'Регион'] = hh_areas[new_value]['parent']
+                                # Используем кэшированную функцию вместо цикла
+                                vacancy_final_df = apply_manual_selections_cached(
+                                    vacancy_df,
+                                    vacancy_selections,
+                                    hh_areas
+                                )
                                 
                                 # Исключаем не найденные
                                 vacancy_final_df = vacancy_final_df[vacancy_final_df['Итоговое гео'].notna()].copy()
@@ -1789,28 +1781,23 @@ if uploaded_files and hh_areas is not None:
                         result_df_sheet = sheet_result['result_df']
                         original_df_sheet = st.session_state.sheets_data[sheet_name]['df']
                         
-                        # Применяем изменения
+                        # Применяем изменения через КЭШИРОВАННУЮ функцию
+                        sheet_selections = {}
                         for selection_key, new_value in st.session_state.manual_selections.items():
-                            # selection_key это кортеж (sheet_name, row_id) или просто row_id для старых данных
                             if isinstance(selection_key, tuple):
                                 key_sheet_name, row_id = selection_key
-                                # Применяем только для текущей вкладки
-                                if key_sheet_name != sheet_name:
-                                    continue
+                                if key_sheet_name == sheet_name:
+                                    sheet_selections[row_id] = new_value
                             else:
-                                # Для обратной совместимости - применяем как раньше
-                                row_id = selection_key
+                                # Для обратной совместимости
+                                sheet_selections[selection_key] = new_value
 
-                            if row_id in result_df_sheet['row_id'].values:
-                                mask = result_df_sheet['row_id'] == row_id
-
-                                if new_value == "❌ Нет совпадения":
-                                    result_df_sheet.loc[mask, 'Итоговое гео'] = None
-                                else:
-                                    result_df_sheet.loc[mask, 'Итоговое гео'] = new_value
-                                    if new_value in hh_areas:
-                                        result_df_sheet.loc[mask, 'ID HH'] = hh_areas[new_value]['id']
-                                        result_df_sheet.loc[mask, 'Регион'] = hh_areas[new_value]['parent']
+                        # Используем кэшированную функцию
+                        result_df_sheet = apply_manual_selections_cached(
+                            result_df_sheet,
+                            sheet_selections,
+                            hh_areas
+                        )
                         
                         # Формируем данные для этой вкладки
                         output_sheet = result_df_sheet[
@@ -1879,35 +1866,19 @@ if uploaded_files and hh_areas is not None:
                 else:
                     # Режим столбца вакансий - оригинальная логика
                 
-                    # Создаем копию result_df для применения изменений
-                    final_result_df = result_df.copy()
-                    
-                    # Применяем ручные изменения к final_result_df
-                    if st.session_state.manual_selections:
-                        for row_id, new_value in st.session_state.manual_selections.items():
-                            # row_id может быть кортежем (sheet_name, row_id) или просто значением
-                            if isinstance(row_id, tuple):
-                                # Для режима вакансий с листами - пропускаем, т.к. это другой блок
-                                continue
+                    # Применяем ручные изменения через КЭШИРОВАННУЮ функцию
+                    # Фильтруем только НЕ-кортежи (для режима columns без вкладок)
+                    simple_selections = {}
+                    for row_id, new_value in st.session_state.manual_selections.items():
+                        if not isinstance(row_id, tuple):
+                            simple_selections[row_id] = new_value
 
-                            mask = final_result_df['row_id'] == row_id
-
-                            if new_value == "❌ Нет совпадения":
-                                final_result_df.loc[mask, 'Итоговое гео'] = None
-                                final_result_df.loc[mask, 'ID HH'] = None
-                                final_result_df.loc[mask, 'Регион'] = None
-                                final_result_df.loc[mask, 'Совпадение %'] = 0
-                                final_result_df.loc[mask, 'Изменение'] = 'Нет'
-                                final_result_df.loc[mask, 'Статус'] = '❌ Не найдено'
-                            else:
-                                final_result_df.loc[mask, 'Итоговое гео'] = new_value
-
-                                if new_value in hh_areas:
-                                    final_result_df.loc[mask, 'ID HH'] = hh_areas[new_value]['id']
-                                    final_result_df.loc[mask, 'Регион'] = hh_areas[new_value]['parent']
-
-                                original = final_result_df.loc[mask, 'Исходное название'].values[0]
-                                final_result_df.loc[mask, 'Изменение'] = 'Да' if check_if_changed(original, new_value) else 'Нет'
+                    # Используем кэшированную функцию вместо цикла
+                    final_result_df = apply_manual_selections_cached(
+                        result_df,
+                        simple_selections,
+                        hh_areas
+                    )
                 
                     # Добавляем города из added_cities
                     if st.session_state.added_cities:
