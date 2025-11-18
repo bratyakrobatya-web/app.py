@@ -132,8 +132,17 @@ def extract_city_and_region(text: str) -> Tuple[str, Optional[str]]:
 def get_hh_areas() -> Dict:
     """Получает справочник HH.ru"""
     print("Загрузка справочника HH.ru...")
-    response = requests.get('https://api.hh.ru/areas')
-    data = response.json()
+    try:
+        response = requests.get(
+            'https://api.hh.ru/areas',
+            timeout=10,  # DoS protection
+            verify=True  # SSL verification
+        )
+        response.raise_for_status()
+        data = response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"❌ Ошибка загрузки справочника HH.ru: {e}")
+        return {}
 
     areas_dict = {}
 
