@@ -1006,113 +1006,93 @@ if uploaded_files and hh_areas is not None:
                         </style>
                         """, unsafe_allow_html=True)
 
-                        # ФОРМА - блокирует reruns до нажатия submit
-                        with st.form(key="edit_cities_form", clear_on_submit=False):
-                            # Обертка для черной окантовки
-                            st.markdown('<div class="edit-cities-block">', unsafe_allow_html=True)
+                        # Обертка для черной окантовки
+                        st.markdown('<div class="edit-cities-block">', unsafe_allow_html=True)
 
-                            for idx, row in editable_rows.iterrows():
-                                with st.container():
-                                    row_id = row['row_id']
-                                    candidates = st.session_state.candidates_cache.get(row_id, [])
-
-                                    # Если кандидатов нет в кэше, получаем их заново
-                                    if not candidates:
-                                        city_name = row['Исходное название']
-                                        # Используем кэшированную версию для производительности
-                                        candidates = get_candidates_by_word(city_name, get_russian_cities_cached(hh_areas), limit=20)
-
-                                    current_value = row['Итоговое гео']
-                                    current_match = row['Совпадение %']
-
-                                    # Добавляем текущее значение в список, если его нет
-                                    if current_value and current_value != row['Исходное название']:
-                                        candidate_names = [c[0] for c in candidates]
-                                        if current_value not in candidate_names:
-                                            candidates.append((current_value, current_match))
-
-                                    # Сортируем кандидатов по убыванию процента совпадения
-                                    candidates.sort(key=lambda x: x[1], reverse=True)
-
-                                    # Формируем список опций с процентами
-                                    if candidates:
-                                        options = ["❌ Нет совпадения"] + [f"{c[0]} ({c[1]:.1f}%)" for c in candidates[:20]]
-                                    else:
-                                        options = ["❌ Нет совпадения"]
-
-                                    # Определяем выбранный элемент (manual_selections)
-                                    selected_value = None
-                                    if row_id in st.session_state.manual_selections:
-                                        # Показываем применённый выбор
-                                        selected_value = st.session_state.manual_selections[row_id]
-                                    else:
-                                        # Показываем текущее совпадение
-                                        selected_value = current_value
-
-                                    # Находим индекс в options
-                                    if selected_value == "❌ Нет совпадения":
-                                        default_idx = 0
-                                    else:
-                                        default_idx = 0
-                                        if selected_value:
-                                            for i, c in enumerate(candidates):
-                                                if c[0] == selected_value:
-                                                    default_idx = i + 1
-                                                    break
-
-                                    col1, col2, col3, col4 = st.columns([2, 3, 1, 1])
-
-                                    with col1:
-                                        st.markdown(f"**{row['Исходное название']}**")
-
-                                    with col2:
-                                        widget_key = f"select_{row_id}"
-                                        st.selectbox(
-                                            "Выберите город:",
-                                            options=options,
-                                            index=default_idx,
-                                            key=widget_key,
-                                            label_visibility="collapsed"
-                                        )
-
-                                    with col3:
-                                        st.text(f"{row['Совпадение %']}%")
-
-                                    with col4:
-                                        st.text(row['Статус'])
-
-                                    st.markdown("<hr style='margin-top: 5px; margin-bottom: 5px;'>", unsafe_allow_html=True)
-
-                            # Закрываем обертку для черной окантовки
-                            st.markdown('</div>', unsafe_allow_html=True)
-
-                            # Submit button внутри формы
-                            st.markdown("---")
-                            submitted = st.form_submit_button("✅ Применить изменения", use_container_width=True, type="primary")
-
-                        # ============================================
-                        # ОБРАБОТКА SUBMIT ФОРМЫ
-                        # ============================================
-                        if submitted:
-                            # Читаем все selectbox значения из session_state
-                            applied_count = 0
-                            for idx, row in editable_rows.iterrows():
+                        for idx, row in editable_rows.iterrows():
+                            with st.container():
                                 row_id = row['row_id']
+                                candidates = st.session_state.candidates_cache.get(row_id, [])
+
+                                # Если кандидатов нет в кэше, получаем их заново
+                                if not candidates:
+                                    city_name = row['Исходное название']
+                                    # Используем кэшированную версию для производительности
+                                    candidates = get_candidates_by_word(city_name, get_russian_cities_cached(hh_areas), limit=20)
+
+                                current_value = row['Итоговое гео']
+                                current_match = row['Совпадение %']
+
+                                # Добавляем текущее значение в список, если его нет
+                                if current_value and current_value != row['Исходное название']:
+                                    candidate_names = [c[0] for c in candidates]
+                                    if current_value not in candidate_names:
+                                        candidates.append((current_value, current_match))
+
+                                # Сортируем кандидатов по убыванию процента совпадения
+                                candidates.sort(key=lambda x: x[1], reverse=True)
+
+                                # Формируем список опций с процентами
+                                if candidates:
+                                    options = ["❌ Нет совпадения"] + [f"{c[0]} ({c[1]:.1f}%)" for c in candidates[:20]]
+                                else:
+                                    options = ["❌ Нет совпадения"]
+
+                                # Определяем выбранный элемент - ЧИТАЕМ ИЗ ТЕКУЩЕГО ЗНАЧЕНИЯ SELECTBOX
                                 widget_key = f"select_{row_id}"
-                                selected = st.session_state.get(widget_key)
+                                selected_value_in_widget = st.session_state.get(widget_key)
 
-                                if selected == "❌ Нет совпадения":
-                                    st.session_state.manual_selections[row_id] = "❌ Нет совпадения"
-                                    applied_count += 1
-                                elif selected:
-                                    # Извлекаем название без процента
-                                    selected_city = selected.rsplit(' (', 1)[0]
-                                    st.session_state.manual_selections[row_id] = selected_city
-                                    applied_count += 1
+                                # Определяем default index
+                                if row_id in st.session_state.manual_selections:
+                                    selected_value = st.session_state.manual_selections[row_id]
+                                else:
+                                    selected_value = current_value
 
-                            if applied_count > 0:
-                                st.success(f"✅ Применено изменений: {applied_count}")
-                                st.rerun()
+                                # Находим индекс в options
+                                if selected_value == "❌ Нет совпадения":
+                                    default_idx = 0
+                                else:
+                                    default_idx = 0
+                                    if selected_value:
+                                        for i, c in enumerate(candidates):
+                                            if c[0] == selected_value:
+                                                default_idx = i + 1
+                                                break
+
+                                col1, col2, col3, col4 = st.columns([2, 3, 1, 1])
+
+                                with col1:
+                                    st.markdown(f"**{row['Исходное название']}**")
+
+                                with col2:
+                                    st.selectbox(
+                                        "Выберите город:",
+                                        options=options,
+                                        index=default_idx,
+                                        key=widget_key,
+                                        label_visibility="collapsed"
+                                    )
+
+                                with col3:
+                                    st.text(f"{row['Совпадение %']}%")
+
+                                with col4:
+                                    st.text(row['Статус'])
+
+                                st.markdown("<hr style='margin-top: 5px; margin-bottom: 5px;'>", unsafe_allow_html=True)
+
+                                # АВТОМАТИЧЕСКИ сохраняем в manual_selections при изменении
+                                current_selection = st.session_state.get(widget_key)
+                                if current_selection:
+                                    if current_selection == "❌ Нет совпадения":
+                                        st.session_state.manual_selections[row_id] = "❌ Нет совпадения"
+                                    else:
+                                        # Извлекаем название без процента
+                                        selected_city = current_selection.rsplit(' (', 1)[0]
+                                        st.session_state.manual_selections[row_id] = selected_city
+
+                        # Закрываем обертку для черной окантовки
+                        st.markdown('</div>', unsafe_allow_html=True)
 
                         # ============================================
                         # БЛОК: ДОБАВЛЕНИЕ ЛЮБОГО ГОРОДА (только для НЕ split режима)
