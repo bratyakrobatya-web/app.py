@@ -7,6 +7,7 @@ import re
 import zipfile
 from datetime import datetime
 import os
+from typing import Dict, List
 
 # Security utilities
 from security_utils import (
