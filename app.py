@@ -15,9 +15,14 @@ from security_utils import (
     logger,
     log_security_event,
     sanitize_html,
+    sanitize_user_input,
     sanitize_csv_content,
     validate_file_size,
     validate_file_extension,
+    safe_session_append,
+    cleanup_session_state,
+    check_session_state_limits,
+    handle_production_error,
     MAX_FILE_SIZE,
     MAX_FILES_COUNT,
     ALLOWED_FILE_EXTENSIONS
@@ -257,6 +262,12 @@ if 'original_df' not in st.session_state:
     st.session_state.original_df = None
 if 'export_mode' not in st.session_state:
     st.session_state.export_mode = None
+
+# Проверка лимитов session_state для предотвращения утечек памяти
+session_stats = check_session_state_limits()
+if session_stats['warnings']:
+    for warning in session_stats['warnings']:
+        logger.warning(f"Session state warning: {warning}")
 
 
 # ============================================
@@ -983,7 +994,9 @@ if uploaded_files and hh_areas is not None:
                         result_df_sorted = result_df_sorted[result_df_sorted['Статус'].isin(status_filter)]
 
                     if st.session_state.search_query and st.session_state.search_query.strip():
-                        search_lower = st.session_state.search_query.lower().strip()
+                        # Sanitization пользовательского ввода для защиты от инъекций
+                        sanitized_query = sanitize_user_input(st.session_state.search_query, max_length=200)
+                        search_lower = sanitized_query.lower().strip()
                         mask = result_df_sorted.apply(
                             lambda row: (
                                 search_lower in str(row['Исходное название']).lower() or
@@ -996,7 +1009,7 @@ if uploaded_files and hh_areas is not None:
                         result_df_filtered = result_df_sorted[mask]
 
                         if len(result_df_filtered) == 0:
-                            st.warning(f"По запросу **'{st.session_state.search_query}'** ничего не найдено")
+                            st.warning(f"По запросу **'{sanitized_query}'** ничего не найдено")
                         else:
                             st.info(f"Найдено совпадений: **{len(result_df_filtered)}** из {len(result_df)}")
                     else:
@@ -1627,8 +1640,12 @@ if uploaded_files and hh_areas is not None:
                                 with col_add_btn1:
                                     if st.button("➕ Добавить", use_container_width=True, type="secondary", key=f"add_btn_{vacancy}_{tab_idx}"):
                                         if selected_add_city and selected_add_city not in st.session_state[vacancy_key]:
-                                            st.session_state[vacancy_key].append(selected_add_city)
-                                            st.success(f"✅ {selected_add_city}")
+                                            # Безопасное добавление с проверкой лимитов
+                                            if safe_session_append(vacancy_key, selected_add_city):
+                                                st.success(f"✅ {selected_add_city}")
+                                            else:
+                                                st.error("⚠️ Достигнут лимит добавленных городов")
+                                                log_security_event('session_limit', f"Limit reached for {vacancy_key}", 'WARNING')
                                         elif selected_add_city in st.session_state[vacancy_key]:
                                             st.warning(f"⚠️ Уже добавлен")
 
