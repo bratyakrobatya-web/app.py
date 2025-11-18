@@ -1486,6 +1486,28 @@ uploaded_files = st.file_uploader(
 if uploaded_files and hh_areas is not None:
     st.markdown("---")
 
+    # Валидация размера и расширения файлов
+    files_valid = True
+    for uploaded_file in uploaded_files:
+        # Проверка размера
+        is_valid_size, error_msg = validate_file_size(uploaded_file.size)
+        if not is_valid_size:
+            st.error(f"❌ {uploaded_file.name}: {error_msg}")
+            logger.warning(f"Файл отклонен (размер): {uploaded_file.name} ({uploaded_file.size} байт)")
+            log_security_event('file_size_exceeded', f"{uploaded_file.name}: {uploaded_file.size} байт", 'WARNING')
+            files_valid = False
+
+        # Проверка расширения
+        is_valid_ext, error_msg = validate_file_extension(uploaded_file.name, ['.xlsx', '.csv'])
+        if not is_valid_ext:
+            st.error(f"❌ {uploaded_file.name}: {error_msg}")
+            logger.warning(f"Файл отклонен (расширение): {uploaded_file.name}")
+            log_security_event('invalid_file_extension', uploaded_file.name, 'WARNING')
+            files_valid = False
+
+    if not files_valid:
+        st.stop()
+
     try:
         # Обрабатываем все загруженные файлы
         sheets_data = {}
@@ -3285,6 +3307,28 @@ uploaded_files = st.file_uploader(
 )
 
 if uploaded_files:
+    # Валидация размера и расширения файлов
+    files_valid = True
+    for uploaded_file in uploaded_files:
+        # Проверка размера
+        is_valid_size, error_msg = validate_file_size(uploaded_file.size)
+        if not is_valid_size:
+            st.error(f"❌ {uploaded_file.name}: {error_msg}")
+            logger.warning(f"Файл отклонен (размер): {uploaded_file.name} ({uploaded_file.size} байт)")
+            log_security_event('file_size_exceeded', f"{uploaded_file.name}: {uploaded_file.size} байт", 'WARNING')
+            files_valid = False
+
+        # Проверка расширения
+        is_valid_ext, error_msg = validate_file_extension(uploaded_file.name, ['.xlsx', '.xls', '.xlsm', '.xlsb', '.csv'])
+        if not is_valid_ext:
+            st.error(f"❌ {uploaded_file.name}: {error_msg}")
+            logger.warning(f"Файл отклонен (расширение): {uploaded_file.name}")
+            log_security_event('invalid_file_extension', uploaded_file.name, 'WARNING')
+            files_valid = False
+
+    if not files_valid:
+        st.stop()
+
     try:
         with st.spinner("Обрабатываем файлы..."):
             # Читаем все файлы
