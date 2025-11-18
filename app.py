@@ -54,29 +54,6 @@ st.markdown("""
         --shadow-primary: rgba(244, 48, 31, 0.25);
         --shadow-hover: rgba(244, 48, 31, 0.35);
         --shadow-glow: 0 6px 20px rgba(244, 48, 31, 0.35);
-    }
-
-    /* Анимация для логотипа */
-    @keyframes rotate {
-        from { transform: rotate(0deg); }
-        to { transform: rotate(360deg); }
-    }
-
-    .rotating-earth {
-        display: inline-block;
-        animation: rotate 6s linear infinite;
-        vertical-align: middle;
-        margin-right: 8px;
-        width: 1em;
-        height: 1em;
-    }
-
-    .rotating-earth img {
-        width: 100%;
-        height: 100%;
-        display: block;
-        filter: brightness(0) saturate(100%) invert(24%) sepia(95%) saturate(3456%) hue-rotate(353deg) brightness(99%) contrast(93%);
-    }
 
     /* Круги с цифрами с градиентом */
     .step-number {
