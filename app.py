@@ -23,6 +23,13 @@ from security_utils import (
 )
 from requests.exceptions import RequestException, Timeout, HTTPError
 
+# Safe file operations
+from safe_file_utils import (
+    safe_open_image,
+    safe_read_csv,
+    safe_read_file
+)
+
 # Version: 3.3.2 - Fixed: corrected all indentation in single mode block
 
 # ============================================
@@ -928,8 +935,12 @@ def get_hh_areas():
 def load_population_data():
     """Загружает данные о населении городов из CSV файла"""
     try:
-        # Читаем CSV с разделителем точка с запятой
-        df = pd.read_csv('population.csv', sep=';', encoding='utf-8')
+        # Безопасное чтение CSV с защитой от Path Traversal
+        df = safe_read_csv('population.csv', sep=';', encoding='utf-8')
+
+        if df is None:
+            logger.error("Не удалось загрузить файл population.csv")
+            return {}
 
         # Создаем словарь {город: население}
         population_dict = {}
@@ -1728,17 +1739,20 @@ def merge_cities_files(df1, df2, hh_areas, threshold=85):
 # ИНТЕРФЕЙС
 # ============================================
 
-# Загрузка иконки synchronize.png
+# Загрузка иконки synchronize.png с защитой от Path Traversal
 try:
     import base64
     from io import BytesIO
-    from PIL import Image
 
-    sync_icon_image = Image.open("synchronize.png")
-    buffered = BytesIO()
-    sync_icon_image.save(buffered, format="PNG")
-    sync_icon_base64 = base64.b64encode(buffered.getvalue()).decode()
-    SYNC_ICON = f'<img src="data:image/png;base64,{sync_icon_base64}" style="width: 1em; height: 1em; display: inline-block;">'
+    sync_icon_image = safe_open_image("synchronize.png")
+    if sync_icon_image:
+        buffered = BytesIO()
+        sync_icon_image.save(buffered, format="PNG")
+        sync_icon_base64 = base64.b64encode(buffered.getvalue()).decode()
+        SYNC_ICON = f'<img src="data:image/png;base64,{sync_icon_base64}" style="width: 1em; height: 1em; display: inline-block;">'
+    else:
+        logger.warning("Не удалось загрузить synchronize.png, используется эмодзи")
+        SYNC_ICON = '🔄'
 except Exception as e:
     # Fallback если файл не найден
     SYNC_ICON = '🔄'
@@ -1877,32 +1891,35 @@ st.markdown('<div id="синхронизатор-городов"></div>', unsafe
 st.header("📤 Синхронизатор городов")
 
 with st.sidebar:
-    # Логотип - используем base64 для полного обхода кэша
+    # Логотип - используем base64 для полного обхода кэша с защитой от Path Traversal
     try:
         import base64
         from io import BytesIO
-        from PIL import Image
 
-        # Читаем изображение
-        logo_image = Image.open("min-hh-red.png")
+        # Безопасное чтение изображения
+        logo_image = safe_open_image("min-hh-red.png")
 
-        # Конвертируем в base64
-        buffered = BytesIO()
-        logo_image.save(buffered, format="PNG", optimize=False, quality=100)
-        img_str = base64.b64encode(buffered.getvalue()).decode()
+        if logo_image:
+            # Конвертируем в base64
+            buffered = BytesIO()
+            logo_image.save(buffered, format="PNG", optimize=False, quality=100)
+            img_str = base64.b64encode(buffered.getvalue()).decode()
 
-        # Вставляем через HTML с прямыми стилями для максимального качества
-        st.markdown(
-            f'''<img src="data:image/png;base64,{img_str}"
-            style="width: 200px;
-                   height: auto;
-                   image-rendering: auto;
-                   -ms-interpolation-mode: bicubic;
-                   display: block;
-                   margin-bottom: 10px;
-                   object-fit: contain;" />''',
-            unsafe_allow_html=True
-        )
+            # Вставляем через HTML с прямыми стилями для максимального качества
+            st.markdown(
+                f'''<img src="data:image/png;base64,{img_str}"
+                style="width: 200px;
+                       height: auto;
+                       image-rendering: auto;
+                       -ms-interpolation-mode: bicubic;
+                       display: block;
+                       margin-bottom: 10px;
+                       object-fit: contain;" />''',
+                unsafe_allow_html=True
+            )
+        else:
+            logger.warning("Не удалось загрузить min-hh-red.png")
+            st.markdown(f'<div class="title-container"><span>{SYNC_ICON}</span></div>', unsafe_allow_html=True)
     except Exception as e:
         # Fallback если PNG еще не создан
         st.markdown(
@@ -4034,21 +4051,23 @@ with st.expander("Яндекс.Еда", expanded=False):
 
     st.info("**Кнопка копирования** в правом верхнем углу блока кода скопирует **весь код целиком**")
 
-    # Читаем основной код из файла
+    # Безопасное чтение основного кода из файла
     try:
-        with open("yaedamatch", "r", encoding="utf-8") as f:
-            full_code = f.read()
+        full_code = safe_read_file("yaedamatch", encoding="utf-8")
 
-        # Извлекаем код начиная с импорта библиотек
-        main_code_start = full_code.find("# ============================================\n# ИМПОРТ БИБЛИОТЕК")
-        if main_code_start != -1:
-            main_code = full_code[main_code_start:]
+        if full_code:
+            # Извлекаем код начиная с импорта библиотек
+            main_code_start = full_code.find("# ============================================\n# ИМПОРТ БИБЛИОТЕК")
+            if main_code_start != -1:
+                main_code = full_code[main_code_start:]
+            else:
+                main_code = full_code
+
+            # Отображаем код
+            with st.expander("Показать код", expanded=False):
+                st.code(main_code, language="python", line_numbers=False)
         else:
-            main_code = full_code
-
-        # Отображаем код
-        with st.expander("Показать код", expanded=False):
-            st.code(main_code, language="python", line_numbers=False)
+            st.error("❌ Не удалось загрузить файл yaedamatch")
 
     except FileNotFoundError:
         st.error("Файл yaedamatch не найден. Обратитесь к администратору.")
