@@ -120,7 +120,7 @@ def get_hh_areas_cached() -> Optional[Dict]:
 
 
 @st.cache_data(show_spinner=False)
-def apply_manual_selections_cached(_result_df, _manual_selections: dict, _hh_areas: dict) -> pd.DataFrame:
+def apply_manual_selections_cached(_result_df, manual_selections: dict, _hh_areas: dict) -> pd.DataFrame:
     """
     Кэшированное применение ручных изменений к DataFrame.
 
@@ -128,25 +128,25 @@ def apply_manual_selections_cached(_result_df, _manual_selections: dict, _hh_are
     - БЕЗ кэша: применяется при КАЖДОМ rerun (~1000ms для 30 городов)
     - С кэшем: применяется ТОЛЬКО при изменении manual_selections (~5ms)
 
-    Параметры с префиксом _ не хэшируются Streamlit, используется id объекта.
-    При изменении manual_selections меняется id → кэш инвалидируется → функция выполняется заново.
+    ВАЖНО: manual_selections БЕЗ _ чтобы Streamlit хэшировал СОДЕРЖИМОЕ словаря!
+    При изменении значений внутри словаря хэш меняется → кэш инвалидируется → функция выполняется.
 
     Args:
-        _result_df: Исходный DataFrame с результатами
-        _manual_selections: Словарь ручных изменений {row_id: new_value}
-        _hh_areas: Справочник HH.ru
+        _result_df: Исходный DataFrame с результатами (НЕ хэшируется)
+        manual_selections: Словарь ручных изменений {row_id: new_value} (ХЭШИРУЕТСЯ!)
+        _hh_areas: Справочник HH.ru (НЕ хэшируется)
 
     Returns:
         pd.DataFrame: DataFrame с применёнными изменениями
     """
     # Копируем только если есть изменения
-    if not _manual_selections:
+    if not manual_selections:
         return _result_df
 
     final_df = _result_df.copy()
 
     # Применяем ручные изменения
-    for row_id, new_value in _manual_selections.items():
+    for row_id, new_value in manual_selections.items():
         mask = final_df['row_id'] == row_id
 
         if new_value == "❌ Нет совпадения":
