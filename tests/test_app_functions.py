@@ -259,6 +259,9 @@ class TestIntegration:
         """Проверка полного pipeline обработки"""
         from app import get_russian_cities_cached, apply_manual_selections_cached
 
+        # Очищаем кэш перед тестом
+        get_russian_cities_cached.clear()
+
         # 1. Получаем российские города
         mock_hh_areas = {
             'Москва': {'root_parent_id': '113', 'id': 1, 'parent': 'Москва'},
