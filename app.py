@@ -2629,6 +2629,9 @@ with st.expander("Ростелеком", expanded=False):
 with st.expander("Ингосстрах", expanded=False):
     st.info("Сверка для этого клиента находится в разработке")
 
+with st.expander("Магнит", expanded=False):
+    st.info("Сверка для этого клиента находится в разработке")
+
 # Закрываем контейнер matrix-code-section
 st.markdown('</div>', unsafe_allow_html=True)
 
