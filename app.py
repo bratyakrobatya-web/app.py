@@ -23,7 +23,7 @@ import os
 # Настройка страницы
 st.set_page_config(
     page_title="Синхронизатор",
-    page_icon="",
+    page_icon="⚙️",
     layout="wide"
 )
 
