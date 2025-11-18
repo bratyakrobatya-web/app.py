@@ -1201,6 +1201,8 @@ if hh_areas:
         with col1:
             # Для публикатора (только названия городов)
             publisher_df = pd.DataFrame({'Город': selected_cities_df['Город']})
+            # Санитизация данных перед экспортом (защита от CSV Injection)
+            publisher_df = sanitize_csv_content(publisher_df)
             output_pub = io.BytesIO()
             with pd.ExcelWriter(output_pub, engine='openpyxl') as writer:
                 publisher_df.to_excel(writer, index=False, header=False, sheet_name='Гео')
@@ -1216,9 +1218,11 @@ if hh_areas:
             )
         with col2:
             # Полный отчет с ID и регионами
+            # Санитизация данных перед экспортом (защита от CSV Injection)
+            safe_cities_df = sanitize_csv_content(selected_cities_df.copy())
             output_full = io.BytesIO()
             with pd.ExcelWriter(output_full, engine='openpyxl') as writer:
-                selected_cities_df.to_excel(writer, index=False, sheet_name='Города')
+                safe_cities_df.to_excel(writer, index=False, sheet_name='Города')
             output_full.seek(0)
             st.download_button(
                 label=f"📥 Полный отчет ({len(selected_cities)} городов)",
@@ -1242,6 +1246,8 @@ if hh_areas:
                 col1, col2 = st.columns(2)
                 with col1:
                     publisher_df = pd.DataFrame({'Город': all_cities_df['Город']})
+                    # Санитизация данных перед экспортом (защита от CSV Injection)
+                    publisher_df = sanitize_csv_content(publisher_df)
                     output_pub = io.BytesIO()
                     with pd.ExcelWriter(output_pub, engine='openpyxl') as writer:
                         publisher_df.to_excel(writer, index=False, header=False, sheet_name='Гео')
@@ -1256,9 +1262,11 @@ if hh_areas:
                         key="download_all_publisher"
                     )
                 with col2:
+                    # Санитизация данных перед экспортом (защита от CSV Injection)
+                    safe_all_cities_df = sanitize_csv_content(all_cities_df.copy())
                     output_full = io.BytesIO()
                     with pd.ExcelWriter(output_full, engine='openpyxl') as writer:
-                        all_cities_df.to_excel(writer, index=False, sheet_name='Города')
+                        safe_all_cities_df.to_excel(writer, index=False, sheet_name='Города')
                     output_full.seek(0)
                     st.download_button(
                         label=f"📥 Скачать полный отчет ({len(all_cities_df)} городов)",
