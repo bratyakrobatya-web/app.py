@@ -1587,10 +1587,10 @@ if uploaded_files and hh_areas is not None:
                         break
                 
                 if vacancy_col:
-                    # Формируем данные для экспорта - используем result_df напрямую
+                    # FIX: Формируем данные для экспорта (исключаем не найденные с эмодзи)
                     export_df = result_df[
                         (result_df['Итоговое гео'].notna()) &
-                        (~result_df['Статус'].str.contains('Не найдено', na=False)) &
+                        (~result_df['Статус'].str.contains('❌ Не найдено', na=False)) &
                         (~result_df['Статус'].str.contains('Пустое значение', na=False))
                     ].copy()
                     
@@ -1999,10 +1999,10 @@ if uploaded_files and hh_areas is not None:
                             hh_areas
                         )
                         
-                        # Формируем данные для этой вкладки
+                        # FIX: Формируем данные для публикатора (исключаем не найденные с эмодзи)
                         output_sheet = result_df_sheet[
                             (result_df_sheet['Итоговое гео'].notna()) &
-                            (~result_df_sheet['Статус'].str.contains('Не найдено', na=False)) &
+                            (~result_df_sheet['Статус'].str.contains('❌ Не найдено', na=False)) &
                             (~result_df_sheet['Статус'].str.contains('Пустое значение', na=False))
                         ].copy()
 
@@ -2115,10 +2115,10 @@ if uploaded_files and hh_areas is not None:
                     # Формируем итоговый файл для скачивания (все вакансии вместе)
                     original_cols = st.session_state.original_df.columns.tolist()
                 
-                    # Оставляем только строки с найденным гео
+                    # FIX: Оставляем только строки с найденным гео (исключаем не найденные с эмодзи)
                     export_df = final_result_df[
                         (final_result_df['Итоговое гео'].notna()) &
-                        (~final_result_df['Статус'].str.contains('Не найдено', na=False)) &
+                        (~final_result_df['Статус'].str.contains('❌ Не найдено', na=False)) &
                         (~final_result_df['Статус'].str.contains('Пустое значение', na=False))
                     ].copy()
                 
