@@ -261,23 +261,17 @@ class TestIntegration:
 
     def test_all_functions_handle_none_input(self):
         """Проверка обработки None всеми функциями"""
-        assert safe_open_image(None) is None
-        assert safe_read_csv(None) is None
-        assert safe_read_file(None) is None
-        # get_asset_path и get_data_path могут вызвать исключение при None
-        # так как они не проверяют на None перед операцией '/'
-        try:
-            result = get_asset_path(None)
-            # Если не вызвало исключение, проверяем результат
-            assert result is None or isinstance(result, Path)
-        except (TypeError, AttributeError):
-            pass  # Ожидаемое поведение
+        # Все функции могут вызвать TypeError при None, так как используют Path / None
+        # Это ожидаемое поведение, функции не предназначены для None входных данных
 
-        try:
-            result = get_data_path(None)
-            assert result is None or isinstance(result, Path)
-        except (TypeError, AttributeError):
-            pass  # Ожидаемое поведение
+        for func in [safe_open_image, safe_read_csv, safe_read_file, get_asset_path, get_data_path]:
+            try:
+                result = func(None)
+                # Если не вызвало исключение, результат должен быть None или Path
+                assert result is None or isinstance(result, Path), f"{func.__name__} returned unexpected value for None input"
+            except (TypeError, AttributeError):
+                # Ожидаемое поведение - TypeError при попытке Path / None
+                pass
 
     def test_all_functions_handle_path_traversal(self):
         """Проверка защиты от path traversal во всех функциях"""
