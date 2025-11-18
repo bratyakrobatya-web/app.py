@@ -1059,10 +1059,11 @@ if uploaded_files and hh_areas is not None:
 
                     st.dataframe(display_df, use_container_width=True, height=400, hide_index=True)  
               
-                    # ИЗМЕНЕНО: Исключаем дубликаты из редактирования
+                    # FIX: Exclude duplicates AND "Not found" cities from editing
                     editable_rows = result_df_sorted[
                         (result_df_sorted['Совпадение %'] <= 90) &
-                        (~result_df_sorted['Статус'].str.contains('Дубликат', na=False))
+                        (~result_df_sorted['Статус'].str.contains('Дубликат', na=False)) &
+                        (~result_df_sorted['Статус'].str.contains('❌ Не найдено', na=False))
                     ].copy()
 
                     # Сортируем: сначала "Нет совпадения", затем по возрастанию процента
@@ -1305,10 +1306,11 @@ if uploaded_files and hh_areas is not None:
                             result_df_sheet = sheet_result['result_df']
                             original_df_sheet = st.session_state.sheets_data[sheet_name]['df']
 
-                            # Блок редактирования городов с совпадением ≤ 90%
+                            # FIX: Exclude duplicates AND "Not found" cities from editing
                             editable_rows = result_df_sheet[
-                                (result_df_sheet['Совпадение %'] <= 90) & 
-                                (~result_df_sheet['Статус'].str.contains('Дубликат', na=False))
+                                (result_df_sheet['Совпадение %'] <= 90) &
+                                (~result_df_sheet['Статус'].str.contains('Дубликат', na=False)) &
+                                (~result_df_sheet['Статус'].str.contains('❌ Не найдено', na=False))
                             ].copy()
                             
                             if len(editable_rows) > 0:
@@ -1613,7 +1615,11 @@ if uploaded_files and hh_areas is not None:
                                 # Показываем таблицу с возможностью редактирования
                                 st.markdown("#### Города для редактирования (совпадение ≤ 90%)")
                                 
-                                editable_vacancy_rows = vacancy_df[vacancy_df['Совпадение %'] <= 90].copy()
+                                # FIX: Exclude "Not found" cities from editing
+                                editable_vacancy_rows = vacancy_df[
+                                    (vacancy_df['Совпадение %'] <= 90) &
+                                    (~vacancy_df['Статус'].str.contains('❌ Не найдено', na=False))
+                                ].copy()
                                 
                                 # Убираем дубликаты по исходному названию для редактирования
                                 if len(editable_vacancy_rows) > 0:
