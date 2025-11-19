@@ -252,6 +252,24 @@ def get_cached_icon_base64(filename: str) -> Optional[str]:
     return None
 
 
+@st.cache_data(show_spinner=False)
+def create_excel_bytes_cached(df: pd.DataFrame, sheet_name: str) -> bytes:
+    """
+    Кэшированная генерация Excel файла.
+    
+    КРИТИЧНО ДЛЯ ПРОИЗВОДИТЕЛЬНОСТИ:
+    - Избегает пересоздания Excel файла при каждом rerun, если данные не изменились.
+    - Решает проблему "подвисания" при переключении вкладок и выборе городов.
+    """
+    # Санитизация данных перед экспортом (защита от CSV Injection)
+    safe_df = sanitize_csv_content(df)
+    
+    buffer = io.BytesIO()
+    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+        safe_df.to_excel(writer, index=False, header=True, sheet_name='Результат')
+    return buffer.getvalue()
+
+
 # ============================================
 # КОНФИГУРАЦИЯ: API КЛЮЧИ
 # ============================================
@@ -1381,17 +1399,14 @@ if uploaded_files and hh_areas is not None:
                                 st.markdown("---")
                                 safe_sheet_name = str(sheet_name).replace('/', '_').replace('\\', '_')[:50]
 
-                                # Санитизация данных перед экспортом (защита от CSV Injection)
-                                final_output = sanitize_csv_content(final_output)
 
-                                file_buffer = io.BytesIO()
-                                with pd.ExcelWriter(file_buffer, engine='openpyxl') as writer:
-                                    final_output.to_excel(writer, index=False, header=True, sheet_name='Результат')
-                                file_buffer.seek(0)
+
+                                # OPTIMIZED: Используем кэшированную генерацию файла
+                                excel_bytes = create_excel_bytes_cached(final_output, sheet_name)
                                 
                                 st.download_button(
                                     label=f"📥 Скачать файл ({len(final_output)} уникальных городов)",
-                                    data=file_buffer,
+                                    data=excel_bytes,
                                     file_name=f"{safe_sheet_name}.xlsx",
                                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                                     use_container_width=True,
@@ -1401,7 +1416,7 @@ if uploaded_files and hh_areas is not None:
                                 
                                 # Сохраняем в session_state для архива (обновляется при каждом изменении селектора)
                                 st.session_state.vacancy_files[sheet_name] = {
-                                    'data': file_buffer.getvalue(),
+                                    'data': excel_bytes,
                                     'name': f"{safe_sheet_name}.xlsx",
                                     'count': len(final_output)
                                 }
@@ -1851,14 +1866,12 @@ if uploaded_files and hh_areas is not None:
                             # Санитизация данных перед экспортом (защита от CSV Injection)
                             output_vacancy_df = sanitize_csv_content(output_vacancy_df)
 
-                            file_buffer = io.BytesIO()
-                            with pd.ExcelWriter(file_buffer, engine='openpyxl') as writer:
-                                output_vacancy_df.to_excel(writer, index=False, header=True, sheet_name='Результат')
-                            file_buffer.seek(0)
-
+                            # OPTIMIZED: Используем кэшированную генерацию файла
+                            excel_bytes = create_excel_bytes_cached(output_vacancy_df, 'Результат')
+                            
                             st.download_button(
                                 label=f"📥 Скачать файл ({len(output_vacancy_df)} уникальных городов)",
-                                data=file_buffer,
+                                data=excel_bytes,
                                 file_name=f"{safe_vacancy_name}.xlsx",
                                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                                 use_container_width=True,
@@ -1870,7 +1883,7 @@ if uploaded_files and hh_areas is not None:
                             if 'vacancy_files' not in st.session_state:
                                 st.session_state.vacancy_files = {}
                             st.session_state.vacancy_files[vacancy] = {
-                                'data': file_buffer.getvalue(),
+                                'data': excel_bytes,
                                 'name': f"{safe_vacancy_name}.xlsx",
                                 'count': len(output_vacancy_df)
                             }
