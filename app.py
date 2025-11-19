@@ -1598,7 +1598,7 @@ if uploaded_files and hh_areas is not None:
                                     key=f"download_sheet_{sheet_name}_{tab_idx}"
                                 )
                                 
-                                # Сохраняем в session_state для архива
+                                # Сохраняем в session_state для архива (обновляется при каждом изменении селектора)
                                 st.session_state.vacancy_files[sheet_name] = {
                                     'data': file_buffer.getvalue(),
                                     'name': f"{safe_sheet_name}.xlsx",
@@ -1606,6 +1606,9 @@ if uploaded_files and hh_areas is not None:
                                 }
                             else:
                                 st.warning("⚠️ Нет данных для выгрузки")
+                                # Удаляем из vacancy_files если данных больше нет
+                                if sheet_name in st.session_state.vacancy_files:
+                                    del st.session_state.vacancy_files[sheet_name]
                     
                     # Кнопка для скачивания всех файлов архивом
                     st.markdown("---")
@@ -2018,40 +2021,47 @@ if uploaded_files and hh_areas is not None:
                                 # Удаляем первую строку, если она является заголовком
                                 output_vacancy_df = remove_header_row_if_needed(output_vacancy_df, original_cols[0])
 
-                                # Превью итогового файла для вакансии
-                                st.markdown(f"#### 👀 Превью итогового файла - {vacancy}")
-                                st.dataframe(output_vacancy_df, use_container_width=True, height=300)
+                                # Проверяем что есть данные для выгрузки
+                                if len(output_vacancy_df) > 0:
+                                    # Превью итогового файла для вакансии
+                                    st.markdown(f"#### 👀 Превью итогового файла - {vacancy}")
+                                    st.dataframe(output_vacancy_df, use_container_width=True, height=300)
 
-                                # Кнопка выгрузки для этой вакансии
-                                st.markdown("---")
-                                safe_vacancy_name = str(vacancy).replace('/', '_').replace('\\', '_')[:50]
+                                    # Кнопка выгрузки для этой вакансии
+                                    st.markdown("---")
+                                    safe_vacancy_name = str(vacancy).replace('/', '_').replace('\\', '_')[:50]
 
-                                # Санитизация данных перед экспортом (защита от CSV Injection)
-                                output_vacancy_df = sanitize_csv_content(output_vacancy_df)
+                                    # Санитизация данных перед экспортом (защита от CSV Injection)
+                                    output_vacancy_df = sanitize_csv_content(output_vacancy_df)
 
-                                file_buffer = io.BytesIO()
-                                with pd.ExcelWriter(file_buffer, engine='openpyxl') as writer:
-                                    output_vacancy_df.to_excel(writer, index=False, header=True, sheet_name='Результат')
-                                file_buffer.seek(0)
-                                
-                                st.download_button(
-                                    label=f"📥 Скачать файл ({len(output_vacancy_df)} уникальных городов)",
-                                    data=file_buffer,
-                                    file_name=f"{safe_vacancy_name}.xlsx",
-                                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                    use_container_width=True,
-                                    type="primary",
-                                    key=f"download_{vacancy}_{tab_idx}"
-                                )
-                                
-                                # Сохраняем файл в session_state для архива
-                                if 'vacancy_files' not in st.session_state:
-                                    st.session_state.vacancy_files = {}
-                                st.session_state.vacancy_files[vacancy] = {
-                                    'data': file_buffer.getvalue(),
-                                    'name': f"{safe_vacancy_name}.xlsx",
-                                    'count': len(output_vacancy_df)
-                                }
+                                    file_buffer = io.BytesIO()
+                                    with pd.ExcelWriter(file_buffer, engine='openpyxl') as writer:
+                                        output_vacancy_df.to_excel(writer, index=False, header=True, sheet_name='Результат')
+                                    file_buffer.seek(0)
+
+                                    st.download_button(
+                                        label=f"📥 Скачать файл ({len(output_vacancy_df)} уникальных городов)",
+                                        data=file_buffer,
+                                        file_name=f"{safe_vacancy_name}.xlsx",
+                                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                        use_container_width=True,
+                                        type="primary",
+                                        key=f"download_{vacancy}_{tab_idx}"
+                                    )
+
+                                    # Сохраняем файл в session_state для архива (обновляется при каждом изменении селектора)
+                                    if 'vacancy_files' not in st.session_state:
+                                        st.session_state.vacancy_files = {}
+                                    st.session_state.vacancy_files[vacancy] = {
+                                        'data': file_buffer.getvalue(),
+                                        'name': f"{safe_vacancy_name}.xlsx",
+                                        'count': len(output_vacancy_df)
+                                    }
+                                else:
+                                    st.warning("⚠️ Нет данных для выгрузки")
+                                    # Удаляем из vacancy_files если данных больше нет
+                                    if 'vacancy_files' in st.session_state and vacancy in st.session_state.vacancy_files:
+                                        del st.session_state.vacancy_files[vacancy]
                         
                         # Кнопка для скачивания всех файлов архивом
                         st.markdown("---")
@@ -2089,161 +2099,182 @@ if uploaded_files and hh_areas is not None:
                 # РЕЖИМ: Единым файлом
                 st.markdown("---")
 
-                # Получаем данные для редактирования из первой вкладки или первого результата
                 if st.session_state.sheet_mode == 'tabs':
-                    # Для режима tabs используем первую вкладку
-                    first_sheet = list(st.session_state.sheets_results.keys())[0]
-                    edit_result_df = st.session_state.sheets_results[first_sheet]['result_df']
-                else:
-                    # Для режима columns используем общий result_df
-                    edit_result_df = result_df
+                    # РЕЖИМ ВКЛАДОК: Редактирование перед объединением
+                    st.subheader("🎯 Редактирование городов")
 
-                # Блок редактирования городов с совпадением ≤ 95%
-                editable_rows = edit_result_df[
-                    (edit_result_df['Совпадение %'] <= 95) &
-                    (~edit_result_df['Статус'].str.contains('Дубликат', na=False))
-                ].copy()
+                    # Получаем список вкладок
+                    sheet_names = list(st.session_state.sheets_results.keys())
+                    st.info(f"📊 Редактирование городов из **{len(sheet_names)}** вкладок перед объединением")
 
-                if len(editable_rows) > 0:
-                    # Убираем дубликаты по исходному названию
-                    editable_rows['_normalized_original'] = (
-                        editable_rows['Исходное название']
-                        .fillna('').astype(str)
-                        .str.replace('ё', 'е').str.replace('Ё', 'Е')
-                        .str.lower().str.strip()
-                        .str.replace(r'\s+', ' ', regex=True)
-                    )
-                    editable_rows = editable_rows.drop_duplicates(subset=['_normalized_original'], keep='first')
+                    # Создаем вкладки для редактирования
+                    tabs = st.tabs([f"{name}" for name in sheet_names])
 
-                    # Сортируем
-                    editable_rows['_sort_priority'] = (~editable_rows['Статус'].str.contains('❌ Не найдено', na=False)).astype(int)
-                    editable_rows = editable_rows.sort_values(['_sort_priority', 'Совпадение %'], ascending=[True, True])
-                    editable_rows = editable_rows.drop(columns=['_sort_priority'])
+                    for tab_idx, (tab, sheet_name) in enumerate(zip(tabs, sheet_names)):
+                        with tab:
+                            st.markdown(f"### 📄 {sheet_name}")
 
-                    st.subheader("✏️ Редактирование городов с совпадением ≤ 95%")
-                    st.info(f"📝 Найдено **{len(editable_rows)}** городов для редактирования")
+                            # Получаем данные этой вкладки
+                            sheet_result = st.session_state.sheets_results[sheet_name]
+                            result_df_sheet = sheet_result['result_df']
 
-                    # CSS для черных селекторов
-                    st.markdown(get_edit_selectbox_css(), unsafe_allow_html=True)
+                            # Блок редактирования городов с совпадением ≤ 95%
+                            editable_rows = result_df_sheet[
+                                (result_df_sheet['Совпадение %'] <= 95) &
+                                (~result_df_sheet['Статус'].str.contains('Дубликат', na=False))
+                            ].copy()
 
-                    # Пагинация
-                    CITIES_PER_PAGE = 10
-                    total_cities = len(editable_rows)
-                    total_pages = max(1, (total_cities + CITIES_PER_PAGE - 1) // CITIES_PER_PAGE)
+                            if len(editable_rows) > 0:
+                                # Убираем дубликаты по исходному названию (VECTORIZED)
+                                editable_rows['_normalized_original'] = (
+                                    editable_rows['Исходное название']
+                                    .fillna('').astype(str)
+                                    .str.replace('ё', 'е').str.replace('Ё', 'Е')
+                                    .str.lower().str.strip()
+                                    .str.replace(r'\s+', ' ', regex=True)
+                                )
+                                editable_rows = editable_rows.drop_duplicates(subset=['_normalized_original'], keep='first')
 
-                    page_key = 'edit_page_single_mode'
-                    if page_key not in st.session_state:
-                        st.session_state[page_key] = 1
+                                # Сортируем: сначала "Нет совпадения", затем по возрастанию процента
+                                # VECTORIZED: sort priority (0 for not found, 1 for others)
+                                editable_rows['_sort_priority'] = (~editable_rows['Статус'].str.contains('❌ Не найдено', na=False)).astype(int)
+                                editable_rows = editable_rows.sort_values(
+                                    ['_sort_priority', 'Совпадение %'],
+                                    ascending=[True, True]
+                                )
+                                editable_rows = editable_rows.drop(columns=['_sort_priority'])
 
-                    if st.session_state[page_key] > total_pages:
-                        st.session_state[page_key] = total_pages
-                    if st.session_state[page_key] < 1:
-                        st.session_state[page_key] = 1
+                                st.markdown("#### ✏️ Редактирование городов с совпадением ≤ 95%")
 
-                    # Кнопки пагинации
-                    if total_pages > 1:
-                        page_cols = st.columns(min(total_pages, 10))
-                        for i in range(min(total_pages, 10)):
-                            page_num = i + 1
-                            with page_cols[i]:
-                                if st.session_state[page_key] == page_num:
-                                    st.markdown(f"""
-                                    <div style='background-color: #e14531; color: white; padding: 10px;
-                                                text-align: center; border-radius: 20px;
-                                                border: 2px solid #e14531;
-                                                font-weight: bold; margin-bottom: 10px;'>
-                                        Страница {page_num}
-                                    </div>
-                                    """, unsafe_allow_html=True)
-                                else:
-                                    if st.button(f"Страница {page_num}", key=f"single_edit_page_{page_num}", use_container_width=True):
-                                        st.session_state[page_key] = page_num
-                                        st.rerun()
+                                # CSS вне цикла для улучшения производительности
+                                st.markdown(get_edit_selectbox_css(), unsafe_allow_html=True)
 
-                        if total_pages > 10:
-                            st.info(f"Показаны первые 10 из {total_pages} страниц.")
+                                # PAGINATION для Single режима - tabs
+                                CITIES_PER_PAGE_SINGLE = 10
+                                total_cities_single = len(editable_rows)
+                                total_pages_single = max(1, (total_cities_single + CITIES_PER_PAGE_SINGLE - 1) // CITIES_PER_PAGE_SINGLE)
 
-                    # Вычисляем диапазон строк
-                    start_idx = (st.session_state[page_key] - 1) * CITIES_PER_PAGE
-                    end_idx = min(start_idx + CITIES_PER_PAGE, total_cities)
-                    page_rows = editable_rows.iloc[start_idx:end_idx]
+                                # Инициализация текущей страницы для этой вкладки
+                                page_key = f'edit_page_single_{sheet_name}'
+                                if page_key not in st.session_state:
+                                    st.session_state[page_key] = 1
 
-                    st.caption(f"Показано {start_idx + 1}-{end_idx} из {total_cities} городов")
+                                # Ограничиваем страницу в допустимых пределах
+                                if st.session_state[page_key] > total_pages_single:
+                                    st.session_state[page_key] = total_pages_single
+                                if st.session_state[page_key] < 1:
+                                    st.session_state[page_key] = 1
 
-                    # Обертка для черной окантовки
-                    st.markdown('<div class="edit-cities-block">', unsafe_allow_html=True)
+                                # Пагинация: овальные кнопки с красной подсветкой
+                                if total_pages_single > 1:
+                                    # Создаём строку с кнопками
+                                    page_cols_single = st.columns(min(total_pages_single, 10))
+                                    for i in range(min(total_pages_single, 10)):
+                                        page_num_single = i + 1
+                                        with page_cols_single[i]:
+                                            if st.session_state[page_key] == page_num_single:
+                                                # Текущая страница - овальная залитая красная
+                                                st.markdown(f"""
+                                                <div style='background-color: #e14531; color: white; padding: 10px;
+                                                            text-align: center; border-radius: 20px;
+                                                            border: 2px solid #e14531;
+                                                            font-weight: bold; margin-bottom: 10px;'>
+                                                    Страница {page_num_single} (выбрано)
+                                                </div>
+                                                """, unsafe_allow_html=True)
+                                            else:
+                                                # Кликабельная кнопка - овальная с красной окантовкой
+                                                if st.button(f"Страница {page_num_single}", key=f"single_page_{sheet_name}_{tab_idx}_{page_num_single}", use_container_width=True):
+                                                    st.session_state[page_key] = page_num_single
+                                                    st.rerun()
 
-                    for idx, row in page_rows.iterrows():
-                        row_id = row['row_id']
-                        city_name = row['Исходное название']
-                        current_value = row['Итоговое гео']
-                        current_match = row['Совпадение %']
+                                    if total_pages_single > 10:
+                                        st.info(f"Показаны первые 10 из {total_pages_single} страниц.")
 
-                        # Кандидаты
-                        candidates = st.session_state.candidates_cache.get(row_id, [])
-                        if not candidates:
-                            candidates = get_candidates_by_word(city_name, get_russian_cities_cached(hh_areas), limit=20)
+                                # Вычисляем диапазон строк для текущей страницы
+                                start_idx_single = (st.session_state[page_key] - 1) * CITIES_PER_PAGE_SINGLE
+                                end_idx_single = min(start_idx_single + CITIES_PER_PAGE_SINGLE, total_cities_single)
+                                page_rows_single = editable_rows.iloc[start_idx_single:end_idx_single]
 
-                        # Опции
-                        options, candidates_dict = prepare_city_options(
-                            tuple(candidates),
-                            current_value,
-                            current_match,
-                            city_name
-                        )
+                                st.caption(f"Показано {start_idx_single + 1}-{end_idx_single} из {total_cities_single} городов")
 
-                        # Ключ для селектора
-                        unique_key = f"select_single_edit_{row_id}"
+                                # Обертка для черной окантовки
+                                st.markdown('<div class="edit-cities-block">', unsafe_allow_html=True)
 
-                        # Текущее значение
-                        if row_id in st.session_state.manual_selections:
-                            selected_value = st.session_state.manual_selections[row_id]
-                        else:
-                            selected_value = current_value
+                                # Для каждого города показываем выбор
+                                for idx, row in page_rows_single.iterrows():
+                                    row_id = row['row_id']
+                                    city_name = row['Исходное название']
+                                    current_value = row['Итоговое гео']
+                                    current_match = row['Совпадение %']
 
-                        # Индекс
-                        if selected_value == "❌ Нет совпадения":
-                            default_idx = 0
-                        else:
-                            default_idx = candidates_dict.get(selected_value, 0)
+                                    # Используем кэш кандидатов
+                                    cache_key = (sheet_name, row_id)
+                                    candidates = st.session_state.candidates_cache.get(cache_key, [])
+                                    if not candidates:
+                                        candidates = get_candidates_by_word(city_name, get_russian_cities_cached(hh_areas), limit=20)
 
-                        col1, col2, col3, col4 = st.columns([2, 3, 1, 1])
+                                    # Кэшированная подготовка options
+                                    options, candidates_dict = prepare_city_options(
+                                        tuple(candidates),
+                                        current_value,
+                                        current_match,
+                                        city_name
+                                    )
 
-                        with col1:
-                            st.markdown(f"**{city_name}**")
+                                    # Определяем текущий выбор
+                                    unique_key = f"select_single_{sheet_name}_{row_id}_{tab_idx}"
+                                    selection_key = (sheet_name, row_id)
 
-                        with col2:
-                            st.selectbox(
-                                "Выберите город:",
-                                options=options,
-                                index=default_idx,
-                                key=unique_key,
-                                label_visibility="collapsed"
-                            )
+                                    if selection_key in st.session_state.manual_selections:
+                                        selected_value = st.session_state.manual_selections[selection_key]
+                                    else:
+                                        selected_value = current_value
 
-                        with col3:
-                            st.text(f"{row['Совпадение %']:.1f}%")
+                                    # Быстрый поиск индекса O(1)
+                                    if selected_value == "❌ Нет совпадения":
+                                        default_idx = 0
+                                    else:
+                                        default_idx = candidates_dict.get(selected_value, 0)
 
-                        with col4:
-                            st.text(row['Статус'])
+                                    col1, col2, col3 = st.columns([2, 3, 1])
 
-                        # Сохраняем выбор
-                        current_selection = st.session_state.get(unique_key)
-                        if current_selection:
-                            if current_selection == "❌ Нет совпадения":
-                                st.session_state.manual_selections[row_id] = "❌ Нет совпадения"
+                                    with col1:
+                                        st.text(city_name)
+
+                                    with col2:
+                                        st.selectbox(
+                                            "Выберите город:",
+                                            options=options,
+                                            index=default_idx,
+                                            key=unique_key,
+                                            label_visibility="collapsed"
+                                        )
+
+                                    with col3:
+                                        st.text(f"{row['Совпадение %']:.1f}%")
+
+                                    # АВТОМАТИЧЕСКИ сохраняем в manual_selections при изменении
+                                    current_selection = st.session_state.get(unique_key)
+                                    if current_selection:
+                                        if current_selection == "❌ Нет совпадения":
+                                            st.session_state.manual_selections[selection_key] = "❌ Нет совпадения"
+                                        else:
+                                            # Извлекаем название без процента
+                                            selected_city = current_selection.rsplit(' (', 1)[0]
+                                            st.session_state.manual_selections[selection_key] = selected_city
+
+                                st.markdown("---")
+
+                                # Закрываем обертку для черной окантовки
+                                st.markdown('</div>', unsafe_allow_html=True)
                             else:
-                                selected_city = current_selection.rsplit(' (', 1)[0]
-                                st.session_state.manual_selections[row_id] = selected_city
+                                st.success("✅ Все города распознаны корректно!")
 
-                    # Закрываем обертку
-                    st.markdown('</div>', unsafe_allow_html=True)
+                    # Теперь блок скачивания
+                    st.markdown("---")
+                    st.subheader("💾 Скачать результаты")
 
-                # Теперь блок скачивания
-                st.markdown("---")
-                st.subheader("💾 Скачать результаты")
-
-                if st.session_state.sheet_mode == 'tabs':
                     # Режим вкладок - объединяем все вкладки в один файл
                     all_data = []
                     
@@ -2378,8 +2409,164 @@ if uploaded_files and hh_areas is not None:
                         st.warning("⚠️ Нет данных для выгрузки")
                 
                 else:
-                    # Режим столбца вакансий - оригинальная логика
-                
+                    # Режим столбца вакансий - редактирование перед объединением
+                    st.subheader("🎯 Редактирование городов")
+
+                    # Показываем блок редактирования для всех городов
+                    editable_rows = result_df[
+                        (result_df['Совпадение %'] <= 95) &
+                        (~result_df['Статус'].str.contains('Дубликат', na=False))
+                    ].copy()
+
+                    if len(editable_rows) > 0:
+                        # Убираем дубликаты по исходному названию (VECTORIZED)
+                        editable_rows['_normalized_original'] = (
+                            editable_rows['Исходное название']
+                            .fillna('').astype(str)
+                            .str.replace('ё', 'е').str.replace('Ё', 'Е')
+                            .str.lower().str.strip()
+                            .str.replace(r'\s+', ' ', regex=True)
+                        )
+                        editable_rows = editable_rows.drop_duplicates(subset=['_normalized_original'], keep='first')
+
+                        # Сортируем: сначала "Нет совпадения", затем по возрастанию процента
+                        # VECTORIZED: sort priority (0 for not found, 1 for others)
+                        editable_rows['_sort_priority'] = (~editable_rows['Статус'].str.contains('❌ Не найдено', na=False)).astype(int)
+                        editable_rows = editable_rows.sort_values(
+                            ['_sort_priority', 'Совпадение %'],
+                            ascending=[True, True]
+                        )
+                        editable_rows = editable_rows.drop(columns=['_sort_priority'])
+
+                        st.markdown("#### ✏️ Редактирование городов с совпадением ≤ 95%")
+
+                        # CSS вне цикла для улучшения производительности
+                        st.markdown(get_edit_selectbox_css(), unsafe_allow_html=True)
+
+                        # PAGINATION для Single режима - columns
+                        CITIES_PER_PAGE_SINGLE_COL = 10
+                        total_cities_single_col = len(editable_rows)
+                        total_pages_single_col = max(1, (total_cities_single_col + CITIES_PER_PAGE_SINGLE_COL - 1) // CITIES_PER_PAGE_SINGLE_COL)
+
+                        # Инициализация текущей страницы
+                        page_key_col = 'edit_page_single_columns'
+                        if page_key_col not in st.session_state:
+                            st.session_state[page_key_col] = 1
+
+                        # Ограничиваем страницу в допустимых пределах
+                        if st.session_state[page_key_col] > total_pages_single_col:
+                            st.session_state[page_key_col] = total_pages_single_col
+                        if st.session_state[page_key_col] < 1:
+                            st.session_state[page_key_col] = 1
+
+                        # Пагинация: овальные кнопки с красной подсветкой
+                        if total_pages_single_col > 1:
+                            # Создаём строку с кнопками
+                            page_cols_single_col = st.columns(min(total_pages_single_col, 10))
+                            for i in range(min(total_pages_single_col, 10)):
+                                page_num_single_col = i + 1
+                                with page_cols_single_col[i]:
+                                    if st.session_state[page_key_col] == page_num_single_col:
+                                        # Текущая страница - овальная залитая красная
+                                        st.markdown(f"""
+                                        <div style='background-color: #e14531; color: white; padding: 10px;
+                                                    text-align: center; border-radius: 20px;
+                                                    border: 2px solid #e14531;
+                                                    font-weight: bold; margin-bottom: 10px;'>
+                                            Страница {page_num_single_col} (выбрано)
+                                        </div>
+                                        """, unsafe_allow_html=True)
+                                    else:
+                                        # Кликабельная кнопка - овальная с красной окантовкой
+                                        if st.button(f"Страница {page_num_single_col}", key=f"single_col_page_{page_num_single_col}", use_container_width=True):
+                                            st.session_state[page_key_col] = page_num_single_col
+                                            st.rerun()
+
+                            if total_pages_single_col > 10:
+                                st.info(f"Показаны первые 10 из {total_pages_single_col} страниц.")
+
+                        # Вычисляем диапазон строк для текущей страницы
+                        start_idx_single_col = (st.session_state[page_key_col] - 1) * CITIES_PER_PAGE_SINGLE_COL
+                        end_idx_single_col = min(start_idx_single_col + CITIES_PER_PAGE_SINGLE_COL, total_cities_single_col)
+                        page_rows_single_col = editable_rows.iloc[start_idx_single_col:end_idx_single_col]
+
+                        st.caption(f"Показано {start_idx_single_col + 1}-{end_idx_single_col} из {total_cities_single_col} городов")
+
+                        # Обертка для черной окантовки
+                        st.markdown('<div class="edit-cities-block">', unsafe_allow_html=True)
+
+                        # Для каждого города показываем выбор
+                        for idx, row in page_rows_single_col.iterrows():
+                            row_id = row['row_id']
+                            city_name = row['Исходное название']
+                            current_value = row['Итоговое гео']
+                            current_match = row['Совпадение %']
+
+                            # Используем кэш кандидатов
+                            candidates = st.session_state.candidates_cache.get(row_id, [])
+                            if not candidates:
+                                candidates = get_candidates_by_word(city_name, get_russian_cities_cached(hh_areas), limit=20)
+
+                            # Кэшированная подготовка options
+                            options, candidates_dict = prepare_city_options(
+                                tuple(candidates),
+                                current_value,
+                                current_match,
+                                city_name
+                            )
+
+                            # Определяем текущий выбор
+                            unique_key = f"select_single_col_{row_id}"
+
+                            if row_id in st.session_state.manual_selections:
+                                selected_value = st.session_state.manual_selections[row_id]
+                            else:
+                                selected_value = current_value
+
+                            # Быстрый поиск индекса O(1)
+                            if selected_value == "❌ Нет совпадения":
+                                default_idx = 0
+                            else:
+                                default_idx = candidates_dict.get(selected_value, 0)
+
+                            col1, col2, col3 = st.columns([2, 3, 1])
+
+                            with col1:
+                                st.text(city_name)
+
+                            with col2:
+                                st.selectbox(
+                                    "Выберите город:",
+                                    options=options,
+                                    index=default_idx,
+                                    key=unique_key,
+                                    label_visibility="collapsed"
+                                )
+
+                            with col3:
+                                st.text(f"{row['Совпадение %']:.1f}%")
+
+                            # АВТОМАТИЧЕСКИ сохраняем в manual_selections при изменении
+                            current_selection = st.session_state.get(unique_key)
+                            if current_selection:
+                                if current_selection == "❌ Нет совпадения":
+                                    st.session_state.manual_selections[row_id] = "❌ Нет совпадения"
+                                else:
+                                    # Извлекаем название без процента
+                                    selected_city = current_selection.rsplit(' (', 1)[0]
+                                    st.session_state.manual_selections[row_id] = selected_city
+
+                        st.markdown("---")
+
+                        # Закрываем обертку для черной окантовки
+                        st.markdown('</div>', unsafe_allow_html=True)
+                    else:
+                        st.success("✅ Все города распознаны корректно!")
+
+                    # Теперь блок скачивания
+                    st.markdown("---")
+                    st.subheader("💾 Скачать результаты")
+
                     # Применяем ручные изменения через КЭШИРОВАННУЮ функцию
                     # Фильтруем только НЕ-кортежи (для режима columns без вкладок)
                     simple_selections = {}
