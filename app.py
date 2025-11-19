@@ -1091,79 +1091,10 @@ if uploaded_files and hh_areas is not None:
                         # OPTIMIZED: use cached CSS
                         st.markdown(get_edit_selectbox_css(), unsafe_allow_html=True)
 
-                        # ============================================
-                        # PAGINATION для улучшения производительности
-                        # ============================================
-                        CITIES_PER_PAGE = 10
-                        total_cities = len(editable_rows)
-                        total_pages = max(1, (total_cities + CITIES_PER_PAGE - 1) // CITIES_PER_PAGE)
-
-                        # Инициализация текущей страницы
-                        if 'edit_page' not in st.session_state:
-                            st.session_state.edit_page = 1
-
-                        # Ограничиваем страницу в допустимых пределах
-                        if st.session_state.edit_page > total_pages:
-                            st.session_state.edit_page = total_pages
-                        if st.session_state.edit_page < 1:
-                            st.session_state.edit_page = 1
-
-                        # Пагинация: овальные кнопки с красной подсветкой
-                        if total_pages > 1:
-                            # CSS для овальных кнопок
-                            st.markdown("""
-                            <style>
-                            /* Овальные кнопки для пагинации - невыбранные БЕЗ заливки */
-                            div[data-testid="column"] > div > div > button {
-                                width: 100%;
-                                padding: 10px 20px;
-                                font-size: 14px;
-                                border-radius: 20px !important;
-                                border: 2px solid #e14531 !important;
-                                background-color: white !important;
-                                color: #e14531 !important;
-                            }
-                            div[data-testid="column"] > div > div > button:hover {
-                                background-color: #fff5f5 !important;
-                            }
-                            </style>
-                            """, unsafe_allow_html=True)
-
-                            # Создаём строку с кнопками
-                            page_cols = st.columns(min(total_pages, 10))
-                            for i in range(min(total_pages, 10)):
-                                page_num = i + 1
-                                with page_cols[i]:
-                                    if st.session_state.edit_page == page_num:
-                                        # Текущая страница - овальная залитая красная
-                                        st.markdown(f"""
-                                        <div style='background-color: #e14531; color: white; padding: 10px;
-                                                    text-align: center; border-radius: 20px;
-                                                    border: 2px solid #e14531;
-                                                    font-weight: bold; margin-bottom: 10px;'>
-                                            Страница {page_num} (выбрано)
-                                        </div>
-                                        """, unsafe_allow_html=True)
-                                    else:
-                                        # Кликабельная кнопка - овальная с красной окантовкой
-                                        if st.button(f"Страница {page_num}", key=f"edit_page_{page_num}", use_container_width=True):
-                                            st.session_state.edit_page = page_num
-                                            st.rerun()
-
-                            if total_pages > 10:
-                                st.info(f"Показаны первые 10 из {total_pages} страниц.")
-
-                        # Вычисляем диапазон строк для текущей страницы
-                        start_idx = (st.session_state.edit_page - 1) * CITIES_PER_PAGE
-                        end_idx = min(start_idx + CITIES_PER_PAGE, total_cities)
-                        page_rows = editable_rows.iloc[start_idx:end_idx]
-
-                        st.caption(f"Показано {start_idx + 1}-{end_idx} из {total_cities} городов")
-
                         # Обертка для черной окантовки
                         st.markdown('<div class="edit-cities-block">', unsafe_allow_html=True)
 
-                        for idx, row in page_rows.iterrows():
+                        for idx, row in editable_rows.iterrows():
                             with st.container():
                                 row_id = row['row_id']
                                 city_name = row['Исходное название']
@@ -1390,62 +1321,11 @@ if uploaded_files and hh_areas is not None:
                                 # OPTIMIZED: use cached CSS
                                 st.markdown(get_edit_selectbox_css(), unsafe_allow_html=True)
 
-                                # ============================================
-                                # PAGINATION для Split режима - tabs
-                                # ============================================
-                                CITIES_PER_PAGE_SPLIT = 10
-                                total_cities_split = len(editable_rows)
-                                total_pages_split = max(1, (total_cities_split + CITIES_PER_PAGE_SPLIT - 1) // CITIES_PER_PAGE_SPLIT)
-
-                                # Инициализация текущей страницы для этой вкладки
-                                page_key = f'edit_page_split_{sheet_name}'
-                                if page_key not in st.session_state:
-                                    st.session_state[page_key] = 1
-
-                                # Ограничиваем страницу в допустимых пределах
-                                if st.session_state[page_key] > total_pages_split:
-                                    st.session_state[page_key] = total_pages_split
-                                if st.session_state[page_key] < 1:
-                                    st.session_state[page_key] = 1
-
-                                # Пагинация: овальные кнопки с красной подсветкой
-                                if total_pages_split > 1:
-                                    # Создаём строку с кнопками
-                                    page_cols_split = st.columns(min(total_pages_split, 10))
-                                    for i in range(min(total_pages_split, 10)):
-                                        page_num_split = i + 1
-                                        with page_cols_split[i]:
-                                            if st.session_state[page_key] == page_num_split:
-                                                # Текущая страница - овальная залитая красная
-                                                st.markdown(f"""
-                                                <div style='background-color: #e14531; color: white; padding: 10px;
-                                                            text-align: center; border-radius: 20px;
-                                                            border: 2px solid #e14531;
-                                                            font-weight: bold; margin-bottom: 10px;'>
-                                                    Страница {page_num_split} (выбрано)
-                                                </div>
-                                                """, unsafe_allow_html=True)
-                                            else:
-                                                # Кликабельная кнопка - овальная с красной окантовкой
-                                                if st.button(f"Страница {page_num_split}", key=f"split_page_{sheet_name}_{tab_idx}_{page_num_split}", use_container_width=True):
-                                                    st.session_state[page_key] = page_num_split
-                                                    st.rerun()
-
-                                    if total_pages_split > 10:
-                                        st.info(f"Показаны первые 10 из {total_pages_split} страниц.")
-
-                                # Вычисляем диапазон строк для текущей страницы
-                                start_idx_split = (st.session_state[page_key] - 1) * CITIES_PER_PAGE_SPLIT
-                                end_idx_split = min(start_idx_split + CITIES_PER_PAGE_SPLIT, total_cities_split)
-                                page_rows_split = editable_rows.iloc[start_idx_split:end_idx_split]
-
-                                st.caption(f"Показано {start_idx_split + 1}-{end_idx_split} из {total_cities_split} городов")
-
                                 # Обертка для черной окантовки
                                 st.markdown('<div class="edit-cities-block">', unsafe_allow_html=True)
 
                                 # Для каждого города показываем выбор
-                                for idx, row in page_rows_split.iterrows():
+                                for idx, row in editable_rows.iterrows():
                                     row_id = row['row_id']
                                     city_name = row['Исходное название']
                                     current_value = row['Итоговое гео']
@@ -1768,55 +1648,10 @@ if uploaded_files and hh_areas is not None:
                                             russia_cities_for_select.append(city_name)
                                     russia_cities_for_select = sorted(russia_cities_for_select)
 
-                                    # ============================================
-                                    # PAGINATION для Split режима - columns (vacancy)
-                                    # ============================================
-                                    CITIES_PER_PAGE_VACANCY = 10
-                                    total_cities_vacancy = len(editable_vacancy_rows)
-                                    total_pages_vacancy = max(1, (total_cities_vacancy + CITIES_PER_PAGE_VACANCY - 1) // CITIES_PER_PAGE_VACANCY)
-
-                                    # Инициализация текущей страницы для этой вакансии
-                                    page_key_vacancy = f'edit_page_vacancy_{vacancy}_{tab_idx}'
-                                    if page_key_vacancy not in st.session_state:
-                                        st.session_state[page_key_vacancy] = 1
-
-                                    # Пагинация: овальные кнопки с красной подсветкой
-                                    if total_pages_vacancy > 1:
-                                        # Создаём строку с кнопками
-                                        page_cols_vacancy = st.columns(min(total_pages_vacancy, 10))
-                                        for i in range(min(total_pages_vacancy, 10)):
-                                            page_num_vacancy = i + 1
-                                            with page_cols_vacancy[i]:
-                                                if st.session_state[page_key_vacancy] == page_num_vacancy:
-                                                    # Текущая страница - овальная залитая красная
-                                                    st.markdown(f"""
-                                                    <div style='background-color: #e14531; color: white; padding: 10px;
-                                                                text-align: center; border-radius: 20px;
-                                                                border: 2px solid #e14531;
-                                                                font-weight: bold; margin-bottom: 10px;'>
-                                                        Страница {page_num_vacancy} (выбрано)
-                                                    </div>
-                                                    """, unsafe_allow_html=True)
-                                                else:
-                                                    # Кликабельная кнопка - овальная с красной окантовкой
-                                                    if st.button(f"Страница {page_num_vacancy}", key=f"vacancy_page_{vacancy}_{tab_idx}_{page_num_vacancy}", use_container_width=True):
-                                                        st.session_state[page_key_vacancy] = page_num_vacancy
-                                                        st.rerun()
-
-                                        if total_pages_vacancy > 10:
-                                            st.info(f"Показаны первые 10 из {total_pages_vacancy} страниц.")
-
-                                    # Вычисляем диапазон строк для текущей страницы
-                                    start_idx_vacancy = (st.session_state[page_key_vacancy] - 1) * CITIES_PER_PAGE_VACANCY
-                                    end_idx_vacancy = min(start_idx_vacancy + CITIES_PER_PAGE_VACANCY, total_cities_vacancy)
-                                    page_vacancy_rows = editable_vacancy_rows.iloc[start_idx_vacancy:end_idx_vacancy]
-
-                                    st.caption(f"Показано {start_idx_vacancy + 1}-{end_idx_vacancy} из {total_cities_vacancy} городов")
-
                                     # Обертка для черной окантовки
                                     st.markdown('<div class="edit-cities-block">', unsafe_allow_html=True)
 
-                                    for idx, row in page_vacancy_rows.iterrows():
+                                    for idx, row in editable_vacancy_rows.iterrows():
                                         col1, col2, col3 = st.columns([2, 3, 1])
                                         
                                         with col1:
@@ -2460,6 +2295,24 @@ if uploaded_files and hh_areas is not None:
         st.error(f"❌ Ошибка обработки файла: {str(e)}")
         import traceback
         st.code(traceback.format_exc())
+else:
+    # Файл был удален - очищаем все кэши
+    if 'processed' in st.session_state and st.session_state.processed:
+        # Очищаем все кэши связанные с обработкой файла
+        st.session_state.processed = False
+        st.session_state.result_df = None
+        st.session_state.manual_selections = {}
+        st.session_state.added_cities = []
+        st.session_state.candidates_cache = {}
+        st.session_state.original_df = None
+        if 'vacancy_files' in st.session_state:
+            del st.session_state.vacancy_files
+        if 'sheets_results' in st.session_state:
+            del st.session_state.sheets_results
+        # Очищаем кэши пагинации
+        keys_to_delete = [k for k in st.session_state.keys() if k.startswith('edit_page')]
+        for key in keys_to_delete:
+            del st.session_state[key]
 
 # ============================================
 # БЛОК: ВЫБОР РЕГИОНОВ И ГОРОДОВ
