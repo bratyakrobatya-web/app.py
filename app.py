@@ -1118,9 +1118,9 @@ if uploaded_files and hh_areas is not None:
                                 padding: 10px 20px;
                                 font-size: 14px;
                                 border-radius: 20px !important;
-                                border: 2px solid #f4301f !important;
+                                border: 2px solid #e14531 !important;
                                 background-color: white !important;
-                                color: #f4301f !important;
+                                color: #e14531 !important;
                             }
                             div[data-testid="column"] > div > div > button:hover {
                                 background-color: #fff5f5 !important;
@@ -1136,11 +1136,11 @@ if uploaded_files and hh_areas is not None:
                                     if st.session_state.edit_page == page_num:
                                         # Текущая страница - овальная залитая красная
                                         st.markdown(f"""
-                                        <div style='background-color: #f4301f; color: white; padding: 10px;
+                                        <div style='background-color: #e14531; color: white; padding: 10px;
                                                     text-align: center; border-radius: 20px;
-                                                    border: 2px solid #f4301f;
+                                                    border: 2px solid #e14531;
                                                     font-weight: bold; margin-bottom: 10px;'>
-                                            Страница {page_num}
+                                            Страница {page_num} (выбрано)
                                         </div>
                                         """, unsafe_allow_html=True)
                                     else:
@@ -1402,11 +1402,11 @@ if uploaded_files and hh_areas is not None:
                                             if st.session_state[page_key] == page_num_split:
                                                 # Текущая страница - овальная залитая красная
                                                 st.markdown(f"""
-                                                <div style='background-color: #f4301f; color: white; padding: 10px;
+                                                <div style='background-color: #e14531; color: white; padding: 10px;
                                                             text-align: center; border-radius: 20px;
-                                                            border: 2px solid #f4301f;
+                                                            border: 2px solid #e14531;
                                                             font-weight: bold; margin-bottom: 10px;'>
-                                                    Страница {page_num_split}
+                                                    Страница {page_num_split} (выбрано)
                                                 </div>
                                                 """, unsafe_allow_html=True)
                                             else:
@@ -1741,11 +1741,11 @@ if uploaded_files and hh_areas is not None:
                                                 if st.session_state[page_key_vacancy] == page_num_vacancy:
                                                     # Текущая страница - овальная залитая красная
                                                     st.markdown(f"""
-                                                    <div style='background-color: #f4301f; color: white; padding: 10px;
+                                                    <div style='background-color: #e14531; color: white; padding: 10px;
                                                                 text-align: center; border-radius: 20px;
-                                                                border: 2px solid #f4301f;
+                                                                border: 2px solid #e14531;
                                                                 font-weight: bold; margin-bottom: 10px;'>
-                                                        Страница {page_num_vacancy}
+                                                        Страница {page_num_vacancy} (выбрано)
                                                     </div>
                                                     """, unsafe_allow_html=True)
                                                 else:
@@ -1998,7 +1998,9 @@ if uploaded_files and hh_areas is not None:
                                 # Удаляем первую строку, если она является заголовком
                                 output_vacancy_df = remove_header_row_if_needed(output_vacancy_df, original_cols[0])
 
-                                # Превью убрано - достаточно таблицы сопоставлений
+                                # Превью итогового файла для вакансии
+                                st.markdown(f"#### 👀 Превью итогового файла - {vacancy}")
+                                st.dataframe(output_vacancy_df, use_container_width=True, height=300)
 
                                 # Кнопка выгрузки для этой вакансии
                                 st.markdown("---")
@@ -2169,7 +2171,6 @@ if uploaded_files and hh_areas is not None:
                         first_col_name = output_df.columns[0]
                         output_df = remove_header_row_if_needed(output_df, first_col_name)
 
-                        st.success(f"✅ Готово к выгрузке: **{len(output_df)}** уникальных городов")
 
                         # Санитизация данных перед экспортом (защита от CSV Injection)
                         output_df = sanitize_csv_content(output_df)
@@ -2303,7 +2304,6 @@ if uploaded_files and hh_areas is not None:
                     # Удаляем первую строку, если она является заголовком
                     output_df = remove_header_row_if_needed(output_df, original_cols[0])
 
-                    st.success(f"✅ Готово к выгрузке: **{len(output_df)}** уникальных городов")
 
                     # Санитизация данных перед экспортом (защита от CSV Injection)
                     output_df = sanitize_csv_content(output_df)
@@ -2462,14 +2462,14 @@ st.markdown("""
 <style>
 /* Красная окантовка для multiselect */
 [data-testid="stMultiSelect"] div[data-baseweb="select"] > div {
-    border-color: #f4301f !important;
+    border-color: #e14531 !important;
 }
 [data-testid="stMultiSelect"] div[data-baseweb="select"] > div:hover {
-    border-color: #f4301f !important;
+    border-color: #e14531 !important;
 }
 [data-testid="stMultiSelect"] div[data-baseweb="select"] > div:focus-within {
-    border-color: #f4301f !important;
-    box-shadow: 0 0 0 0.2rem rgba(244, 48, 31, 0.25) !important;
+    border-color: #e14531 !important;
+    box-shadow: 0 0 0 0.2rem rgba(225, 69, 49, 0.25) !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -2943,6 +2943,24 @@ st.markdown("---")
 # Раздел: Сверки с клиентами
 # =====================================================
 st.markdown('<div id="сверки-с-клиентами"></div>', unsafe_allow_html=True)
+
+# CSS для селекторов в разделе Сверки с клиентами
+st.markdown("""
+<style>
+/* Красная окантовка для selectbox и multiselect в разделе Сверки */
+[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+    border-color: #e14531 !important;
+}
+[data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover {
+    border-color: #e14531 !important;
+}
+[data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus-within {
+    border-color: #e14531 !important;
+    box-shadow: 0 0 0 0.2rem rgba(225, 69, 49, 0.25) !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 st.header("🔄 Сверки с клиентами")
 
 st.markdown("""
@@ -3012,11 +3030,6 @@ with st.expander("Яндекс.Еда", expanded=False):
 with st.expander("Пятерочка", expanded=False):
     st.info("Сверка для этого клиента находится в разработке")
 
-with st.expander("Ростелеком", expanded=False):
-    st.info("Сверка для этого клиента находится в разработке")
-
-with st.expander("Ингосстрах", expanded=False):
-    st.info("Сверка для этого клиента находится в разработке")
 
 # Закрываем контейнер matrix-code-section
 st.markdown('</div>', unsafe_allow_html=True)
