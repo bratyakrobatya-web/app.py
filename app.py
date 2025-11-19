@@ -1486,7 +1486,30 @@ if uploaded_files and hh_areas is not None:
                                 (~result_df_sheet_final['Статус'].str.contains('❌ Не найдено', na=False)) &
                                 (~result_df_sheet_final['Статус'].str.contains('Пустое значение', na=False))
                             ].copy()
-                            
+
+                            # КРИТИЧНО: Также исключаем ВСЕ дубликаты городов с "❌ Не найдено"
+                            excluded_cities = result_df_sheet_final[
+                                result_df_sheet_final['Статус'].str.contains('❌ Не найдено', na=False)
+                            ]['Исходное название'].unique()
+
+                            if len(excluded_cities) > 0:
+                                excluded_normalized = set()
+                                for city in excluded_cities:
+                                    if pd.notna(city):
+                                        normalized = str(city).replace('ё', 'е').replace('Ё', 'Е').lower().strip()
+                                        normalized = ' '.join(normalized.split())
+                                        excluded_normalized.add(normalized)
+
+                                output_sheet_df['_temp_normalized'] = (
+                                    output_sheet_df['Исходное название']
+                                    .fillna('').astype(str)
+                                    .str.replace('ё', 'е').str.replace('Ё', 'Е')
+                                    .str.lower().str.strip()
+                                    .str.replace(r'\s+', ' ', regex=True)
+                                )
+                                output_sheet_df = output_sheet_df[~output_sheet_df['_temp_normalized'].isin(excluded_normalized)].copy()
+                                output_sheet_df = output_sheet_df.drop(columns=['_temp_normalized'])
+
                             if len(output_sheet_df) > 0:
                                 # Берем столбцы из исходного файла
                                 original_cols = original_df_sheet.columns.tolist()
@@ -1596,7 +1619,30 @@ if uploaded_files and hh_areas is not None:
                         (~result_df['Статус'].str.contains('❌ Не найдено', na=False)) &
                         (~result_df['Статус'].str.contains('Пустое значение', na=False))
                     ].copy()
-                    
+
+                    # КРИТИЧНО: Также исключаем ВСЕ дубликаты городов с "❌ Не найдено"
+                    excluded_cities = result_df[
+                        result_df['Статус'].str.contains('❌ Не найдено', na=False)
+                    ]['Исходное название'].unique()
+
+                    if len(excluded_cities) > 0:
+                        excluded_normalized = set()
+                        for city in excluded_cities:
+                            if pd.notna(city):
+                                normalized = str(city).replace('ё', 'е').replace('Ё', 'Е').lower().strip()
+                                normalized = ' '.join(normalized.split())
+                                excluded_normalized.add(normalized)
+
+                        export_df['_temp_normalized'] = (
+                            export_df['Исходное название']
+                            .fillna('').astype(str)
+                            .str.replace('ё', 'е').str.replace('Ё', 'Е')
+                            .str.lower().str.strip()
+                            .str.replace(r'\s+', ' ', regex=True)
+                        )
+                        export_df = export_df[~export_df['_temp_normalized'].isin(excluded_normalized)].copy()
+                        export_df = export_df.drop(columns=['_temp_normalized'])
+
                     # Получаем уникальные вакансии
                     if vacancy_col in export_df.columns:
                         unique_vacancies = sorted(export_df[vacancy_col].dropna().unique())
@@ -1865,11 +1911,36 @@ if uploaded_files and hh_areas is not None:
                                 )
                                 
                                 # FIX: Исключаем не найденные (❌ Не найдено) для публикатора
-                                vacancy_final_df = vacancy_final_df[
+                                temp_vacancy_df = vacancy_final_df[
                                     (vacancy_final_df['Итоговое гео'].notna()) &
                                     (~vacancy_final_df['Статус'].str.contains('❌ Не найдено', na=False))
                                 ].copy()
-                                
+
+                                # КРИТИЧНО: Также исключаем ВСЕ дубликаты городов с "❌ Не найдено"
+                                excluded_cities = vacancy_final_df[
+                                    vacancy_final_df['Статус'].str.contains('❌ Не найдено', na=False)
+                                ]['Исходное название'].unique()
+
+                                if len(excluded_cities) > 0:
+                                    excluded_normalized = set()
+                                    for city in excluded_cities:
+                                        if pd.notna(city):
+                                            normalized = str(city).replace('ё', 'е').replace('Ё', 'Е').lower().strip()
+                                            normalized = ' '.join(normalized.split())
+                                            excluded_normalized.add(normalized)
+
+                                    temp_vacancy_df['_temp_normalized'] = (
+                                        temp_vacancy_df['Исходное название']
+                                        .fillna('').astype(str)
+                                        .str.replace('ё', 'е').str.replace('Ё', 'Е')
+                                        .str.lower().str.strip()
+                                        .str.replace(r'\s+', ' ', regex=True)
+                                    )
+                                    temp_vacancy_df = temp_vacancy_df[~temp_vacancy_df['_temp_normalized'].isin(excluded_normalized)].copy()
+                                    temp_vacancy_df = temp_vacancy_df.drop(columns=['_temp_normalized'])
+
+                                vacancy_final_df = temp_vacancy_df
+
                                 # Формируем DataFrame для выгрузки
                                 output_vacancy_df = pd.DataFrame()
                                 output_vacancy_df[original_cols[0]] = vacancy_final_df['Итоговое гео']
@@ -2014,7 +2085,42 @@ if uploaded_files and hh_areas is not None:
                             (~result_df_sheet['Статус'].str.contains('Пустое значение', na=False))
                         ].copy()
 
-                        st.write(f"**DEBUG [{sheet_name}]** После фильтрации: {len(output_sheet)} строк")
+                        st.write(f"**DEBUG [{sheet_name}]** После фильтрации по статусу: {len(output_sheet)} строк")
+
+                        # КРИТИЧНО: Также исключаем ВСЕ дубликаты городов с "❌ Не найдено"
+                        excluded_cities = result_df_sheet[
+                            result_df_sheet['Статус'].str.contains('❌ Не найдено', na=False)
+                        ]['Исходное название'].unique()
+
+                        if len(excluded_cities) > 0:
+                            # Нормализуем исключенные города
+                            excluded_normalized = set()
+                            for city in excluded_cities:
+                                if pd.notna(city):
+                                    normalized = (
+                                        str(city)
+                                        .replace('ё', 'е').replace('Ё', 'Е')
+                                        .lower().strip()
+                                    )
+                                    normalized = ' '.join(normalized.split())
+                                    excluded_normalized.add(normalized)
+
+                            # Нормализуем названия в output_sheet
+                            output_sheet['_temp_normalized'] = (
+                                output_sheet['Исходное название']
+                                .fillna('').astype(str)
+                                .str.replace('ё', 'е').str.replace('Ё', 'Е')
+                                .str.lower().str.strip()
+                                .str.replace(r'\s+', ' ', regex=True)
+                            )
+
+                            # Исключаем все строки с такими же нормализованными названиями
+                            output_sheet = output_sheet[~output_sheet['_temp_normalized'].isin(excluded_normalized)].copy()
+                            output_sheet = output_sheet.drop(columns=['_temp_normalized'])
+
+                            st.write(f"**DEBUG [{sheet_name}]** Исключено городов: {len(excluded_cities)}, после исключения дубликатов: {len(output_sheet)} строк")
+
+                        st.write(f"**DEBUG [{sheet_name}]** После фильтрации дубликатов: {len(output_sheet)} строк")
 
                         if len(output_sheet) > 0:
                             # Получаем индексы из row_id
@@ -2137,7 +2243,43 @@ if uploaded_files and hh_areas is not None:
                         (~final_result_df['Статус'].str.contains('Пустое значение', na=False))
                     ].copy()
 
-                    st.write(f"**DEBUG [Columns]** После фильтрации: {len(export_df)} строк")
+                    st.write(f"**DEBUG [Columns]** После фильтрации по статусу: {len(export_df)} строк")
+
+                    # КРИТИЧНО: Также исключаем ВСЕ дубликаты городов с "❌ Не найдено"
+                    # Получаем список исключенных городов (нормализованные названия)
+                    excluded_cities = final_result_df[
+                        final_result_df['Статус'].str.contains('❌ Не найдено', na=False)
+                    ]['Исходное название'].unique()
+
+                    if len(excluded_cities) > 0:
+                        # Нормализуем исключенные города
+                        excluded_normalized = set()
+                        for city in excluded_cities:
+                            if pd.notna(city):
+                                normalized = (
+                                    str(city)
+                                    .replace('ё', 'е').replace('Ё', 'Е')
+                                    .lower().strip()
+                                )
+                                normalized = ' '.join(normalized.split())  # Убираем множественные пробелы
+                                excluded_normalized.add(normalized)
+
+                        # Нормализуем названия в export_df
+                        export_df['_temp_normalized'] = (
+                            export_df['Исходное название']
+                            .fillna('').astype(str)
+                            .str.replace('ё', 'е').str.replace('Ё', 'Е')
+                            .str.lower().str.strip()
+                            .str.replace(r'\s+', ' ', regex=True)
+                        )
+
+                        # Исключаем все строки с такими же нормализованными названиями
+                        export_df = export_df[~export_df['_temp_normalized'].isin(excluded_normalized)].copy()
+                        export_df = export_df.drop(columns=['_temp_normalized'])
+
+                        st.write(f"**DEBUG** Исключено городов: {len(excluded_cities)}, после исключения дубликатов: {len(export_df)} строк")
+
+                    st.write(f"**DEBUG [Columns]** После фильтрации дубликатов: {len(export_df)} строк")
 
                     # Создаем итоговый DataFrame
                     # Получаем индексы ОДИН РАЗ перед циклом
@@ -2207,7 +2349,30 @@ if uploaded_files and hh_areas is not None:
                         (final_result_df['Итоговое гео'].notna()) &
                         (~final_result_df['Статус'].str.contains('❌ Не найдено', na=False))
                     ].copy()
-                    
+
+                    # КРИТИЧНО: Также исключаем ВСЕ дубликаты городов с "❌ Не найдено"
+                    excluded_cities = final_result_df[
+                        final_result_df['Статус'].str.contains('❌ Не найдено', na=False)
+                    ]['Исходное название'].unique()
+
+                    if len(excluded_cities) > 0:
+                        excluded_normalized = set()
+                        for city in excluded_cities:
+                            if pd.notna(city):
+                                normalized = str(city).replace('ё', 'е').replace('Ё', 'Е').lower().strip()
+                                normalized = ' '.join(normalized.split())
+                                excluded_normalized.add(normalized)
+
+                        export_df['_temp_normalized'] = (
+                            export_df['Исходное название']
+                            .fillna('').astype(str)
+                            .str.replace('ё', 'е').str.replace('Ё', 'Е')
+                            .str.lower().str.strip()
+                            .str.replace(r'\s+', ' ', regex=True)
+                        )
+                        export_df = export_df[~export_df['_temp_normalized'].isin(excluded_normalized)].copy()
+                        export_df = export_df.drop(columns=['_temp_normalized'])
+
                     # Получаем названия столбцов из исходного файла
                     original_cols = st.session_state.original_df.columns.tolist()
                     
