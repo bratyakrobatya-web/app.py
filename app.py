@@ -853,8 +853,8 @@ if uploaded_files and hh_areas is not None:
             dup_hh = st.session_state.dup_hh  
             total_dup = st.session_state.total_dup  
             
-            # ПРОВЕРЯЕМ РЕЖИМ ВАКАНСИЙ И ДАЕМ ВЫБОР
-            if st.session_state.get('has_vacancy_mode', False):
+            # ПРОВЕРЯЕМ РЕЖИМ ВАКАНСИЙ И ДАЕМ ВЫБОР (только после обработки)
+            if st.session_state.get('has_vacancy_mode', False) and st.session_state.processed:
                 st.markdown("---")
                 st.subheader("🎯 Выбор режима работы")
 
@@ -1572,7 +1572,9 @@ if uploaded_files and hh_areas is not None:
                                 # Удаляем первую строку, если она является заголовком
                                 final_output = remove_header_row_if_needed(final_output, original_cols[0])
 
-                                # Превью убрано - достаточно таблицы сопоставлений
+                                # Превью итогового файла для вкладки
+                                st.markdown(f"#### 👀 Превью итогового файла - {sheet_name}")
+                                st.dataframe(final_output, use_container_width=True, height=300)
 
                                 # Кнопка скачивания
                                 st.markdown("---")
@@ -1720,7 +1722,10 @@ if uploaded_files and hh_areas is not None:
                                     editable_vacancy_rows = editable_vacancy_rows.drop(columns=['_sort_priority'])
 
                                 if len(editable_vacancy_rows) > 0:
-                                    
+
+                                    # CSS для черной окантовки в редактировании
+                                    st.markdown(get_edit_selectbox_css(), unsafe_allow_html=True)
+
                                     # Получаем список всех городов России для выбора
                                     russia_cities_for_select = []
                                     for city_name, city_info in hh_areas.items():
@@ -1772,6 +1777,9 @@ if uploaded_files and hh_areas is not None:
                                     page_vacancy_rows = editable_vacancy_rows.iloc[start_idx_vacancy:end_idx_vacancy]
 
                                     st.caption(f"Показано {start_idx_vacancy + 1}-{end_idx_vacancy} из {total_cities_vacancy} городов")
+
+                                    # Обертка для черной окантовки
+                                    st.markdown('<div class="edit-cities-block">', unsafe_allow_html=True)
 
                                     for idx, row in page_vacancy_rows.iterrows():
                                         col1, col2, col3 = st.columns([2, 3, 1])
@@ -1859,6 +1867,9 @@ if uploaded_files and hh_areas is not None:
                                             st.text(f"{row['Совпадение %']}%")
                                         
                                         st.markdown("<hr style='margin-top: 5px; margin-bottom: 5px;'>", unsafe_allow_html=True)
+
+                                    # Закрываем обертку для черной окантовки
+                                    st.markdown('</div>', unsafe_allow_html=True)
                                 else:
                                     st.success("✅ Все города распознаны корректно!")
                                 
@@ -2154,9 +2165,19 @@ if uploaded_files and hh_areas is not None:
                             first_col_name = original_df_sheet.columns[0]
                             sheet_data[first_col_name] = output_sheet['Итоговое гео'].values
 
-                            # Остальные колонки из оригинального датафрейма (используем loc для правильного доступа по индексам)
+                            # Остальные колонки из оригинального датафрейма
+                            # FIX: Используем merge вместо loc для безопасного получения данных
                             for col in original_df_sheet.columns[1:]:
-                                sheet_data[col] = original_df_sheet.loc[indices, col].values
+                                # Создаем временный DataFrame с row_id и нужной колонкой
+                                temp_df = original_df_sheet.reset_index()
+                                temp_df['row_id'] = temp_df.index
+                                # Объединяем по row_id
+                                merged = output_sheet[['row_id']].merge(
+                                    temp_df[['row_id', col]],
+                                    on='row_id',
+                                    how='left'
+                                )
+                                sheet_data[col] = merged[col].values
 
                             all_data.append(sheet_data)
                     
