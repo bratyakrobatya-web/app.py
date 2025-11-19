@@ -291,45 +291,29 @@ h3 {
     font-weight: normal;
 }
 
-/* Inputs - Selectbox с черной окантовкой (ГЛОБАЛЬНО ДЛЯ ВСЕХ) */
+/* Inputs - Selectbox с черной окантовкой */
 div[data-baseweb="select"] > div,
-div[data-baseweb="select"] > div > div,
 .stSelectbox > div > div,
-.stSelectbox > div > div > div,
-[data-testid="stSelectbox"] > div > div,
-[data-testid="stSelectbox"] > div > div > div,
-[data-testid="stSelectbox"] [data-baseweb="select"] > div {
+[data-testid="stSelectbox"] > div > div {
     position: relative;
-    border: 2px solid #000000 !important;
-    border-color: #000000 !important;
-    border-radius: 10px ;
-    background: white ;
-    transition: all 0.3s ease ;
-    cursor: pointer ;
+    border: 2px solid #1a1a1a;
+    border-radius: 10px;
+    background: white;
+    transition: all 0.3s ease;
+    cursor: pointer;
 }
 
 div[data-baseweb="select"] > div:hover,
 .stSelectbox:hover > div > div,
 [data-testid="stSelectbox"]:hover > div > div {
-    border: 2px solid #000000 !important;
-    border-color: #000000 !important;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
     filter: brightness(1.02);
 }
 
-div[data-baseweb="select"] > div:focus,
 div[data-baseweb="select"] > div:focus-within,
-div[data-baseweb="select"] > div:active,
-.stSelectbox > div > div:focus,
 .stSelectbox > div > div:focus-within,
-.stSelectbox > div > div:active,
-[data-testid="stSelectbox"] > div > div:focus,
-[data-testid="stSelectbox"] > div > div:focus-within,
-[data-testid="stSelectbox"] > div > div:active {
-    border: 2px solid #000000 !important;
-    border-color: #000000 !important;
-    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1) ;
-    outline: none !important;
+[data-testid="stSelectbox"] > div > div:focus-within {
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
 }
 
 .stTextInput > div > div {
