@@ -2088,8 +2088,161 @@ if uploaded_files and hh_areas is not None:
             elif st.session_state.get('has_vacancy_mode', False) and st.session_state.export_mode == "single":
                 # РЕЖИМ: Единым файлом
                 st.markdown("---")
+
+                # Получаем данные для редактирования из первой вкладки или первого результата
+                if st.session_state.sheet_mode == 'tabs':
+                    # Для режима tabs используем первую вкладку
+                    first_sheet = list(st.session_state.sheets_results.keys())[0]
+                    edit_result_df = st.session_state.sheets_results[first_sheet]['result_df']
+                else:
+                    # Для режима columns используем общий result_df
+                    edit_result_df = result_df
+
+                # Блок редактирования городов с совпадением ≤ 95%
+                editable_rows = edit_result_df[
+                    (edit_result_df['Совпадение %'] <= 95) &
+                    (~edit_result_df['Статус'].str.contains('Дубликат', na=False))
+                ].copy()
+
+                if len(editable_rows) > 0:
+                    # Убираем дубликаты по исходному названию
+                    editable_rows['_normalized_original'] = (
+                        editable_rows['Исходное название']
+                        .fillna('').astype(str)
+                        .str.replace('ё', 'е').str.replace('Ё', 'Е')
+                        .str.lower().str.strip()
+                        .str.replace(r'\s+', ' ', regex=True)
+                    )
+                    editable_rows = editable_rows.drop_duplicates(subset=['_normalized_original'], keep='first')
+
+                    # Сортируем
+                    editable_rows['_sort_priority'] = (~editable_rows['Статус'].str.contains('❌ Не найдено', na=False)).astype(int)
+                    editable_rows = editable_rows.sort_values(['_sort_priority', 'Совпадение %'], ascending=[True, True])
+                    editable_rows = editable_rows.drop(columns=['_sort_priority'])
+
+                    st.subheader("✏️ Редактирование городов с совпадением ≤ 95%")
+                    st.info(f"📝 Найдено **{len(editable_rows)}** городов для редактирования")
+
+                    # CSS для черных селекторов
+                    st.markdown(get_edit_selectbox_css(), unsafe_allow_html=True)
+
+                    # Пагинация
+                    CITIES_PER_PAGE = 10
+                    total_cities = len(editable_rows)
+                    total_pages = max(1, (total_cities + CITIES_PER_PAGE - 1) // CITIES_PER_PAGE)
+
+                    page_key = 'edit_page_single_mode'
+                    if page_key not in st.session_state:
+                        st.session_state[page_key] = 1
+
+                    if st.session_state[page_key] > total_pages:
+                        st.session_state[page_key] = total_pages
+                    if st.session_state[page_key] < 1:
+                        st.session_state[page_key] = 1
+
+                    # Кнопки пагинации
+                    if total_pages > 1:
+                        page_cols = st.columns(min(total_pages, 10))
+                        for i in range(min(total_pages, 10)):
+                            page_num = i + 1
+                            with page_cols[i]:
+                                if st.session_state[page_key] == page_num:
+                                    st.markdown(f"""
+                                    <div style='background-color: #e14531; color: white; padding: 10px;
+                                                text-align: center; border-radius: 20px;
+                                                border: 2px solid #e14531;
+                                                font-weight: bold; margin-bottom: 10px;'>
+                                        Страница {page_num}
+                                    </div>
+                                    """, unsafe_allow_html=True)
+                                else:
+                                    if st.button(f"Страница {page_num}", key=f"single_edit_page_{page_num}", use_container_width=True):
+                                        st.session_state[page_key] = page_num
+                                        st.rerun()
+
+                        if total_pages > 10:
+                            st.info(f"Показаны первые 10 из {total_pages} страниц.")
+
+                    # Вычисляем диапазон строк
+                    start_idx = (st.session_state[page_key] - 1) * CITIES_PER_PAGE
+                    end_idx = min(start_idx + CITIES_PER_PAGE, total_cities)
+                    page_rows = editable_rows.iloc[start_idx:end_idx]
+
+                    st.caption(f"Показано {start_idx + 1}-{end_idx} из {total_cities} городов")
+
+                    # Обертка для черной окантовки
+                    st.markdown('<div class="edit-cities-block">', unsafe_allow_html=True)
+
+                    for idx, row in page_rows.iterrows():
+                        row_id = row['row_id']
+                        city_name = row['Исходное название']
+                        current_value = row['Итоговое гео']
+                        current_match = row['Совпадение %']
+
+                        # Кандидаты
+                        candidates = st.session_state.candidates_cache.get(row_id, [])
+                        if not candidates:
+                            candidates = get_candidates_by_word(city_name, get_russian_cities_cached(hh_areas), limit=20)
+
+                        # Опции
+                        options, candidates_dict = prepare_city_options(
+                            tuple(candidates),
+                            current_value,
+                            current_match,
+                            city_name
+                        )
+
+                        # Ключ для селектора
+                        unique_key = f"select_single_edit_{row_id}"
+
+                        # Текущее значение
+                        if row_id in st.session_state.manual_selections:
+                            selected_value = st.session_state.manual_selections[row_id]
+                        else:
+                            selected_value = current_value
+
+                        # Индекс
+                        if selected_value == "❌ Нет совпадения":
+                            default_idx = 0
+                        else:
+                            default_idx = candidates_dict.get(selected_value, 0)
+
+                        col1, col2, col3, col4 = st.columns([2, 3, 1, 1])
+
+                        with col1:
+                            st.markdown(f"**{city_name}**")
+
+                        with col2:
+                            st.selectbox(
+                                "Выберите город:",
+                                options=options,
+                                index=default_idx,
+                                key=unique_key,
+                                label_visibility="collapsed"
+                            )
+
+                        with col3:
+                            st.text(f"{row['Совпадение %']:.1f}%")
+
+                        with col4:
+                            st.text(row['Статус'])
+
+                        # Сохраняем выбор
+                        current_selection = st.session_state.get(unique_key)
+                        if current_selection:
+                            if current_selection == "❌ Нет совпадения":
+                                st.session_state.manual_selections[row_id] = "❌ Нет совпадения"
+                            else:
+                                selected_city = current_selection.rsplit(' (', 1)[0]
+                                st.session_state.manual_selections[row_id] = selected_city
+
+                    # Закрываем обертку
+                    st.markdown('</div>', unsafe_allow_html=True)
+
+                # Теперь блок скачивания
+                st.markdown("---")
                 st.subheader("💾 Скачать результаты")
-                
+
                 if st.session_state.sheet_mode == 'tabs':
                     # Режим вкладок - объединяем все вкладки в один файл
                     all_data = []
