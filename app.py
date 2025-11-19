@@ -1994,21 +1994,16 @@ if uploaded_files and hh_areas is not None:
                       
                     publisher_count = len(publisher_df)  
                       
-                    st.download_button(  
-                        label=f"📤 Файл для публикатора\n{publisher_count} строк",  
-                        data=output_publisher,  
-                        file_name=f"geo_result_{uploaded_file.name.rsplit('.', 1)[0]}.xlsx",  
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",  
+                    st.download_button(
+                        label=f"📤 Файл для публикатора\n{publisher_count} строк",
+                        data=output_publisher,
+                        file_name=f"geo_result_{uploaded_file.name.rsplit('.', 1)[0]}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                         use_container_width=True,
                         type="primary",
-                        key='download_publisher'  
+                        key='download_publisher'
                     )
-                    
-                    st.markdown('<p style="font-size: 0.875rem; color: rgba(49, 51, 63, 0.6);"><span class="check-circle">✓</span>Остальные столбцы из исходного файла</p>', unsafe_allow_html=True)
-                    st.markdown('<p style="font-size: 0.875rem; color: rgba(49, 51, 63, 0.6);"><span class="check-circle">✓</span>Исключены не найденные и дубликаты</p>', unsafe_allow_html=True)
-                    if st.session_state.added_cities:
-                        st.caption(f"✅ Добавлено городов: {len(st.session_state.added_cities)}")
-                  
+
                 with col2:
                     export_full_df = final_result_df.drop(['row_id', 'sort_priority'], axis=1, errors='ignore')
 
@@ -2029,9 +2024,6 @@ if uploaded_files and hh_areas is not None:
                         type="primary",
                         key='download_full'
                     )
-                    
-                    st.caption("📊 Подробный отчет со всеми данными")
-                    st.caption("📊 Включает статусы и проценты совпадений")
       
     except Exception as e:
         st.error(f"❌ Ошибка обработки файла: {str(e)}")
