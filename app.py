@@ -168,7 +168,7 @@ def get_hh_areas_cached() -> Optional[Dict]:
 
 
 @st.cache_data(show_spinner=False)
-def apply_manual_selections_cached(_result_df, manual_selections: dict, _hh_areas: dict) -> pd.DataFrame:
+def apply_manual_selections_cached(_result_df, manual_selections: dict, _hh_areas: dict, cache_key: str = "default") -> pd.DataFrame:
     """
     Кэшированное применение ручных изменений к DataFrame.
 
@@ -179,10 +179,14 @@ def apply_manual_selections_cached(_result_df, manual_selections: dict, _hh_area
     ВАЖНО: manual_selections БЕЗ _ чтобы Streamlit хэшировал СОДЕРЖИМОЕ словаря!
     При изменении значений внутри словаря хэш меняется → кэш инвалидируется → функция выполняется.
 
+    FIX: Добавлен cache_key для различения разных вкладок/вакансий.
+    Без этого параметра все вкладки с пустым manual_selections={} получали одинаковый кэшированный результат!
+
     Args:
         _result_df: Исходный DataFrame с результатами (НЕ хэшируется)
         manual_selections: Словарь ручных изменений {row_id: new_value} (ХЭШИРУЕТСЯ!)
         _hh_areas: Справочник HH.ru (НЕ хэшируется)
+        cache_key: Уникальный ключ для кэша (название вкладки/вакансии) (ХЭШИРУЕТСЯ!)
 
     Returns:
         pd.DataFrame: DataFrame с применёнными изменениями
@@ -1134,7 +1138,8 @@ if uploaded_files and hh_areas is not None:
                         final_result_df = apply_manual_selections_cached(
                             result_df,
                             st.session_state.manual_selections,
-                            hh_areas
+                            hh_areas,
+                            cache_key="scenario1"
                         )
 
                         # Добавляем города из added_cities
@@ -1295,10 +1300,12 @@ if uploaded_files and hh_areas is not None:
                                     sheet_selections[selection_key] = new_value
 
                             # Используем кэшированную функцию вместо цикла
+                            # FIX: Передаем sheet_name в cache_key для уникальности кэша каждой вкладки
                             result_df_sheet_final = apply_manual_selections_cached(
                                 result_df_sheet,
                                 sheet_selections,
-                                hh_areas
+                                hh_areas,
+                                cache_key=f"tab_{sheet_name}"
                             )
                             
                             # FIX: Формируем итоговый файл для публикатора (исключаем не найденные)
@@ -1715,10 +1722,12 @@ if uploaded_files and hh_areas is not None:
                                 vacancy_selections[selection_key] = new_value
 
                         # Используем кэшированную функцию вместо цикла
+                        # FIX: Передаем vacancy в cache_key для уникальности кэша каждой вакансии
                         vacancy_final_df = apply_manual_selections_cached(
                             vacancy_df,
                             vacancy_selections,
-                            hh_areas
+                            hh_areas,
+                            cache_key=f"vacancy_{vacancy}"
                         )
 
                         # КРИТИЧНЫЙ FIX: Применяем изменения ко ВСЕМ дубликатам
