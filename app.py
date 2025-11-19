@@ -1295,7 +1295,22 @@ if uploaded_files and hh_areas is not None:
                             result_df,
                             st.session_state.manual_selections,
                             hh_areas
-                        )  
+                        )
+
+                        # Добавляем города из added_cities
+                        if st.session_state.added_cities:
+                            for city in st.session_state.added_cities:
+                                if city in hh_areas:
+                                    final_result_df = pd.concat([final_result_df, pd.DataFrame([{
+                                        'row_id': len(final_result_df),
+                                        'Исходное название': city,
+                                        'Итоговое гео': city,
+                                        'ID HH': hh_areas[city]['id'],
+                                        'Регион': hh_areas[city]['parent'],
+                                        'Совпадение %': 100.0,
+                                        'Статус': '✅ Добавлено',
+                                        'Изменение': 'Нет'
+                                    }])], ignore_index=True)  
             
             # ПРОВЕРЯЕМ РЕЖИМ РАБОТЫ
             # Если режим split - показываем только блок редактирования по вакансиям/вкладкам
@@ -1727,6 +1742,20 @@ if uploaded_files and hh_areas is not None:
 
                                 if len(editable_vacancy_rows) > 0:
 
+                                    # Callback для сохранения выбора ТОЛЬКО при изменении
+                                    def on_city_select_vacancy(selection_key, widget_key):
+                                        """Callback для режима split vacancy - вызывается только при изменении"""
+                                        selected = st.session_state.get(widget_key)
+                                        if selected == "❌ Нет совпадения":
+                                            st.session_state.manual_selections[selection_key] = "❌ Нет совпадения"
+                                        elif selected:
+                                            # Извлекаем название без процента
+                                            if "(" in selected and not selected.startswith("❌"):
+                                                city_match = selected.rsplit(' (', 1)[0]
+                                                st.session_state.manual_selections[selection_key] = city_match
+                                            else:
+                                                st.session_state.manual_selections[selection_key] = selected
+
                                     # CSS для черной окантовки в редактировании
                                     st.markdown(get_edit_selectbox_css(), unsafe_allow_html=True)
 
@@ -1850,22 +1879,15 @@ if uploaded_files and hh_areas is not None:
                                                             default_idx = i
                                                             break
                                             
-                                            selected = st.selectbox(
+                                            st.selectbox(
                                                 "Выберите город:",
                                                 options=options,
                                                 index=default_idx,
                                                 key=unique_key,
-                                                label_visibility="collapsed"
+                                                label_visibility="collapsed",
+                                                on_change=on_city_select_vacancy,
+                                                args=(selection_key, unique_key)
                                             )
-                                            
-                                            if selected == "❌ Нет совпадения":
-                                                st.session_state.manual_selections[selection_key] = "❌ Нет совпадения"
-                                            else:
-                                                if "(" in selected and selected.startswith("❌") == False:
-                                                    selected_city = selected.rsplit(' (', 1)[0]
-                                                    st.session_state.manual_selections[selection_key] = selected_city
-                                                else:
-                                                    st.session_state.manual_selections[selection_key] = selected
                                         
                                         with col3:
                                             st.text(f"{row['Совпадение %']}%")
@@ -2101,180 +2123,14 @@ if uploaded_files and hh_areas is not None:
                 st.markdown("---")
 
                 if st.session_state.sheet_mode == 'tabs':
-                    # РЕЖИМ ВКЛАДОК: Редактирование перед объединением
-                    st.subheader("🎯 Редактирование городов")
+                    # РЕЖИМ ВКЛАДОК: Объединение всех вкладок БЕЗ редактирования
+                    st.markdown("---")
+                    st.subheader("💾 Скачать результаты")
 
                     # Получаем список вкладок
                     sheet_names = list(st.session_state.sheets_results.keys())
-                    st.info(f"📊 Редактирование городов из **{len(sheet_names)}** вкладок перед объединением")
+                    st.info(f"📊 Объединение городов из **{len(sheet_names)}** вкладок")
 
-                    # Создаем вкладки для редактирования
-                    tabs = st.tabs([f"{name}" for name in sheet_names])
-
-                    for tab_idx, (tab, sheet_name) in enumerate(zip(tabs, sheet_names)):
-                        with tab:
-                            st.markdown(f"### 📄 {sheet_name}")
-
-                            # Получаем данные этой вкладки
-                            sheet_result = st.session_state.sheets_results[sheet_name]
-                            result_df_sheet = sheet_result['result_df']
-
-                            # Блок редактирования городов с совпадением ≤ 95%
-                            editable_rows = result_df_sheet[
-                                (result_df_sheet['Совпадение %'] <= 95) &
-                                (~result_df_sheet['Статус'].str.contains('Дубликат', na=False))
-                            ].copy()
-
-                            if len(editable_rows) > 0:
-                                # Убираем дубликаты по исходному названию (VECTORIZED)
-                                editable_rows['_normalized_original'] = (
-                                    editable_rows['Исходное название']
-                                    .fillna('').astype(str)
-                                    .str.replace('ё', 'е').str.replace('Ё', 'Е')
-                                    .str.lower().str.strip()
-                                    .str.replace(r'\s+', ' ', regex=True)
-                                )
-                                editable_rows = editable_rows.drop_duplicates(subset=['_normalized_original'], keep='first')
-
-                                # Сортируем: сначала "Нет совпадения", затем по возрастанию процента
-                                # VECTORIZED: sort priority (0 for not found, 1 for others)
-                                editable_rows['_sort_priority'] = (~editable_rows['Статус'].str.contains('❌ Не найдено', na=False)).astype(int)
-                                editable_rows = editable_rows.sort_values(
-                                    ['_sort_priority', 'Совпадение %'],
-                                    ascending=[True, True]
-                                )
-                                editable_rows = editable_rows.drop(columns=['_sort_priority'])
-
-                                st.markdown("#### ✏️ Редактирование городов с совпадением ≤ 95%")
-
-                                # CSS вне цикла для улучшения производительности
-                                st.markdown(get_edit_selectbox_css(), unsafe_allow_html=True)
-
-                                # PAGINATION для Single режима - tabs
-                                CITIES_PER_PAGE_SINGLE = 10
-                                total_cities_single = len(editable_rows)
-                                total_pages_single = max(1, (total_cities_single + CITIES_PER_PAGE_SINGLE - 1) // CITIES_PER_PAGE_SINGLE)
-
-                                # Инициализация текущей страницы для этой вкладки
-                                page_key = f'edit_page_single_{sheet_name}'
-                                if page_key not in st.session_state:
-                                    st.session_state[page_key] = 1
-
-                                # Ограничиваем страницу в допустимых пределах
-                                if st.session_state[page_key] > total_pages_single:
-                                    st.session_state[page_key] = total_pages_single
-                                if st.session_state[page_key] < 1:
-                                    st.session_state[page_key] = 1
-
-                                # Пагинация: овальные кнопки с красной подсветкой
-                                if total_pages_single > 1:
-                                    # Создаём строку с кнопками
-                                    page_cols_single = st.columns(min(total_pages_single, 10))
-                                    for i in range(min(total_pages_single, 10)):
-                                        page_num_single = i + 1
-                                        with page_cols_single[i]:
-                                            if st.session_state[page_key] == page_num_single:
-                                                # Текущая страница - овальная залитая красная
-                                                st.markdown(f"""
-                                                <div style='background-color: #e14531; color: white; padding: 10px;
-                                                            text-align: center; border-radius: 20px;
-                                                            border: 2px solid #e14531;
-                                                            font-weight: bold; margin-bottom: 10px;'>
-                                                    Страница {page_num_single} (выбрано)
-                                                </div>
-                                                """, unsafe_allow_html=True)
-                                            else:
-                                                # Кликабельная кнопка - овальная с красной окантовкой
-                                                if st.button(f"Страница {page_num_single}", key=f"single_page_{sheet_name}_{tab_idx}_{page_num_single}", use_container_width=True):
-                                                    st.session_state[page_key] = page_num_single
-                                                    st.rerun()
-
-                                    if total_pages_single > 10:
-                                        st.info(f"Показаны первые 10 из {total_pages_single} страниц.")
-
-                                # Вычисляем диапазон строк для текущей страницы
-                                start_idx_single = (st.session_state[page_key] - 1) * CITIES_PER_PAGE_SINGLE
-                                end_idx_single = min(start_idx_single + CITIES_PER_PAGE_SINGLE, total_cities_single)
-                                page_rows_single = editable_rows.iloc[start_idx_single:end_idx_single]
-
-                                st.caption(f"Показано {start_idx_single + 1}-{end_idx_single} из {total_cities_single} городов")
-
-                                # Обертка для черной окантовки
-                                st.markdown('<div class="edit-cities-block">', unsafe_allow_html=True)
-
-                                # Для каждого города показываем выбор
-                                for idx, row in page_rows_single.iterrows():
-                                    row_id = row['row_id']
-                                    city_name = row['Исходное название']
-                                    current_value = row['Итоговое гео']
-                                    current_match = row['Совпадение %']
-
-                                    # Используем кэш кандидатов
-                                    cache_key = (sheet_name, row_id)
-                                    candidates = st.session_state.candidates_cache.get(cache_key, [])
-                                    if not candidates:
-                                        candidates = get_candidates_by_word(city_name, get_russian_cities_cached(hh_areas), limit=20)
-
-                                    # Кэшированная подготовка options
-                                    options, candidates_dict = prepare_city_options(
-                                        tuple(candidates),
-                                        current_value,
-                                        current_match,
-                                        city_name
-                                    )
-
-                                    # Определяем текущий выбор
-                                    unique_key = f"select_single_{sheet_name}_{row_id}_{tab_idx}"
-                                    selection_key = (sheet_name, row_id)
-
-                                    if selection_key in st.session_state.manual_selections:
-                                        selected_value = st.session_state.manual_selections[selection_key]
-                                    else:
-                                        selected_value = current_value
-
-                                    # Быстрый поиск индекса O(1)
-                                    if selected_value == "❌ Нет совпадения":
-                                        default_idx = 0
-                                    else:
-                                        default_idx = candidates_dict.get(selected_value, 0)
-
-                                    col1, col2, col3 = st.columns([2, 3, 1])
-
-                                    with col1:
-                                        st.text(city_name)
-
-                                    with col2:
-                                        st.selectbox(
-                                            "Выберите город:",
-                                            options=options,
-                                            index=default_idx,
-                                            key=unique_key,
-                                            label_visibility="collapsed"
-                                        )
-
-                                    with col3:
-                                        st.text(f"{row['Совпадение %']:.1f}%")
-
-                                    # АВТОМАТИЧЕСКИ сохраняем в manual_selections при изменении
-                                    current_selection = st.session_state.get(unique_key)
-                                    if current_selection:
-                                        if current_selection == "❌ Нет совпадения":
-                                            st.session_state.manual_selections[selection_key] = "❌ Нет совпадения"
-                                        else:
-                                            # Извлекаем название без процента
-                                            selected_city = current_selection.rsplit(' (', 1)[0]
-                                            st.session_state.manual_selections[selection_key] = selected_city
-
-                                st.markdown("---")
-
-                                # Закрываем обертку для черной окантовки
-                                st.markdown('</div>', unsafe_allow_html=True)
-                            else:
-                                st.success("✅ Все города распознаны корректно!")
-
-                    # Теперь блок скачивания
-                    st.markdown("---")
-                    st.subheader("💾 Скачать результаты")
 
                     # Режим вкладок - объединяем все вкладки в один файл
                     all_data = []
@@ -2441,6 +2297,17 @@ if uploaded_files and hh_areas is not None:
 
                         st.markdown("#### ✏️ Редактирование городов с совпадением ≤ 95%")
 
+                        # Callback для сохранения выбора ТОЛЬКО при изменении
+                        def on_city_select_single_col(row_id, widget_key):
+                            """Callback для single mode columns - вызывается только при изменении"""
+                            selected = st.session_state.get(widget_key)
+                            if selected == "❌ Нет совпадения":
+                                st.session_state.manual_selections[row_id] = "❌ Нет совпадения"
+                            elif selected:
+                                # Извлекаем название без процента
+                                city_match = selected.rsplit(' (', 1)[0]
+                                st.session_state.manual_selections[row_id] = city_match
+
                         # CSS вне цикла для улучшения производительности
                         st.markdown(get_edit_selectbox_css(), unsafe_allow_html=True)
 
@@ -2541,21 +2408,13 @@ if uploaded_files and hh_areas is not None:
                                     options=options,
                                     index=default_idx,
                                     key=unique_key,
-                                    label_visibility="collapsed"
+                                    label_visibility="collapsed",
+                                    on_change=on_city_select_single_col,
+                                    args=(row_id, unique_key)
                                 )
 
                             with col3:
                                 st.text(f"{row['Совпадение %']:.1f}%")
-
-                            # АВТОМАТИЧЕСКИ сохраняем в manual_selections при изменении
-                            current_selection = st.session_state.get(unique_key)
-                            if current_selection:
-                                if current_selection == "❌ Нет совпадения":
-                                    st.session_state.manual_selections[row_id] = "❌ Нет совпадения"
-                                else:
-                                    # Извлекаем название без процента
-                                    selected_city = current_selection.rsplit(' (', 1)[0]
-                                    st.session_state.manual_selections[row_id] = selected_city
 
                         st.markdown("---")
 
