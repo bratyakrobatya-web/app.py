@@ -270,6 +270,81 @@ def create_excel_bytes_cached(df: pd.DataFrame, sheet_name: str) -> bytes:
     return buffer.getvalue()
 
 
+@st.cache_data(show_spinner=False)
+def prepare_final_sheet_output_cached(result_df: pd.DataFrame, original_df: pd.DataFrame, sheet_name: str) -> pd.DataFrame:
+    """
+    Кэшированная подготовка итогового DataFrame для вкладки.
+    
+    ОПТИМИЗАЦИЯ:
+    - Выполняет фильтрацию, merge и очистку данных только один раз.
+    - Предотвращает повторные тяжелые вычисления при перерисовке интерфейса.
+    """
+    # 1. Фильтрация валидных строк
+    output_df = result_df[
+        (result_df['Итоговое гео'].notna()) &
+        (~result_df['Статус'].str.contains('❌ Не найдено', na=False)) &
+        (~result_df['Статус'].str.contains('Пустое значение', na=False))
+    ].copy()
+
+    # 2. Исключение дубликатов городов с "❌ Не найдено"
+    excluded_cities = result_df[
+        result_df['Статус'].str.contains('❌ Не найдено', na=False)
+    ]['Исходное название'].unique()
+
+    if len(excluded_cities) > 0:
+        excluded_normalized = set()
+        for city in excluded_cities:
+            if pd.notna(city):
+                normalized = str(city).replace('ё', 'е').replace('Ё', 'Е').lower().strip()
+                normalized = ' '.join(normalized.split())
+                excluded_normalized.add(normalized)
+
+        output_df['_temp_normalized'] = (
+            output_df['Исходное название']
+            .fillna('').astype(str)
+            .str.replace('ё', 'е').str.replace('Ё', 'Е')
+            .str.lower().str.strip()
+            .str.replace(r'\s+', ' ', regex=True)
+        )
+        output_df = output_df[~output_df['_temp_normalized'].isin(excluded_normalized)].copy()
+        output_df = output_df.drop(columns=['_temp_normalized'])
+
+    if len(output_df) == 0:
+        return pd.DataFrame()
+
+    # 3. Объединение с исходными данными
+    original_cols = original_df.columns.tolist()
+    final_output = pd.DataFrame()
+    final_output[original_cols[0]] = output_df['Итоговое гео']
+
+    for col in original_cols[1:]:
+        if col in original_df.columns:
+            temp_df = original_df.reset_index()
+            temp_df['row_id'] = temp_df.index
+            merged = output_df[['row_id']].merge(
+                temp_df[['row_id', col]],
+                on='row_id',
+                how='left'
+            )
+            final_output[col] = merged[col].values
+    
+    # 4. Удаление дубликатов
+    final_output['_normalized'] = (
+        final_output[original_cols[0]]
+        .fillna('').astype(str)
+        .str.replace('ё', 'е').str.replace('Ё', 'Е')
+        .str.lower().str.strip()
+        .str.replace(r'\s+', ' ', regex=True)
+    )
+    final_output = final_output.drop_duplicates(subset=['_normalized'], keep='first')
+    final_output = final_output.drop(columns=['_normalized'])
+
+    # 5. Удаление заголовка если нужно
+    final_output = remove_header_row_if_needed(final_output, original_cols[0])
+    
+    return final_output
+
+
 # ============================================
 # КОНФИГУРАЦИЯ: API КЛЮЧИ
 # ============================================
@@ -1326,70 +1401,15 @@ if uploaded_files and hh_areas is not None:
                                 cache_key=f"tab_{sheet_name}"
                             )
                             
-                            # FIX: Формируем итоговый файл для публикатора (исключаем не найденные)
-                            output_sheet_df = result_df_sheet_final[
-                                (result_df_sheet_final['Итоговое гео'].notna()) &
-                                (~result_df_sheet_final['Статус'].str.contains('❌ Не найдено', na=False)) &
-                                (~result_df_sheet_final['Статус'].str.contains('Пустое значение', na=False))
-                            ].copy()
+                            # FIX: Используем кэшированную функцию подготовки данных
+                            # Это предотвращает повторные вычисления (merge, filter) при каждом клике
+                            final_output = prepare_final_sheet_output_cached(
+                                result_df_sheet_final,
+                                original_df_sheet,
+                                sheet_name
+                            )
 
-                            # КРИТИЧНО: Также исключаем ВСЕ дубликаты городов с "❌ Не найдено"
-                            excluded_cities = result_df_sheet_final[
-                                result_df_sheet_final['Статус'].str.contains('❌ Не найдено', na=False)
-                            ]['Исходное название'].unique()
-
-                            if len(excluded_cities) > 0:
-                                excluded_normalized = set()
-                                for city in excluded_cities:
-                                    if pd.notna(city):
-                                        normalized = str(city).replace('ё', 'е').replace('Ё', 'Е').lower().strip()
-                                        normalized = ' '.join(normalized.split())
-                                        excluded_normalized.add(normalized)
-
-                                output_sheet_df['_temp_normalized'] = (
-                                    output_sheet_df['Исходное название']
-                                    .fillna('').astype(str)
-                                    .str.replace('ё', 'е').str.replace('Ё', 'Е')
-                                    .str.lower().str.strip()
-                                    .str.replace(r'\s+', ' ', regex=True)
-                                )
-                                output_sheet_df = output_sheet_df[~output_sheet_df['_temp_normalized'].isin(excluded_normalized)].copy()
-                                output_sheet_df = output_sheet_df.drop(columns=['_temp_normalized'])
-
-                            if len(output_sheet_df) > 0:
-                                # Берем столбцы из исходного файла
-                                original_cols = original_df_sheet.columns.tolist()
-                                final_output = pd.DataFrame()
-                                final_output[original_cols[0]] = output_sheet_df['Итоговое гео']
-
-                                # FIX: Используем merge вместо iloc для безопасного получения данных
-                                for col in original_cols[1:]:
-                                    if col in original_df_sheet.columns:
-                                        # Создаем временный DataFrame с row_id и нужной колонкой
-                                        temp_df = original_df_sheet.reset_index()
-                                        temp_df['row_id'] = temp_df.index
-                                        # Объединяем по row_id
-                                        merged = output_sheet_df[['row_id']].merge(
-                                            temp_df[['row_id', col]],
-                                            on='row_id',
-                                            how='left'
-                                        )
-                                        final_output[col] = merged[col].values
-                                
-                                # Удаляем дубликаты
-                                # VECTORIZED: normalize city name
-                                final_output['_normalized'] = (
-                                    final_output[original_cols[0]]
-                                    .fillna('').astype(str)
-                                    .str.replace('ё', 'е').str.replace('Ё', 'Е')
-                                    .str.lower().str.strip()
-                                    .str.replace(r'\s+', ' ', regex=True)
-                                )
-                                final_output = final_output.drop_duplicates(subset=['_normalized'], keep='first')
-                                final_output = final_output.drop(columns=['_normalized'])
-
-                                # Удаляем первую строку, если она является заголовком
-                                final_output = remove_header_row_if_needed(final_output, original_cols[0])
+                            if len(final_output) > 0:
 
                                 # Превью итогового файла для вкладки
                                 st.markdown(f"#### 👀 Превью итогового файла - {sheet_name}")
