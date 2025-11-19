@@ -2138,15 +2138,22 @@ if uploaded_files and hh_areas is not None:
                     ].copy()
 
                     st.write(f"**DEBUG [Columns]** После фильтрации: {len(export_df)} строк")
-                
+
                     # Создаем итоговый DataFrame
+                    # Получаем индексы ОДИН РАЗ перед циклом
+                    indices = export_df['row_id'].values
+                    st.write(f"**DEBUG** indices length: {len(indices)}, values: {indices[:5] if len(indices) > 0 else 'empty'}")
+                    st.write(f"**DEBUG** original_df length: {len(st.session_state.original_df)}")
+
                     output_df = pd.DataFrame()
                     output_df[original_cols[0]] = export_df['Итоговое гео']
-                
+                    st.write(f"**DEBUG** output_df после первой колонки: {len(output_df)} строк")
+
                     for col in original_cols[1:]:
                         if col in st.session_state.original_df.columns:
-                            indices = export_df['row_id'].values
                             output_df[col] = st.session_state.original_df.iloc[indices][col].values
+
+                    st.write(f"**DEBUG** output_df после цикла: {len(output_df)} строк")
                 
                     # Удаляем дубликаты
                     # VECTORIZED: normalize city name
