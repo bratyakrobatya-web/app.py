@@ -248,38 +248,6 @@ def get_cached_icon_base64(filename: str) -> Optional[str]:
     return None
 
 
-@st.cache_data(show_spinner=False)
-def get_edit_selectbox_css() -> str:
-    """
-    Кэшированный CSS для ЧЕРНОЙ окантовки selectbox в редактировании.
-
-    ОПТИМИЗАЦИЯ: CSS генерируется 1 раз вместо 2-3 раз при каждом rerun.
-    Экономия: ~1-2ms при каждом rerun.
-
-    Returns:
-        CSS строка для st.markdown
-    """
-    return """
-    <style>
-    /* ЧЕРНАЯ окантовка для selectbox в блоке редактирования */
-    .edit-cities-block div[data-testid="stSelectbox"] > div > div,
-    .edit-cities-block div[data-testid="stSelectbox"] > div > div > div,
-    .edit-cities-block div[data-testid="stSelectbox"] [data-baseweb="select"] > div,
-    .edit-cities-block div[data-testid="stSelectbox"] > div > div:focus,
-    .edit-cities-block div[data-testid="stSelectbox"] > div > div:focus-within,
-    .edit-cities-block div[data-testid="stSelectbox"] > div > div:active,
-    .edit-cities-block div[data-testid="stSelectbox"] [data-baseweb="select"] > div:focus,
-    .edit-cities-block div[data-testid="stSelectbox"] [data-baseweb="select"] > div:focus-within,
-    .edit-cities-block div[data-testid="stSelectbox"] [data-baseweb="select"] > div:active {
-        border-color: #000000 !important;
-        border: 1px solid #000000 !important;
-        outline: none !important;
-        box-shadow: none !important;
-    }
-    </style>
-    """
-
-
 # ============================================
 # КОНФИГУРАЦИЯ: API КЛЮЧИ
 # ============================================
@@ -854,7 +822,6 @@ if uploaded_files and hh_areas is not None:
 
                 # Очищаем кэши функций
                 apply_manual_selections_cached.clear()
-                get_edit_selectbox_css.clear()
 
                 # Очищаем кэши от предыдущих файлов
                 if 'vacancy_files' in st.session_state:
@@ -1047,15 +1014,6 @@ if uploaded_files and hh_areas is not None:
                                 city_match = selected.rsplit(' (', 1)[0]
                                 st.session_state.manual_selections[row_id] = city_match
 
-                        # ============================================
-                        # CSS вне цикла для улучшения производительности
-                        # ============================================
-                        # OPTIMIZED: use cached CSS
-                        st.markdown(get_edit_selectbox_css(), unsafe_allow_html=True)
-
-                        # Обертка для черной окантовки
-                        st.markdown('<div class="edit-cities-block">', unsafe_allow_html=True)
-
                         for idx, row in editable_rows.iterrows():
                             with st.container():
                                 row_id = row['row_id']
@@ -1112,9 +1070,6 @@ if uploaded_files and hh_areas is not None:
                                     st.text(row['Статус'])
 
                                 st.markdown("<hr style='margin-top: 5px; margin-bottom: 5px;'>", unsafe_allow_html=True)
-
-                        # Закрываем обертку для черной окантовки
-                        st.markdown('</div>', unsafe_allow_html=True)
 
                         # ============================================
                         # БЛОК: ДОБАВЛЕНИЕ ЛЮБОГО ГОРОДА (только для НЕ split режима)
@@ -1270,14 +1225,6 @@ if uploaded_files and hh_areas is not None:
                                         st.session_state.manual_selections[selection_key] = city_match
 
                                 # ============================================
-                                # CSS вне цикла для улучшения производительности
-                                # ============================================
-                                # OPTIMIZED: use cached CSS
-                                st.markdown(get_edit_selectbox_css(), unsafe_allow_html=True)
-
-                                # Обертка для черной окантовки
-                                st.markdown('<div class="edit-cities-block">', unsafe_allow_html=True)
-
                                 # Для каждого города показываем выбор
                                 for idx, row in editable_rows.iterrows():
                                     row_id = row['row_id']
@@ -1334,9 +1281,6 @@ if uploaded_files and hh_areas is not None:
                                         st.text(f"{row['Совпадение %']:.1f}%")
 
                                 st.markdown("---")
-
-                                # Закрываем обертку для черной окантовки
-                                st.markdown('</div>', unsafe_allow_html=True)
 
                             # Применяем ручные изменения через КЭШИРОВАННУЮ функцию
                             # Фильтруем только изменения для текущей вкладки
@@ -1589,11 +1533,6 @@ if uploaded_files and hh_areas is not None:
                                                 st.session_state.manual_selections[selection_key] = city_match
                                             else:
                                                 st.session_state.manual_selections[selection_key] = selected
-                                        # Принудительный rerun для обновления vacancy_files и download button
-                                        st.rerun()
-
-                                    # CSS для черной окантовки в редактировании
-                                    st.markdown(get_edit_selectbox_css(), unsafe_allow_html=True)
 
                                     # Получаем список всех городов России для выбора
                                     russia_cities_for_select = []
@@ -1601,9 +1540,6 @@ if uploaded_files and hh_areas is not None:
                                         if city_info.get('root_parent_id') == '113':
                                             russia_cities_for_select.append(city_name)
                                     russia_cities_for_select = sorted(russia_cities_for_select)
-
-                                    # Обертка для черной окантовки
-                                    st.markdown('<div class="edit-cities-block">', unsafe_allow_html=True)
 
                                     for idx, row in editable_vacancy_rows.iterrows():
                                         col1, col2, col3 = st.columns([2, 3, 1])
@@ -1685,8 +1621,6 @@ if uploaded_files and hh_areas is not None:
                                         
                                         st.markdown("<hr style='margin-top: 5px; margin-bottom: 5px;'>", unsafe_allow_html=True)
 
-                                    # Закрываем обертку для черной окантовки
-                                    st.markdown('</div>', unsafe_allow_html=True)
                                 else:
                                     st.success("✅ Все города распознаны корректно!")
                                 
