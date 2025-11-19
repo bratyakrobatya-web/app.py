@@ -1083,7 +1083,6 @@ if uploaded_files and hh_areas is not None:
                     if len(editable_rows) > 0:
                         st.markdown("---")
                         st.subheader("✏️ Редактирование городов с совпадением ≤ 95%")
-                        st.info(f"Найдено **{len(editable_rows)}** городов, доступных для редактирования")
 
                         # ============================================
                         # CSS вне цикла для улучшения производительности
@@ -1108,45 +1107,50 @@ if uploaded_files and hh_areas is not None:
                         if st.session_state.edit_page < 1:
                             st.session_state.edit_page = 1
 
-                        # Пагинация: кнопки-вкладки с красной подсветкой
+                        # Пагинация: овальные кнопки с красной подсветкой
                         if total_pages > 1:
-                            # CSS для стилизации кнопок как вкладок
+                            # CSS для овальных кнопок
                             st.markdown("""
                             <style>
+                            /* Овальные кнопки для пагинации */
                             div[data-testid="column"] > div > div > button {
                                 width: 100%;
                                 padding: 10px 20px;
                                 font-size: 14px;
-                                border-radius: 5px 5px 0 0;
-                                border: 1px solid #ddd;
-                                border-bottom: 3px solid #ddd;
+                                border-radius: 20px;
+                                border: 2px solid #f4301f;
+                                background-color: white;
+                                color: #f4301f;
+                            }
+                            div[data-testid="column"] > div > div > button:hover {
+                                background-color: #fff5f5;
                             }
                             </style>
                             """, unsafe_allow_html=True)
 
-                            # Создаём строку с кнопками-вкладками
+                            # Создаём строку с кнопками
                             page_cols = st.columns(min(total_pages, 10))
                             for i in range(min(total_pages, 10)):
                                 page_num = i + 1
                                 with page_cols[i]:
                                     if st.session_state.edit_page == page_num:
-                                        # Текущая страница - красная кнопка (disabled)
+                                        # Текущая страница - овальная залитая красная
                                         st.markdown(f"""
-                                        <div style='background-color: #ff4b4b; color: white; padding: 10px;
-                                                    text-align: center; border-radius: 5px 5px 0 0;
-                                                    border: 1px solid #ff4b4b; border-bottom: 3px solid #ff4b4b;
+                                        <div style='background-color: #f4301f; color: white; padding: 10px;
+                                                    text-align: center; border-radius: 20px;
+                                                    border: 2px solid #f4301f;
                                                     font-weight: bold; margin-bottom: 10px;'>
                                             Страница {page_num}
                                         </div>
                                         """, unsafe_allow_html=True)
                                     else:
-                                        # Кликабельная кнопка для других страниц
+                                        # Кликабельная кнопка - овальная с красной окантовкой
                                         if st.button(f"Страница {page_num}", key=f"edit_page_{page_num}", use_container_width=True):
                                             st.session_state.edit_page = page_num
                                             st.rerun()
 
                             if total_pages > 10:
-                                st.info(f"Показаны первые 10 из {total_pages} страниц. Используйте навигацию внизу для перехода.")
+                                st.info(f"Показаны первые 10 из {total_pages} страниц.")
 
                         # Вычисляем диапазон строк для текущей страницы
                         start_idx = (st.session_state.edit_page - 1) * CITIES_PER_PAGE
@@ -1389,25 +1393,25 @@ if uploaded_files and hh_areas is not None:
                                 if st.session_state[page_key] < 1:
                                     st.session_state[page_key] = 1
 
-                                # Пагинация: кнопки-вкладки с красной подсветкой
+                                # Пагинация: овальные кнопки с красной подсветкой
                                 if total_pages_split > 1:
-                                    # Создаём строку с кнопками-вкладками
+                                    # Создаём строку с кнопками
                                     page_cols_split = st.columns(min(total_pages_split, 10))
                                     for i in range(min(total_pages_split, 10)):
                                         page_num_split = i + 1
                                         with page_cols_split[i]:
                                             if st.session_state[page_key] == page_num_split:
-                                                # Текущая страница - красная кнопка
+                                                # Текущая страница - овальная залитая красная
                                                 st.markdown(f"""
-                                                <div style='background-color: #ff4b4b; color: white; padding: 10px;
-                                                            text-align: center; border-radius: 5px 5px 0 0;
-                                                            border: 1px solid #ff4b4b; border-bottom: 3px solid #ff4b4b;
+                                                <div style='background-color: #f4301f; color: white; padding: 10px;
+                                                            text-align: center; border-radius: 20px;
+                                                            border: 2px solid #f4301f;
                                                             font-weight: bold; margin-bottom: 10px;'>
                                                     Страница {page_num_split}
                                                 </div>
                                                 """, unsafe_allow_html=True)
                                             else:
-                                                # Кликабельная кнопка
+                                                # Кликабельная кнопка - овальная с красной окантовкой
                                                 if st.button(f"Страница {page_num_split}", key=f"split_page_{sheet_name}_{tab_idx}_{page_num_split}", use_container_width=True):
                                                     st.session_state[page_key] = page_num_split
                                                     st.rerun()
@@ -1731,25 +1735,25 @@ if uploaded_files and hh_areas is not None:
                                     if page_key_vacancy not in st.session_state:
                                         st.session_state[page_key_vacancy] = 1
 
-                                    # Пагинация: кнопки-вкладки с красной подсветкой
+                                    # Пагинация: овальные кнопки с красной подсветкой
                                     if total_pages_vacancy > 1:
-                                        # Создаём строку с кнопками-вкладками
+                                        # Создаём строку с кнопками
                                         page_cols_vacancy = st.columns(min(total_pages_vacancy, 10))
                                         for i in range(min(total_pages_vacancy, 10)):
                                             page_num_vacancy = i + 1
                                             with page_cols_vacancy[i]:
                                                 if st.session_state[page_key_vacancy] == page_num_vacancy:
-                                                    # Текущая страница - красная кнопка
+                                                    # Текущая страница - овальная залитая красная
                                                     st.markdown(f"""
-                                                    <div style='background-color: #ff4b4b; color: white; padding: 10px;
-                                                                text-align: center; border-radius: 5px 5px 0 0;
-                                                                border: 1px solid #ff4b4b; border-bottom: 3px solid #ff4b4b;
+                                                    <div style='background-color: #f4301f; color: white; padding: 10px;
+                                                                text-align: center; border-radius: 20px;
+                                                                border: 2px solid #f4301f;
                                                                 font-weight: bold; margin-bottom: 10px;'>
                                                         Страница {page_num_vacancy}
                                                     </div>
                                                     """, unsafe_allow_html=True)
                                                 else:
-                                                    # Кликабельная кнопка
+                                                    # Кликабельная кнопка - овальная с красной окантовкой
                                                     if st.button(f"Страница {page_num_vacancy}", key=f"vacancy_page_{vacancy}_{tab_idx}_{page_num_vacancy}", use_container_width=True):
                                                         st.session_state[page_key_vacancy] = page_num_vacancy
                                                         st.rerun()
@@ -2470,14 +2474,14 @@ st.markdown("""
 <style>
 /* Красная окантовка для multiselect */
 [data-testid="stMultiSelect"] div[data-baseweb="select"] > div {
-    border-color: #ff4b4b !important;
+    border-color: #f4301f !important;
 }
 [data-testid="stMultiSelect"] div[data-baseweb="select"] > div:hover {
-    border-color: #ff4b4b !important;
+    border-color: #f4301f !important;
 }
 [data-testid="stMultiSelect"] div[data-baseweb="select"] > div:focus-within {
-    border-color: #ff4b4b !important;
-    box-shadow: 0 0 0 0.2rem rgba(255, 75, 75, 0.25) !important;
+    border-color: #f4301f !important;
+    box-shadow: 0 0 0 0.2rem rgba(244, 48, 31, 0.25) !important;
 }
 </style>
 """, unsafe_allow_html=True)
