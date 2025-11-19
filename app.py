@@ -1063,9 +1063,9 @@ if uploaded_files and hh_areas is not None:
 
                     st.dataframe(display_df, use_container_width=True, height=400, hide_index=True)  
               
-                    # ИЗМЕНЕНО: Исключаем дубликаты из редактирования
+                    # ИЗМЕНЕНО: Исключаем дубликаты из редактирования, порог 95%
                     editable_rows = result_df_sorted[
-                        (result_df_sorted['Совпадение %'] <= 90) &
+                        (result_df_sorted['Совпадение %'] <= 95) &
                         (~result_df_sorted['Статус'].str.contains('Дубликат', na=False))
                     ].copy()
 
@@ -1082,7 +1082,7 @@ if uploaded_files and hh_areas is not None:
               
                     if len(editable_rows) > 0:
                         st.markdown("---")
-                        st.subheader("✏️ Редактирование городов с совпадением ≤ 90%")
+                        st.subheader("✏️ Редактирование городов с совпадением ≤ 95%")
                         st.info(f"Найдено **{len(editable_rows)}** городов, доступных для редактирования")
 
                         # ============================================
@@ -1108,21 +1108,45 @@ if uploaded_files and hh_areas is not None:
                         if st.session_state.edit_page < 1:
                             st.session_state.edit_page = 1
 
-                        # Простая пагинация: кликабельные номера страниц
+                        # Пагинация: кнопки-вкладки с красной подсветкой
                         if total_pages > 1:
-                            st.markdown(f"<div style='text-align: center; margin-bottom: 10px;'><b>Страница {st.session_state.edit_page} из {total_pages}</b></div>", unsafe_allow_html=True)
+                            # CSS для стилизации кнопок как вкладок
+                            st.markdown("""
+                            <style>
+                            div[data-testid="column"] > div > div > button {
+                                width: 100%;
+                                padding: 10px 20px;
+                                font-size: 14px;
+                                border-radius: 5px 5px 0 0;
+                                border: 1px solid #ddd;
+                                border-bottom: 3px solid #ddd;
+                            }
+                            </style>
+                            """, unsafe_allow_html=True)
 
-                            # Создаём кнопки-номера страниц
+                            # Создаём строку с кнопками-вкладками
                             page_cols = st.columns(min(total_pages, 10))
-                            for i in range(total_pages):
-                                if i < 10:  # Показываем максимум 10 кнопок
-                                    with page_cols[i]:
-                                        if st.session_state.edit_page == i + 1:
-                                            st.markdown(f"**{i+1}**")  # Текущая страница жирным
-                                        else:
-                                            if st.button(f"{i+1}", key=f"edit_page_{i+1}"):
-                                                st.session_state.edit_page = i + 1
-                                                st.rerun()
+                            for i in range(min(total_pages, 10)):
+                                page_num = i + 1
+                                with page_cols[i]:
+                                    if st.session_state.edit_page == page_num:
+                                        # Текущая страница - красная кнопка (disabled)
+                                        st.markdown(f"""
+                                        <div style='background-color: #ff4b4b; color: white; padding: 10px;
+                                                    text-align: center; border-radius: 5px 5px 0 0;
+                                                    border: 1px solid #ff4b4b; border-bottom: 3px solid #ff4b4b;
+                                                    font-weight: bold; margin-bottom: 10px;'>
+                                            Страница {page_num}
+                                        </div>
+                                        """, unsafe_allow_html=True)
+                                    else:
+                                        # Кликабельная кнопка для других страниц
+                                        if st.button(f"Страница {page_num}", key=f"edit_page_{page_num}", use_container_width=True):
+                                            st.session_state.edit_page = page_num
+                                            st.rerun()
+
+                            if total_pages > 10:
+                                st.info(f"Показаны первые 10 из {total_pages} страниц. Используйте навигацию внизу для перехода.")
 
                         # Вычисляем диапазон строк для текущей страницы
                         start_idx = (st.session_state.edit_page - 1) * CITIES_PER_PAGE
@@ -1299,9 +1323,9 @@ if uploaded_files and hh_areas is not None:
                             result_df_sheet = sheet_result['result_df']
                             original_df_sheet = st.session_state.sheets_data[sheet_name]['df']
 
-                            # Блок редактирования городов с совпадением ≤ 90%
+                            # Блок редактирования городов с совпадением ≤ 95%
                             editable_rows = result_df_sheet[
-                                (result_df_sheet['Совпадение %'] <= 90) &
+                                (result_df_sheet['Совпадение %'] <= 95) &
                                 (~result_df_sheet['Статус'].str.contains('Дубликат', na=False))
                             ].copy()
                             
@@ -1325,7 +1349,7 @@ if uploaded_files and hh_areas is not None:
                                 )
                                 editable_rows = editable_rows.drop(columns=['_sort_priority'])
 
-                                st.markdown("#### ✏️ Редактирование городов с совпадением ≤ 90%")
+                                st.markdown("#### ✏️ Редактирование городов с совпадением ≤ 95%")
                                 st.warning(f"⚠️ Найдено **{len(editable_rows)}** городов для проверки")
 
                                 # ============================================
@@ -1365,21 +1389,31 @@ if uploaded_files and hh_areas is not None:
                                 if st.session_state[page_key] < 1:
                                     st.session_state[page_key] = 1
 
-                                # Простая пагинация: кликабельные номера страниц
+                                # Пагинация: кнопки-вкладки с красной подсветкой
                                 if total_pages_split > 1:
-                                    st.markdown(f"<div style='text-align: center; margin-bottom: 10px;'><b>Страница {st.session_state[page_key]} из {total_pages_split}</b></div>", unsafe_allow_html=True)
-
-                                    # Создаём кнопки-номера страниц
+                                    # Создаём строку с кнопками-вкладками
                                     page_cols_split = st.columns(min(total_pages_split, 10))
-                                    for i in range(total_pages_split):
-                                        if i < 10:  # Показываем максимум 10 кнопок
-                                            with page_cols_split[i]:
-                                                if st.session_state[page_key] == i + 1:
-                                                    st.markdown(f"**{i+1}**")  # Текущая страница жирным
-                                                else:
-                                                    if st.button(f"{i+1}", key=f"split_page_{sheet_name}_{tab_idx}_{i+1}"):
-                                                        st.session_state[page_key] = i + 1
-                                                        st.rerun()
+                                    for i in range(min(total_pages_split, 10)):
+                                        page_num_split = i + 1
+                                        with page_cols_split[i]:
+                                            if st.session_state[page_key] == page_num_split:
+                                                # Текущая страница - красная кнопка
+                                                st.markdown(f"""
+                                                <div style='background-color: #ff4b4b; color: white; padding: 10px;
+                                                            text-align: center; border-radius: 5px 5px 0 0;
+                                                            border: 1px solid #ff4b4b; border-bottom: 3px solid #ff4b4b;
+                                                            font-weight: bold; margin-bottom: 10px;'>
+                                                    Страница {page_num_split}
+                                                </div>
+                                                """, unsafe_allow_html=True)
+                                            else:
+                                                # Кликабельная кнопка
+                                                if st.button(f"Страница {page_num_split}", key=f"split_page_{sheet_name}_{tab_idx}_{page_num_split}", use_container_width=True):
+                                                    st.session_state[page_key] = page_num_split
+                                                    st.rerun()
+
+                                    if total_pages_split > 10:
+                                        st.info(f"Показаны первые 10 из {total_pages_split} страниц.")
 
                                 # Вычисляем диапазон строк для текущей страницы
                                 start_idx_split = (st.session_state[page_key] - 1) * CITIES_PER_PAGE_SPLIT
@@ -1650,9 +1684,9 @@ if uploaded_files and hh_areas is not None:
                                 vacancy_df = export_df[export_df[vacancy_col] == vacancy].copy()
 
                                 # Показываем таблицу с возможностью редактирования
-                                st.markdown("#### Города для редактирования (совпадение ≤ 90%)")
-                                
-                                editable_vacancy_rows = vacancy_df[vacancy_df['Совпадение %'] <= 90].copy()
+                                st.markdown("#### Города для редактирования (совпадение ≤ 95%)")
+
+                                editable_vacancy_rows = vacancy_df[vacancy_df['Совпадение %'] <= 95].copy()
                                 
                                 # Убираем дубликаты по исходному названию для редактирования
                                 if len(editable_vacancy_rows) > 0:
@@ -1697,21 +1731,31 @@ if uploaded_files and hh_areas is not None:
                                     if page_key_vacancy not in st.session_state:
                                         st.session_state[page_key_vacancy] = 1
 
-                                    # Простая пагинация: кликабельные номера страниц
+                                    # Пагинация: кнопки-вкладки с красной подсветкой
                                     if total_pages_vacancy > 1:
-                                        st.markdown(f"<div style='text-align: center; margin-bottom: 10px;'><b>Страница {st.session_state[page_key_vacancy]} из {total_pages_vacancy}</b></div>", unsafe_allow_html=True)
-
-                                        # Создаём кнопки-номера страниц
+                                        # Создаём строку с кнопками-вкладками
                                         page_cols_vacancy = st.columns(min(total_pages_vacancy, 10))
-                                        for i in range(total_pages_vacancy):
-                                            if i < 10:  # Показываем максимум 10 кнопок
-                                                with page_cols_vacancy[i]:
-                                                    if st.session_state[page_key_vacancy] == i + 1:
-                                                        st.markdown(f"**{i+1}**")  # Текущая страница жирным
-                                                    else:
-                                                        if st.button(f"{i+1}", key=f"vacancy_page_{vacancy}_{tab_idx}_{i+1}"):
-                                                            st.session_state[page_key_vacancy] = i + 1
-                                                            st.rerun()
+                                        for i in range(min(total_pages_vacancy, 10)):
+                                            page_num_vacancy = i + 1
+                                            with page_cols_vacancy[i]:
+                                                if st.session_state[page_key_vacancy] == page_num_vacancy:
+                                                    # Текущая страница - красная кнопка
+                                                    st.markdown(f"""
+                                                    <div style='background-color: #ff4b4b; color: white; padding: 10px;
+                                                                text-align: center; border-radius: 5px 5px 0 0;
+                                                                border: 1px solid #ff4b4b; border-bottom: 3px solid #ff4b4b;
+                                                                font-weight: bold; margin-bottom: 10px;'>
+                                                        Страница {page_num_vacancy}
+                                                    </div>
+                                                    """, unsafe_allow_html=True)
+                                                else:
+                                                    # Кликабельная кнопка
+                                                    if st.button(f"Страница {page_num_vacancy}", key=f"vacancy_page_{vacancy}_{tab_idx}_{page_num_vacancy}", use_container_width=True):
+                                                        st.session_state[page_key_vacancy] = page_num_vacancy
+                                                        st.rerun()
+
+                                        if total_pages_vacancy > 10:
+                                            st.info(f"Показаны первые 10 из {total_pages_vacancy} страниц.")
 
                                     # Вычисляем диапазон строк для текущей страницы
                                     start_idx_vacancy = (st.session_state[page_key_vacancy] - 1) * CITIES_PER_PAGE_VACANCY
