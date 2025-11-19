@@ -264,9 +264,17 @@ def get_edit_selectbox_css() -> str:
     /* ЧЕРНАЯ окантовка для selectbox в блоке редактирования */
     .edit-cities-block div[data-testid="stSelectbox"] > div > div,
     .edit-cities-block div[data-testid="stSelectbox"] > div > div > div,
-    .edit-cities-block div[data-testid="stSelectbox"] [data-baseweb="select"] > div {
+    .edit-cities-block div[data-testid="stSelectbox"] [data-baseweb="select"] > div,
+    .edit-cities-block div[data-testid="stSelectbox"] > div > div:focus,
+    .edit-cities-block div[data-testid="stSelectbox"] > div > div:focus-within,
+    .edit-cities-block div[data-testid="stSelectbox"] > div > div:active,
+    .edit-cities-block div[data-testid="stSelectbox"] [data-baseweb="select"] > div:focus,
+    .edit-cities-block div[data-testid="stSelectbox"] [data-baseweb="select"] > div:focus-within,
+    .edit-cities-block div[data-testid="stSelectbox"] [data-baseweb="select"] > div:active {
         border-color: #000000 !important;
         border: 1px solid #000000 !important;
+        outline: none !important;
+        box-shadow: none !important;
     }
     </style>
     """
@@ -838,10 +846,19 @@ if uploaded_files and hh_areas is not None:
                 st.session_state.dup_hh = st.session_state.sheets_results[first_sheet]['dup_hh']
                 st.session_state.total_dup = st.session_state.sheets_results[first_sheet]['total_dup']
                 
-                st.session_state.processed = True  
-                st.session_state.manual_selections = {}  
+                st.session_state.processed = True
+                st.session_state.manual_selections = {}
                 st.session_state.search_query = ""
                 st.session_state.added_cities = []
+                st.session_state.candidates_cache = {}
+
+                # Очищаем кэши функций
+                apply_manual_selections_cached.clear()
+                get_edit_selectbox_css.clear()
+
+                # Очищаем кэши от предыдущих файлов
+                if 'vacancy_files' in st.session_state:
+                    del st.session_state.vacancy_files
           
         if st.session_state.processed and st.session_state.result_df is not None:
             # Прямая ссылка вместо .copy() - копируем только при изменении
