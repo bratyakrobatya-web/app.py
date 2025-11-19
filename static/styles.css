@@ -292,11 +292,16 @@ h3 {
 }
 
 /* Inputs - Selectbox с черной окантовкой */
+/* МАКСИМАЛЬНАЯ СПЕЦИФИЧНОСТЬ для перекрытия всех дефолтных стилей */
 div[data-baseweb="select"] > div,
 .stSelectbox > div > div,
-[data-testid="stSelectbox"] > div > div {
+[data-testid="stSelectbox"] > div > div,
+div[data-baseweb="select"] > div[class],
+.stSelectbox > div > div[class],
+[data-testid="stSelectbox"] > div > div[class] {
     position: relative;
     border: 2px solid #1a1a1a !important;
+    border-color: #1a1a1a !important;
     border-radius: 10px;
     background: white;
     transition: all 0.3s ease;
@@ -305,7 +310,10 @@ div[data-baseweb="select"] > div,
 
 div[data-baseweb="select"] > div:hover,
 .stSelectbox:hover > div > div,
-[data-testid="stSelectbox"]:hover > div > div {
+[data-testid="stSelectbox"]:hover > div > div,
+div[data-baseweb="select"] > div[class]:hover,
+.stSelectbox:hover > div > div[class],
+[data-testid="stSelectbox"]:hover > div > div[class] {
     border-color: #1a1a1a !important;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
     filter: brightness(1.02);
@@ -313,7 +321,10 @@ div[data-baseweb="select"] > div:hover,
 
 div[data-baseweb="select"] > div:focus-within,
 .stSelectbox > div > div:focus-within,
-[data-testid="stSelectbox"] > div > div:focus-within {
+[data-testid="stSelectbox"] > div > div:focus-within,
+div[data-baseweb="select"] > div[class]:focus-within,
+.stSelectbox > div > div[class]:focus-within,
+[data-testid="stSelectbox"] > div > div[class]:focus-within {
     border-color: #1a1a1a !important;
     box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
 }
