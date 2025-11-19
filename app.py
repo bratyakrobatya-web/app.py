@@ -483,7 +483,7 @@ st.markdown("---")
 # БЛОК: СИНХРОНИЗАТОР ГОРОДОВ
 # ============================================
 st.markdown('<div id="синхронизатор-городов"></div>', unsafe_allow_html=True)
-st.header("📤 Синхронизатор городов")
+st.markdown("## **📤 Синхронизатор городов**")
 
 with st.sidebar:
     # OPTIMIZED: use cached logo loading
@@ -1108,30 +1108,21 @@ if uploaded_files and hh_areas is not None:
                         if st.session_state.edit_page < 1:
                             st.session_state.edit_page = 1
 
-                        # Навигация: кнопки Назад/Вперед
+                        # Простая пагинация: кликабельные номера страниц
                         if total_pages > 1:
-                            nav_col1, nav_col2, nav_col3 = st.columns([1, 2, 1])
+                            st.markdown(f"<div style='text-align: center; margin-bottom: 10px;'><b>Страница {st.session_state.edit_page} из {total_pages}</b></div>", unsafe_allow_html=True)
 
-                            with nav_col1:
-                                if st.button("◀ Назад", disabled=(st.session_state.edit_page == 1), key="edit_prev"):
-                                    st.session_state.edit_page -= 1
-                                    st.rerun()
-
-                            with nav_col2:
-                                st.markdown(f"<div style='text-align: center; padding-top: 5px;'><b>Страница {st.session_state.edit_page} из {total_pages}</b></div>", unsafe_allow_html=True)
-
-                            with nav_col3:
-                                if st.button("Вперед ▶", disabled=(st.session_state.edit_page == total_pages), key="edit_next"):
-                                    st.session_state.edit_page += 1
-                                    st.rerun()
-
-                            # Быстрая навигация через tabs
-                            if total_pages <= 10:  # Показываем табы только если страниц не больше 10
-                                page_tabs = st.tabs([f"📄 {i+1}" for i in range(total_pages)])
-                                selected_tab_idx = st.session_state.edit_page - 1
-                            else:
-                                page_tabs = None
-                                selected_tab_idx = None
+                            # Создаём кнопки-номера страниц
+                            page_cols = st.columns(min(total_pages, 10))
+                            for i in range(total_pages):
+                                if i < 10:  # Показываем максимум 10 кнопок
+                                    with page_cols[i]:
+                                        if st.session_state.edit_page == i + 1:
+                                            st.markdown(f"**{i+1}**")  # Текущая страница жирным
+                                        else:
+                                            if st.button(f"{i+1}", key=f"edit_page_{i+1}"):
+                                                st.session_state.edit_page = i + 1
+                                                st.rerun()
 
                         # Вычисляем диапазон строк для текущей страницы
                         start_idx = (st.session_state.edit_page - 1) * CITIES_PER_PAGE
@@ -1374,22 +1365,21 @@ if uploaded_files and hh_areas is not None:
                                 if st.session_state[page_key] < 1:
                                     st.session_state[page_key] = 1
 
-                                # Навигация: кнопки Назад/Вперед
+                                # Простая пагинация: кликабельные номера страниц
                                 if total_pages_split > 1:
-                                    nav_col1, nav_col2, nav_col3 = st.columns([1, 2, 1])
+                                    st.markdown(f"<div style='text-align: center; margin-bottom: 10px;'><b>Страница {st.session_state[page_key]} из {total_pages_split}</b></div>", unsafe_allow_html=True)
 
-                                    with nav_col1:
-                                        if st.button("◀ Назад", disabled=(st.session_state[page_key] == 1), key=f"split_prev_{sheet_name}_{tab_idx}"):
-                                            st.session_state[page_key] -= 1
-                                            st.rerun()
-
-                                    with nav_col2:
-                                        st.markdown(f"<div style='text-align: center; padding-top: 5px;'><b>Страница {st.session_state[page_key]} из {total_pages_split}</b></div>", unsafe_allow_html=True)
-
-                                    with nav_col3:
-                                        if st.button("Вперед ▶", disabled=(st.session_state[page_key] == total_pages_split), key=f"split_next_{sheet_name}_{tab_idx}"):
-                                            st.session_state[page_key] += 1
-                                            st.rerun()
+                                    # Создаём кнопки-номера страниц
+                                    page_cols_split = st.columns(min(total_pages_split, 10))
+                                    for i in range(total_pages_split):
+                                        if i < 10:  # Показываем максимум 10 кнопок
+                                            with page_cols_split[i]:
+                                                if st.session_state[page_key] == i + 1:
+                                                    st.markdown(f"**{i+1}**")  # Текущая страница жирным
+                                                else:
+                                                    if st.button(f"{i+1}", key=f"split_page_{sheet_name}_{tab_idx}_{i+1}"):
+                                                        st.session_state[page_key] = i + 1
+                                                        st.rerun()
 
                                 # Вычисляем диапазон строк для текущей страницы
                                 start_idx_split = (st.session_state[page_key] - 1) * CITIES_PER_PAGE_SPLIT
@@ -1707,31 +1697,20 @@ if uploaded_files and hh_areas is not None:
                                     if page_key_vacancy not in st.session_state:
                                         st.session_state[page_key_vacancy] = 1
 
-                                    # Навигация: кнопки Назад/Вперед (если больше 1 страницы)
+                                    # Простая пагинация: кликабельные номера страниц
                                     if total_pages_vacancy > 1:
-                                        nav_col1_v, nav_col2_v, nav_col3_v = st.columns([1, 2, 1])
+                                        st.markdown(f"<div style='text-align: center; margin-bottom: 10px;'><b>Страница {st.session_state[page_key_vacancy]} из {total_pages_vacancy}</b></div>", unsafe_allow_html=True)
 
-                                        with nav_col1_v:
-                                            if st.button("◀ Назад", disabled=(st.session_state[page_key_vacancy] == 1), key=f"vacancy_prev_{vacancy}_{tab_idx}"):
-                                                st.session_state[page_key_vacancy] -= 1
-                                                st.rerun()
-
-                                        with nav_col2_v:
-                                            st.markdown(f"<div style='text-align: center; padding-top: 5px;'><b>Страница {st.session_state[page_key_vacancy]} из {total_pages_vacancy}</b></div>", unsafe_allow_html=True)
-
-                                        with nav_col3_v:
-                                            if st.button("Вперед ▶", disabled=(st.session_state[page_key_vacancy] == total_pages_vacancy), key=f"vacancy_next_{vacancy}_{tab_idx}"):
-                                                st.session_state[page_key_vacancy] += 1
-                                                st.rerun()
-
-                                        # Опционально: показываем табы для быстрой навигации (если страниц ≤10)
-                                        if total_pages_vacancy <= 10:
-                                            page_tabs_v = st.tabs([str(i) for i in range(1, total_pages_vacancy + 1)])
-                                            for page_num_v, page_tab_v in enumerate(page_tabs_v, start=1):
-                                                with page_tab_v:
-                                                    if page_num_v != st.session_state[page_key_vacancy]:
-                                                        if st.button(f"Перейти на страницу {page_num_v}", key=f"vacancy_goto_{vacancy}_{tab_idx}_{page_num_v}"):
-                                                            st.session_state[page_key_vacancy] = page_num_v
+                                        # Создаём кнопки-номера страниц
+                                        page_cols_vacancy = st.columns(min(total_pages_vacancy, 10))
+                                        for i in range(total_pages_vacancy):
+                                            if i < 10:  # Показываем максимум 10 кнопок
+                                                with page_cols_vacancy[i]:
+                                                    if st.session_state[page_key_vacancy] == i + 1:
+                                                        st.markdown(f"**{i+1}**")  # Текущая страница жирным
+                                                    else:
+                                                        if st.button(f"{i+1}", key=f"vacancy_page_{vacancy}_{tab_idx}_{i+1}"):
+                                                            st.session_state[page_key_vacancy] = i + 1
                                                             st.rerun()
 
                                     # Вычисляем диапазон строк для текущей страницы
@@ -2073,19 +2052,12 @@ if uploaded_files and hh_areas is not None:
                             hh_areas
                         )
 
-                        # DEBUG: Показываем статусы и количество перед фильтрацией
-                        status_counts = result_df_sheet['Статус'].value_counts()
-                        st.write(f"**DEBUG [{sheet_name}]** До фильтрации: {len(result_df_sheet)} строк")
-                        st.write(f"Статусы:", status_counts.to_dict())
-
                         # FIX: Формируем данные для публикатора (исключаем не найденные с эмодзи)
                         output_sheet = result_df_sheet[
                             (result_df_sheet['Итоговое гео'].notna()) &
                             (~result_df_sheet['Статус'].str.contains('❌ Не найдено', na=False)) &
                             (~result_df_sheet['Статус'].str.contains('Пустое значение', na=False))
                         ].copy()
-
-                        st.write(f"**DEBUG [{sheet_name}]** После фильтрации по статусу: {len(output_sheet)} строк")
 
                         # КРИТИЧНО: Также исключаем ВСЕ дубликаты городов с "❌ Не найдено"
                         excluded_cities = result_df_sheet[
@@ -2117,10 +2089,6 @@ if uploaded_files and hh_areas is not None:
                             # Исключаем все строки с такими же нормализованными названиями
                             output_sheet = output_sheet[~output_sheet['_temp_normalized'].isin(excluded_normalized)].copy()
                             output_sheet = output_sheet.drop(columns=['_temp_normalized'])
-
-                            st.write(f"**DEBUG [{sheet_name}]** Исключено городов: {len(excluded_cities)}, после исключения дубликатов: {len(output_sheet)} строк")
-
-                        st.write(f"**DEBUG [{sheet_name}]** После фильтрации дубликатов: {len(output_sheet)} строк")
 
                         if len(output_sheet) > 0:
                             # Получаем индексы из row_id
@@ -2231,19 +2199,12 @@ if uploaded_files and hh_areas is not None:
                     # Формируем итоговый файл для скачивания (все вакансии вместе)
                     original_cols = st.session_state.original_df.columns.tolist()
 
-                    # DEBUG: Показываем статусы и количество перед фильтрацией
-                    status_counts = final_result_df['Статус'].value_counts()
-                    st.write(f"**DEBUG [Columns]** До фильтрации: {len(final_result_df)} строк")
-                    st.write(f"Статусы:", status_counts.to_dict())
-
                     # FIX: Оставляем только строки с найденным гео (исключаем не найденные с эмодзи)
                     export_df = final_result_df[
                         (final_result_df['Итоговое гео'].notna()) &
                         (~final_result_df['Статус'].str.contains('❌ Не найдено', na=False)) &
                         (~final_result_df['Статус'].str.contains('Пустое значение', na=False))
                     ].copy()
-
-                    st.write(f"**DEBUG [Columns]** После фильтрации по статусу: {len(export_df)} строк")
 
                     # КРИТИЧНО: Также исключаем ВСЕ дубликаты городов с "❌ Не найдено"
                     # Получаем список исключенных городов (нормализованные названия)
@@ -2277,25 +2238,16 @@ if uploaded_files and hh_areas is not None:
                         export_df = export_df[~export_df['_temp_normalized'].isin(excluded_normalized)].copy()
                         export_df = export_df.drop(columns=['_temp_normalized'])
 
-                        st.write(f"**DEBUG** Исключено городов: {len(excluded_cities)}, после исключения дубликатов: {len(export_df)} строк")
-
-                    st.write(f"**DEBUG [Columns]** После фильтрации дубликатов: {len(export_df)} строк")
-
                     # Создаем итоговый DataFrame
                     # Получаем индексы ОДИН РАЗ перед циклом
                     indices = export_df['row_id'].values
-                    st.write(f"**DEBUG** indices length: {len(indices)}, values: {indices[:5] if len(indices) > 0 else 'empty'}")
-                    st.write(f"**DEBUG** original_df length: {len(st.session_state.original_df)}")
 
                     output_df = pd.DataFrame()
                     output_df[original_cols[0]] = export_df['Итоговое гео']
-                    st.write(f"**DEBUG** output_df после первой колонки: {len(output_df)} строк")
 
                     for col in original_cols[1:]:
                         if col in st.session_state.original_df.columns:
                             output_df[col] = st.session_state.original_df.iloc[indices][col].values
-
-                    st.write(f"**DEBUG** output_df после цикла: {len(output_df)} строк")
                 
                     # Удаляем дубликаты
                     # VECTORIZED: normalize city name
@@ -2467,6 +2419,25 @@ if uploaded_files and hh_areas is not None:
 # БЛОК: ВЫБОР РЕГИОНОВ И ГОРОДОВ
 # ============================================
 st.markdown('<div id="выбор-регионов-и-городов"></div>', unsafe_allow_html=True)
+
+# CSS для красной окантовки ТОЛЬКО multiselect (используются в "Выбор регионов")
+# selectbox в разделе "Редактирование" останутся с базовым цветом
+st.markdown("""
+<style>
+/* Красная окантовка для multiselect */
+[data-testid="stMultiSelect"] div[data-baseweb="select"] > div {
+    border-color: #ff4b4b !important;
+}
+[data-testid="stMultiSelect"] div[data-baseweb="select"] > div:hover {
+    border-color: #ff4b4b !important;
+}
+[data-testid="stMultiSelect"] div[data-baseweb="select"] > div:focus-within {
+    border-color: #ff4b4b !important;
+    box-shadow: 0 0 0 0.2rem rgba(255, 75, 75, 0.25) !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
 st.header("🗺️ Выбор регионов и городов")
 
 if hh_areas is not None:
