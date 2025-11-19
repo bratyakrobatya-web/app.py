@@ -251,7 +251,7 @@ def get_cached_icon_base64(filename: str) -> Optional[str]:
 @st.cache_data(show_spinner=False)
 def get_edit_selectbox_css() -> str:
     """
-    Кэшированный CSS для красной окантовки selectbox в редактировании.
+    Кэшированный CSS для ЧЕРНОЙ окантовки selectbox в редактировании.
 
     ОПТИМИЗАЦИЯ: CSS генерируется 1 раз вместо 2-3 раз при каждом rerun.
     Экономия: ~1-2ms при каждом rerun.
@@ -261,12 +261,12 @@ def get_edit_selectbox_css() -> str:
     """
     return """
     <style>
-    /* Красная окантовка для selectbox в блоке редактирования */
+    /* ЧЕРНАЯ окантовка для selectbox в блоке редактирования */
     .edit-cities-block div[data-testid="stSelectbox"] > div > div,
     .edit-cities-block div[data-testid="stSelectbox"] > div > div > div,
     .edit-cities-block div[data-testid="stSelectbox"] [data-baseweb="select"] > div {
-        border-color: #ea3324 !important;
-        border: 2px solid #ea3324 !important;
+        border-color: #000000 !important;
+        border: 1px solid #000000 !important;
     }
     </style>
     """
@@ -1542,11 +1542,20 @@ if uploaded_files and hh_areas is not None:
                                 original_cols = original_df_sheet.columns.tolist()
                                 final_output = pd.DataFrame()
                                 final_output[original_cols[0]] = output_sheet_df['Итоговое гео']
-                                
+
+                                # FIX: Используем merge вместо iloc для безопасного получения данных
                                 for col in original_cols[1:]:
                                     if col in original_df_sheet.columns:
-                                        indices = output_sheet_df['row_id'].values
-                                        final_output[col] = original_df_sheet.iloc[indices][col].values
+                                        # Создаем временный DataFrame с row_id и нужной колонкой
+                                        temp_df = original_df_sheet.reset_index()
+                                        temp_df['row_id'] = temp_df.index
+                                        # Объединяем по row_id
+                                        merged = output_sheet_df[['row_id']].merge(
+                                            temp_df[['row_id', col]],
+                                            on='row_id',
+                                            how='left'
+                                        )
+                                        final_output[col] = merged[col].values
                                 
                                 # Удаляем дубликаты
                                 # VECTORIZED: normalize city name
