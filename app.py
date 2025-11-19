@@ -1720,7 +1720,50 @@ if uploaded_files and hh_areas is not None:
                             vacancy_selections,
                             hh_areas
                         )
-                        
+
+                        # КРИТИЧНЫЙ FIX: Применяем изменения ко ВСЕМ дубликатам
+                        # Проблема: если в файле 2 строки "Москва", показывается только 1 в редактировании
+                        # При изменении на "Питер", только 1 строка меняется, вторая остается "Москва"
+                        # Решение: найти все строки с таким же исходным названием и применить то же изменение
+                        for row_id_changed, new_value in vacancy_selections.items():
+                            # Находим измененную строку
+                            changed_row = vacancy_final_df[vacancy_final_df['row_id'] == row_id_changed]
+                            if len(changed_row) == 0:
+                                continue
+
+                            # Получаем исходное название этой строки
+                            original_city = changed_row['Исходное название'].values[0]
+
+                            # Нормализуем для поиска дубликатов
+                            original_normalized = str(original_city).replace('ё', 'е').replace('Ё', 'Е').lower().strip()
+                            original_normalized = ' '.join(original_normalized.split())
+
+                            # Находим ВСЕ строки с таким же исходным названием
+                            vacancy_final_df['_temp_norm'] = (
+                                vacancy_final_df['Исходное название']
+                                .fillna('').astype(str)
+                                .str.replace('ё', 'е').str.replace('Ё', 'Е')
+                                .str.lower().str.strip()
+                                .str.replace(r'\s+', ' ', regex=True)
+                            )
+                            duplicate_mask = (vacancy_final_df['_temp_norm'] == original_normalized)
+                            vacancy_final_df = vacancy_final_df.drop(columns=['_temp_norm'])
+
+                            # Применяем то же изменение ко ВСЕМ дубликатам
+                            if new_value == "❌ Нет совпадения":
+                                vacancy_final_df.loc[duplicate_mask, 'Итоговое гео'] = None
+                                vacancy_final_df.loc[duplicate_mask, 'ID HH'] = None
+                                vacancy_final_df.loc[duplicate_mask, 'Регион'] = None
+                                vacancy_final_df.loc[duplicate_mask, 'Совпадение %'] = 0
+                                vacancy_final_df.loc[duplicate_mask, 'Изменение'] = 'Нет'
+                                vacancy_final_df.loc[duplicate_mask, 'Статус'] = '❌ Не найдено'
+                            else:
+                                vacancy_final_df.loc[duplicate_mask, 'Итоговое гео'] = new_value
+                                if new_value in hh_areas:
+                                    vacancy_final_df.loc[duplicate_mask, 'ID HH'] = hh_areas[new_value]['id']
+                                    vacancy_final_df.loc[duplicate_mask, 'Регион'] = hh_areas[new_value]['parent']
+                                vacancy_final_df.loc[duplicate_mask, 'Изменение'] = 'Да'
+
                         # FIX: Исключаем не найденные (❌ Не найдено) для публикатора
                         temp_vacancy_df = vacancy_final_df[
                             (vacancy_final_df['Итоговое гео'].notna()) &
