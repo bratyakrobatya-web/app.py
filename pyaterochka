@@ -1,0 +1,197 @@
+# Google Colab скрипт для объединения данных SKILLAZ и FINEBI
+# Загрузите этот файл в Colab и запустите ячейки по порядку
+
+# %% [markdown]
+# ## Ячейка 1: Установка библиотек и импорты
+
+# %%
+!pip install pandas openpyxl -q
+
+import pandas as pd
+import numpy as np
+from google.colab import files
+import re
+from io import BytesIO
+
+# %% [markdown]
+# ## Ячейка 2: Загрузка файлов
+
+# %%
+print("Загрузите два файла:")
+print("1. Файл с 'Отчет История лидов ВР' в названии (SKILLAZ)")
+print("2. Файл с 'Raw_Data' в названии (FINEBI)")
+print()
+
+uploaded = files.upload()
+
+skillaz_file = None
+finebi_file = None
+
+for filename in uploaded.keys():
+    if 'Отчет История лидов' in filename or 'История лидов' in filename:
+        skillaz_file = filename
+        print(f"SKILLAZ файл: {filename}")
+    elif 'Raw_Data' in filename:
+        finebi_file = filename
+        print(f"FINEBI файл: {filename}")
+
+if not skillaz_file:
+    print("\n⚠️ Не найден файл SKILLAZ. Укажите вручную:")
+    skillaz_file = list(uploaded.keys())[0]
+    print(f"Используется: {skillaz_file}")
+
+if not finebi_file:
+    print("\n⚠️ Не найден файл FINEBI. Укажите вручную:")
+    finebi_file = list(uploaded.keys())[1] if len(uploaded) > 1 else list(uploaded.keys())[0]
+    print(f"Используется: {finebi_file}")
+
+# %% [markdown]
+# ## Ячейка 3: Загрузка и обработка данных SKILLAZ
+
+# %%
+# Загрузка SKILLAZ
+df_skillaz = pd.read_excel(BytesIO(uploaded[skillaz_file]))
+
+print(f"SKILLAZ загружен: {len(df_skillaz)} строк")
+print(f"Столбцы: {list(df_skillaz.columns)}")
+
+# Обработка id_отклика - извлекаем первую часть до дефиса
+if 'id отклика' in df_skillaz.columns:
+    df_skillaz['id_отклика_clean'] = df_skillaz['id отклика'].astype(str).apply(
+        lambda x: x.split('-')[0] if pd.notna(x) and x != 'nan' else ''
+    )
+elif 'id_отклика' in df_skillaz.columns:
+    df_skillaz['id_отклика_clean'] = df_skillaz['id_отклика'].astype(str).apply(
+        lambda x: x.split('-')[0] if pd.notna(x) and x != 'nan' else ''
+    )
+else:
+    # Ищем столбец с похожим названием
+    id_col = [c for c in df_skillaz.columns if 'отклик' in c.lower() and 'id' in c.lower()]
+    if id_col:
+        df_skillaz['id_отклика_clean'] = df_skillaz[id_col[0]].astype(str).apply(
+            lambda x: x.split('-')[0] if pd.notna(x) and x != 'nan' else ''
+        )
+        print(f"Использован столбец: {id_col[0]}")
+
+# Определяем столбец с датой статуса
+date_col = None
+for col in df_skillaz.columns:
+    if 'дата статуса' in col.lower():
+        date_col = col
+        break
+
+if date_col:
+    # Преобразуем в datetime
+    df_skillaz[date_col] = pd.to_datetime(df_skillaz[date_col], errors='coerce')
+    # Сортируем по дате статуса по возрастанию
+    df_skillaz = df_skillaz.sort_values(by=date_col, ascending=True)
+    print(f"Отсортировано по столбцу: {date_col}")
+else:
+    print("⚠️ Столбец 'дата статуса' не найден")
+
+print(f"\nПример id_отклика после обработки: {df_skillaz['id_отклика_clean'].head().tolist()}")
+
+# %% [markdown]
+# ## Ячейка 4: Загрузка и обработка данных FINEBI
+
+# %%
+# Загрузка FINEBI
+df_finebi = pd.read_excel(BytesIO(uploaded[finebi_file]))
+
+print(f"FINEBI загружен: {len(df_finebi)} строк")
+print(f"Столбцы: {list(df_finebi.columns)}")
+
+# Находим столбец response_id (может быть с пробелом)
+response_col = None
+for col in df_finebi.columns:
+    if 'response_id' in col.lower().replace(' ', '_'):
+        response_col = col
+        break
+
+if response_col:
+    # Перемещаем response_id в конец
+    cols = [c for c in df_finebi.columns if c != response_col]
+    cols.append(response_col)
+    df_finebi = df_finebi[cols]
+    
+    # Приводим к строке для сопоставления
+    df_finebi['response_id_str'] = df_finebi[response_col].astype(str).str.strip()
+    print(f"Столбец response_id перемещен в конец")
+else:
+    print("⚠️ Столбец response_id не найден!")
+
+# %% [markdown]
+# ## Ячейка 5: Сопоставление данных (аналог ПРОСМОТР)
+
+# %%
+# Определяем столбцы для переноса (без "дата статуса")
+cols_to_transfer = []
+for col in df_skillaz.columns:
+    col_lower = col.lower()
+    if 'skillaz статус' in col_lower or col_lower == 'skillaz статус':
+        cols_to_transfer.append(col)
+    elif 'vr статус' in col_lower:
+        cols_to_transfer.append(col)
+    elif col.lower() == 'этап':
+        cols_to_transfer.append(col)
+
+print(f"Столбцы для переноса: {cols_to_transfer}")
+
+# Создаем словарь с последними значениями для каждого id_отклика
+# Поскольку данные отсортированы по возрастанию даты, последнее значение - это последняя строка
+last_values = {}
+
+for idx, row in df_skillaz.iterrows():
+    id_clean = str(row['id_отклика_clean']).strip()
+    if id_clean and id_clean != 'nan' and id_clean != '':
+        # Перезаписываем - так как данные отсортированы по возрастанию,
+        # последняя запись будет самой свежей
+        last_values[id_clean] = {col: row[col] for col in cols_to_transfer}
+
+print(f"Уникальных id_отклика в SKILLAZ: {len(last_values)}")
+
+# %% [markdown]
+# ## Ячейка 6: Добавление столбцов в FINEBI
+
+# %%
+# Добавляем новые столбцы в FINEBI
+for col in cols_to_transfer:
+    new_col_name = col
+    df_finebi[new_col_name] = df_finebi['response_id_str'].apply(
+        lambda x: last_values.get(str(x).strip(), {}).get(col, 'Нет данных')
+    )
+
+# Удаляем вспомогательный столбец
+df_finebi = df_finebi.drop(columns=['response_id_str'])
+
+# Статистика сопоставления
+matched = df_finebi[df_finebi[cols_to_transfer[0]] != 'Нет данных'].shape[0] if cols_to_transfer else 0
+total = len(df_finebi)
+print(f"Сопоставлено: {matched} из {total} строк ({matched/total*100:.1f}%)")
+
+# %% [markdown]
+# ## Ячейка 7: Подготовка SKILLAZ для экспорта
+
+# %%
+# Удаляем вспомогательный столбец id_отклика_clean из SKILLAZ для экспорта
+df_skillaz_export = df_skillaz.drop(columns=['id_отклика_clean'], errors='ignore')
+
+print(f"SKILLAZ подготовлен: {len(df_skillaz_export)} строк, {len(df_skillaz_export.columns)} столбцов")
+print(f"FINEBI подготовлен: {len(df_finebi)} строк, {len(df_finebi.columns)} столбцов")
+
+# %% [markdown]
+# ## Ячейка 8: Экспорт в Excel с двумя вкладками
+
+# %%
+output_filename = 'SKILLAZ_FINEBI_merged.xlsx'
+
+with pd.ExcelWriter(output_filename, engine='openpyxl') as writer:
+    df_finebi.to_excel(writer, sheet_name='FINEBI', index=False)
+    df_skillaz_export.to_excel(writer, sheet_name='SKILLAZ', index=False)
+
+print(f"✅ Файл создан: {output_filename}")
+print(f"   - Вкладка FINEBI: {len(df_finebi)} строк")
+print(f"   - Вкладка SKILLAZ: {len(df_skillaz_export)} строк")
+
+# Скачивание файла
+files.download(output_filename)
