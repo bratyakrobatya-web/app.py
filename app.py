@@ -2053,20 +2053,19 @@ else:
 # ============================================
 st.markdown('<div id="выбор-регионов-и-городов"></div>', unsafe_allow_html=True)
 
-# CSS для красной окантовки ТОЛЬКО multiselect (используются в "Выбор регионов")
-# selectbox в разделе "Редактирование" останутся с базовым цветом
+# CSS для ЧЕРНОЙ окантовки multiselect (базовый цвет как у selectbox)
 st.markdown("""
 <style>
-/* Красная окантовка для multiselect */
+/* Черная окантовка для multiselect */
 [data-testid="stMultiSelect"] div[data-baseweb="select"] > div {
-    border-color: #e14531 !important;
+    border-color: #1a1a1a !important;
 }
 [data-testid="stMultiSelect"] div[data-baseweb="select"] > div:hover {
-    border-color: #e14531 !important;
+    border-color: #1a1a1a !important;
 }
 [data-testid="stMultiSelect"] div[data-baseweb="select"] > div:focus-within {
-    border-color: #e14531 !important;
-    box-shadow: 0 0 0 0.2rem rgba(225, 69, 49, 0.25) !important;
+    border-color: #1a1a1a !important;
+    box-shadow: 0 0 0 0.2rem rgba(26, 26, 26, 0.25) !important;
 }
 </style>
 """, unsafe_allow_html=True)

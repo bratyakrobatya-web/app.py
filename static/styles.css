@@ -336,7 +336,8 @@ div[data-baseweb="select"] > div[class]:focus-within,
 
 /* MultiSelect с черной окантовкой */
 [data-testid="stMultiSelect"] [data-baseweb="select"] > div {
-    border: 2px solid #1a1a1a ;
+    border: 2px solid #1a1a1a !important;
+    border-color: #1a1a1a !important;
     border-radius: 10px ;
     background: white ;
     transition: all 0.3s ease ;
@@ -344,6 +345,7 @@ div[data-baseweb="select"] > div[class]:focus-within,
 }
 
 [data-testid="stMultiSelect"] [data-baseweb="select"] > div:hover {
+    border-color: #1a1a1a !important;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
     filter: brightness(1.02);
 }
