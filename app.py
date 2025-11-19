@@ -1112,18 +1112,18 @@ if uploaded_files and hh_areas is not None:
                             # CSS для овальных кнопок
                             st.markdown("""
                             <style>
-                            /* Овальные кнопки для пагинации */
+                            /* Овальные кнопки для пагинации - невыбранные БЕЗ заливки */
                             div[data-testid="column"] > div > div > button {
                                 width: 100%;
                                 padding: 10px 20px;
                                 font-size: 14px;
-                                border-radius: 20px;
-                                border: 2px solid #f4301f;
-                                background-color: white;
-                                color: #f4301f;
+                                border-radius: 20px !important;
+                                border: 2px solid #f4301f !important;
+                                background-color: white !important;
+                                color: #f4301f !important;
                             }
                             div[data-testid="column"] > div > div > button:hover {
-                                background-color: #fff5f5;
+                                background-color: #fff5f5 !important;
                             }
                             </style>
                             """, unsafe_allow_html=True)
@@ -1354,7 +1354,6 @@ if uploaded_files and hh_areas is not None:
                                 editable_rows = editable_rows.drop(columns=['_sort_priority'])
 
                                 st.markdown("#### ✏️ Редактирование городов с совпадением ≤ 95%")
-                                st.warning(f"⚠️ Найдено **{len(editable_rows)}** городов для проверки")
 
                                 # ============================================
                                 # CALLBACK для предотвращения полного rerun
@@ -1564,10 +1563,8 @@ if uploaded_files and hh_areas is not None:
                                 # Удаляем первую строку, если она является заголовком
                                 final_output = remove_header_row_if_needed(final_output, original_cols[0])
 
-                                # Превью
-                                st.markdown(f"#### 👀 Превью итогового файла - {sheet_name}")
-                                st.dataframe(final_output, use_container_width=True, height=300)
-                                
+                                # Превью убрано - достаточно таблицы сопоставлений
+
                                 # Кнопка скачивания
                                 st.markdown("---")
                                 safe_sheet_name = str(sheet_name).replace('/', '_').replace('\\', '_')[:50]
@@ -1714,7 +1711,6 @@ if uploaded_files and hh_areas is not None:
                                     editable_vacancy_rows = editable_vacancy_rows.drop(columns=['_sort_priority'])
 
                                 if len(editable_vacancy_rows) > 0:
-                                    st.warning(f"⚠️ Найдено **{len(editable_vacancy_rows)}** городов для проверки")
                                     
                                     # Получаем список всех городов России для выбора
                                     russia_cities_for_select = []
@@ -2002,10 +1998,8 @@ if uploaded_files and hh_areas is not None:
                                 # Удаляем первую строку, если она является заголовком
                                 output_vacancy_df = remove_header_row_if_needed(output_vacancy_df, original_cols[0])
 
-                                # Показываем превью
-                                st.markdown(f"#### 👀 Превью итогового файла - {vacancy}")
-                                st.dataframe(output_vacancy_df, use_container_width=True, height=300)
-                                
+                                # Превью убрано - достаточно таблицы сопоставлений
+
                                 # Кнопка выгрузки для этой вакансии
                                 st.markdown("---")
                                 safe_vacancy_name = str(vacancy).replace('/', '_').replace('\\', '_')[:50]
@@ -2195,10 +2189,7 @@ if uploaded_files and hh_areas is not None:
                             type="primary"
                         )
                         
-                        # Превью
-                        st.markdown("---")
-                        st.markdown("#### 👀 Превью итогового файла")
-                        st.dataframe(output_df, use_container_width=True, height=400)
+                        # Превью убрано по запросу пользователя - достаточно таблицы сопоставлений
                     else:
                         st.warning("⚠️ Нет данных для выгрузки")
                 
@@ -2332,10 +2323,7 @@ if uploaded_files and hh_areas is not None:
                         type="primary"
                     )
                 
-                    # Превью
-                    st.markdown("---")
-                    st.markdown("#### 👀 Превью итогового файла")
-                    st.dataframe(output_df, use_container_width=True, height=400)
+                    # Превью убрано по запросу пользователя - достаточно таблицы сопоставлений
                 
             else:
                 # ОБЫЧНЫЙ РЕЖИМ (как было раньше)
