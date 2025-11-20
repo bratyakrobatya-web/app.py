@@ -2866,6 +2866,9 @@ if uploaded_files and hh_areas is not None:
                         if 'зарплата' in col_lower or col_lower.startswith('от') or col_lower.startswith('до'):
                             salary_cols.append(col)
 
+                    # Флаг для определения, нужно ли экспортировать с заголовками
+                    has_salary_columns = False
+
                     if len(salary_cols) >= 2 and len(publisher_df) > 0:
                         # Определяем столбцы "от" и "до"
                         salary_from_col = None
@@ -2880,6 +2883,9 @@ if uploaded_files and hh_areas is not None:
 
                         # Если нашли оба столбца - выполняем агрегацию
                         if salary_from_col and salary_to_col:
+                            # Устанавливаем флаг, что найдены зарплатные столбцы
+                            has_salary_columns = True
+
                             # Преобразуем зарплаты в числа (убираем пробелы, запятые и т.д.)
                             publisher_df[salary_from_col] = pd.to_numeric(
                                 publisher_df[salary_from_col].astype(str).str.replace(r'[^\d.]', '', regex=True),
@@ -2938,8 +2944,9 @@ if uploaded_files and hh_areas is not None:
                     if len(publisher_df) > 0:
                         output_publisher = io.BytesIO()
                         with pd.ExcelWriter(output_publisher, engine='openpyxl') as writer:
-                            # Экспортируем с заголовками столбцов
-                            publisher_df.to_excel(writer, index=False, header=True, sheet_name='Результат')
+                            # Экспортируем с заголовками только если есть зарплатные столбцы
+                            # Для простого сценария (только города) - БЕЗ заголовков
+                            publisher_df.to_excel(writer, index=False, header=has_salary_columns, sheet_name='Результат')
                         output_publisher.seek(0)
 
                         publisher_count = len(publisher_df)
