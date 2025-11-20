@@ -1175,7 +1175,7 @@ if uploaded_files and hh_areas is not None:
                                 else:
                                     default_idx = candidates_dict.get(selected_value, 0)
 
-                                col1, col2, col3, col4 = st.columns([2, 3, 1, 1])
+                                col1, col2, col3 = st.columns([2, 3, 1])
 
                                 with col1:
                                     st.markdown(f"**{row['Исходное название']}**")
@@ -1193,9 +1193,6 @@ if uploaded_files and hh_areas is not None:
 
                                 with col3:
                                     st.text(f"{row['Совпадение %']}%")
-
-                                with col4:
-                                    st.text(row['Статус'])
 
                                 st.markdown("<hr style='margin-top: 5px; margin-bottom: 5px;'>", unsafe_allow_html=True)
 
@@ -2938,7 +2935,8 @@ if uploaded_files and hh_areas is not None:
 
                     output_publisher = io.BytesIO()
                     with pd.ExcelWriter(output_publisher, engine='openpyxl') as writer:
-                        publisher_df.to_excel(writer, index=False, header=True, sheet_name='Результат')
+                        # FIX: header=False чтобы избежать записи числовых названий столбцов (0, 1, 2...) как первой строки
+                        publisher_df.to_excel(writer, index=False, header=False, sheet_name='Результат')
                     output_publisher.seek(0)  
                       
                     publisher_count = len(publisher_df)  
