@@ -1380,6 +1380,30 @@ if uploaded_files and hh_areas is not None:
 
                         st.markdown("#### ✏️ Редактирование городов с совпадением ≤ 95%")
 
+                        # FIX: Force black border for Scenario 2 (tabs) editing selectboxes
+                        st.markdown("""
+                            <style>
+                                .scenario2-edit-section div[data-baseweb="select"] > div,
+                                .scenario2-edit-section .stSelectbox > div > div {
+                                    border: 2px solid #1a1a1a !important;
+                                    border-color: #1a1a1a !important;
+                                    outline: none !important;
+                                    box-shadow: none !important;
+                                }
+                                .scenario2-edit-section div[data-baseweb="select"] > div:hover,
+                                .scenario2-edit-section .stSelectbox:hover > div > div {
+                                    border-color: #1a1a1a !important;
+                                    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+                                }
+                                .scenario2-edit-section div[data-baseweb="select"] > div:focus-within,
+                                .scenario2-edit-section .stSelectbox > div > div:focus-within {
+                                    border-color: #1a1a1a !important;
+                                    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1) !important;
+                                }
+                            </style>
+                            <div class="scenario2-edit-section">
+                        """, unsafe_allow_html=True)
+
                         # ============================================
                         # CALLBACK для предотвращения полного rerun
                         # ============================================
@@ -1451,6 +1475,9 @@ if uploaded_files and hh_areas is not None:
 
                             # VISUAL: Добавляем разделитель как в Сценарии 2
                             st.markdown("<hr style='margin-top: 5px; margin-bottom: 5px;'>", unsafe_allow_html=True)
+
+                        # Close the scenario2 edit section wrapper
+                        st.markdown("</div>", unsafe_allow_html=True)
 
                     # ============================================
                     # БЛОК: ДОБАВЛЕНИЕ ЛЮБОГО ГОРОДА (для вкладки)
@@ -1714,6 +1741,30 @@ if uploaded_files and hh_areas is not None:
                         # Показываем таблицу с возможностью редактирования
                         st.markdown("#### Города для редактирования (совпадение ≤ 95%)")
 
+                        # FIX: Force black border for Scenario 3 (columns/vacancy) editing selectboxes
+                        st.markdown("""
+                            <style>
+                                .scenario3-edit-section div[data-baseweb="select"] > div,
+                                .scenario3-edit-section .stSelectbox > div > div {
+                                    border: 2px solid #1a1a1a !important;
+                                    border-color: #1a1a1a !important;
+                                    outline: none !important;
+                                    box-shadow: none !important;
+                                }
+                                .scenario3-edit-section div[data-baseweb="select"] > div:hover,
+                                .scenario3-edit-section .stSelectbox:hover > div > div {
+                                    border-color: #1a1a1a !important;
+                                    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+                                }
+                                .scenario3-edit-section div[data-baseweb="select"] > div:focus-within,
+                                .scenario3-edit-section .stSelectbox > div > div:focus-within {
+                                    border-color: #1a1a1a !important;
+                                    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1) !important;
+                                }
+                            </style>
+                            <div class="scenario3-edit-section">
+                        """, unsafe_allow_html=True)
+
                         editable_vacancy_rows = vacancy_df[vacancy_df['Совпадение %'] <= 95].copy()
                         
                         # Убираем дубликаты по исходному названию для редактирования
@@ -1842,7 +1893,10 @@ if uploaded_files and hh_areas is not None:
 
                         else:
                             st.success("✅ Все города распознаны корректно!")
-                        
+
+                        # Close the scenario3 edit section wrapper
+                        st.markdown("</div>", unsafe_allow_html=True)
+
                         # ============================================
                         # БЛОК: ДОБАВЛЕНИЕ ГОРОДОВ ДЛЯ ЭТОЙ ВАКАНСИИ
                         # ============================================
@@ -2736,14 +2790,14 @@ st.markdown('<div id="сверки-с-клиентами"></div>', unsafe_allow_
 # CSS для селекторов в разделе Сверки с клиентами
 st.markdown("""
 <style>
-/* Красная окантовка для selectbox и multiselect в разделе Сверки */
-[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+/* Красная окантовка для selectbox и multiselect ТОЛЬКО в разделе Сверки */
+.matrix-code-section [data-testid="stSelectbox"] div[data-baseweb="select"] > div {
     border-color: #e14531 !important;
 }
-[data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover {
+.matrix-code-section [data-testid="stSelectbox"] div[data-baseweb="select"] > div:hover {
     border-color: #e14531 !important;
 }
-[data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus-within {
+.matrix-code-section [data-testid="stSelectbox"] div[data-baseweb="select"] > div:focus-within {
     border-color: #e14531 !important;
     box-shadow: 0 0 0 0.2rem rgba(225, 69, 49, 0.25) !important;
 }
