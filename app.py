@@ -2776,9 +2776,9 @@ if uploaded_files and hh_areas is not None:
                 
                 with col1:
                     # Формируем файл для публикатора с исходными столбцами
-                    # FIX: Исключаем не найденные (❌ Не найдено) и дубликаты
+                    # FIX: Исключаем только не найденные (❌ Не найдено)
+                    # Дубликаты НЕ исключаем - они нужны для агрегации MIN/MAX зарплат
                     export_df = final_result_df[
-                        (~final_result_df['Статус'].str.contains('Дубликат', na=False)) &
                         (final_result_df['Итоговое гео'].notna()) &
                         (~final_result_df['Статус'].str.contains('❌ Не найдено', na=False))
                     ].copy()
