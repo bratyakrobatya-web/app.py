@@ -1398,6 +1398,78 @@ if uploaded_files and hh_areas is not None:
                             # VISUAL: Добавляем разделитель как в Сценарии 2
                             st.markdown("<hr style='margin-top: 5px; margin-bottom: 5px;'>", unsafe_allow_html=True)
 
+                    # ============================================
+                    # БЛОК: ДОБАВЛЕНИЕ ЛЮБОГО ГОРОДА (для вкладки)
+                    # ============================================
+                    st.markdown("---")
+                    st.markdown("#### ➕ Добавить дополнительные города")
+                    
+                    # Инициализируем список добавленных городов для ЭТОЙ вкладки
+                    if 'added_cities_by_sheet' not in st.session_state:
+                        st.session_state.added_cities_by_sheet = {}
+                    
+                    if sheet_name not in st.session_state.added_cities_by_sheet:
+                        st.session_state.added_cities_by_sheet[sheet_name] = []
+
+                    # Селектор на половину ширины экрана
+                    col_selector_tab = st.columns([1, 1])
+                    with col_selector_tab[0]:
+                        # Используем кэшированную версию
+                        russia_cities = get_russian_cities_cached(hh_areas)
+
+                        selected_city_tab = st.selectbox(
+                            "Выберите город:",
+                            options=sorted(russia_cities),
+                            key=f"city_selector_{sheet_name}",
+                            help="Выберите город из справочника HH.ru"
+                        )
+
+                    # Кнопки под селектором
+                    col_btn1_tab, col_btn2_tab = st.columns(2)
+                    with col_btn1_tab:
+                        # STYLE: Secondary button as in Scenario 2
+                        if st.button("➕ Добавить", use_container_width=True, type="secondary", key=f"add_btn_{sheet_name}"):
+                            if selected_city_tab and selected_city_tab not in st.session_state.added_cities_by_sheet[sheet_name]:
+                                # LOGIC: Safe append with limit check
+                                # Используем ключ словаря как уникальный идентификатор для лимитов
+                                limit_key = f"added_cities_sheet_{sheet_name}"
+                                # В данном случае мы работаем с листом, поэтому safe_session_append нужно адаптировать или использовать напрямую
+                                # Но safe_session_append работает с ключом session_state.
+                                # Поэтому вручную проверим лимит и добавим.
+                                
+                                if len(st.session_state.added_cities_by_sheet[sheet_name]) < 50: # Hardcoded limit similar to safe_session_append default
+                                    st.session_state.added_cities_by_sheet[sheet_name].append(selected_city_tab)
+                                    st.success(f"✅ {selected_city_tab}")
+                                    st.rerun()
+                                else:
+                                    st.error("⚠️ Достигнут лимит добавленных городов")
+                                    log_security_event('session_limit', f"Limit reached for sheet {sheet_name}", 'WARNING')
+
+                            elif selected_city_tab in st.session_state.added_cities_by_sheet[sheet_name]:
+                                st.warning(f"⚠️ Уже добавлен")
+
+                    with col_btn2_tab:
+                        if st.button("🗑️ Очистить", use_container_width=True, key=f"clear_btn_{sheet_name}"):
+                            st.session_state.added_cities_by_sheet[sheet_name] = []
+                            st.rerun()
+            
+                    # Показываем список добавленных городов
+                    if st.session_state.added_cities_by_sheet[sheet_name]:
+                        # STYLE: st.info instead of st.success
+                        st.info(f"📋 Добавлено городов: **{len(st.session_state.added_cities_by_sheet[sheet_name])}**")
+                
+                        # Показываем города в компактном виде
+                        added_cities_text = ", ".join(st.session_state.added_cities_by_sheet[sheet_name])
+                        # STYLE: height=80
+                        st.text_area(
+                            "Список:",
+                            value=added_cities_text,
+                            height=80,
+                            disabled=True,
+                            label_visibility="collapsed",
+                            key=f"added_list_{sheet_name}"
+                        )
+
                     # Применяем ручные изменения через КЭШИРОВАННУЮ функцию
                     # Фильтруем только изменения для текущей вкладки
                     sheet_selections = {}
@@ -1426,6 +1498,24 @@ if uploaded_files and hh_areas is not None:
                         original_df_sheet,
                         sheet_name
                     )
+
+                    # ДОБАВЛЯЕМ ВРУЧНУЮ ДОБАВЛЕННЫЕ ГОРОДА
+                    if sheet_name in st.session_state.added_cities_by_sheet and st.session_state.added_cities_by_sheet[sheet_name]:
+                        added_rows = []
+                        original_cols = original_df_sheet.columns.tolist()
+                        
+                        for city in st.session_state.added_cities_by_sheet[sheet_name]:
+                            if city in hh_areas:
+                                # Создаем строку, заполняя только известные нам поля
+                                new_row = {col: None for col in original_cols}
+                                new_row[original_cols[0]] = city # Предполагаем, что первый столбец - это целевой город
+                                
+                                # Если есть другие известные поля, можно их заполнить, но пока просто добавляем город
+                                added_rows.append(new_row)
+                        
+                        if added_rows:
+                            added_df = pd.DataFrame(added_rows)
+                            final_output = pd.concat([final_output, added_df], ignore_index=True)
 
                     if len(final_output) > 0:
 
