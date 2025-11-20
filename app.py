@@ -2862,10 +2862,11 @@ with st.expander("Пятерочка", expanded=False):
     #### Ожидаемые файлы:
     - **"Отчет История лидов ВР"** или **"История лидов"** - отчет из SKILLAZ
     - **"Raw_Data"** - данные из FINEBI
+    - **"Автоматизация"** - файл с автоматизацией статусов после сверки
 
     #### Результат:
     - Файл **SKILLAZ_FINEBI_merged.xlsx** с двумя вкладками:
-      - **FINEBI** - данные FINEBI с добавленными столбцами из SKILLAZ
+      - **FINEBI** - данные FINEBI с добавленными столбцами из SKILLAZ и автоматизации (processing_status 2, VR статус 2)
       - **SKILLAZ** - исходные данные SKILLAZ
     """)
 
@@ -2888,15 +2889,17 @@ import re
 from io import BytesIO
 
 # Загрузка файлов
-print("Загрузите два файла:")
+print("Загрузите три файла:")
 print("1. Файл с 'Отчет История лидов ВР' в названии (SKILLAZ)")
 print("2. Файл с 'Raw_Data' в названии (FINEBI)")
+print("3. Файл с 'Автоматизация' в названии")
 print()
 
 uploaded = files.upload()
 
 skillaz_file = None
 finebi_file = None
+automation_file = None
 
 for filename in uploaded.keys():
     if 'Отчет История лидов' in filename or 'История лидов' in filename:
@@ -2905,6 +2908,9 @@ for filename in uploaded.keys():
     elif 'Raw_Data' in filename:
         finebi_file = filename
         print(f"FINEBI файл: {filename}")
+    elif 'Автоматизация' in filename:
+        automation_file = filename
+        print(f"АВТОМАТИЗАЦИЯ файл: {filename}")
 
 if not skillaz_file:
     print("\\n⚠️ Не найден файл SKILLAZ. Укажите вручную:")
@@ -2915,6 +2921,11 @@ if not finebi_file:
     print("\\n⚠️ Не найден файл FINEBI. Укажите вручную:")
     finebi_file = list(uploaded.keys())[1] if len(uploaded) > 1 else list(uploaded.keys())[0]
     print(f"Используется: {finebi_file}")
+
+if not automation_file:
+    print("\\n⚠️ Не найден файл АВТОМАТИЗАЦИЯ. Укажите вручную:")
+    automation_file = list(uploaded.keys())[2] if len(uploaded) > 2 else list(uploaded.keys())[0]
+    print(f"Используется: {automation_file}")
 
 # Загрузка и обработка данных SKILLAZ
 df_skillaz = pd.read_excel(BytesIO(uploaded[skillaz_file]))
@@ -3024,6 +3035,55 @@ df_finebi = df_finebi.drop(columns=['response_id_str'])
 matched = df_finebi[df_finebi[cols_to_transfer[0]] != 'Нет данных'].shape[0] if cols_to_transfer else 0
 total = len(df_finebi)
 print(f"\\nСопоставлено: {matched} из {total} строк ({matched/total*100:.1f}%)")
+
+# Обработка файла Автоматизация и добавление данных в FINEBI
+df_automation = pd.read_excel(BytesIO(uploaded[automation_file]))
+
+print(f"\\nАВТОМАТИЗАЦИЯ загружен: {len(df_automation)} строк")
+print(f"Столбцы: {list(df_automation.columns)}")
+
+# Проверяем наличие необходимых столбцов
+required_cols = ['Skillaz статус', 'Этап', 'processing_status 2', 'VR статус 2']
+missing_cols = [col for col in required_cols if col not in df_automation.columns]
+
+if missing_cols:
+    print(f"\\n⚠️ Предупреждение: В файле Автоматизация отсутствуют столбцы: {missing_cols}")
+    print(f"Доступные столбцы: {list(df_automation.columns)}")
+else:
+    # Создаем словарь для быстрого поиска по комбинации "Skillaz статус" + "Этап"
+    automation_dict = {}
+
+    for idx, row in df_automation.iterrows():
+        skillaz_status = str(row['Skillaz статус']).strip() if pd.notna(row['Skillaz статус']) else ''
+        etap = str(row['Этап']).strip() if pd.notna(row['Этап']) else ''
+
+        if skillaz_status or etap:
+            key = (skillaz_status, etap)
+            automation_dict[key] = {
+                'processing_status 2': row['processing_status 2'],
+                'VR статус 2': row['VR статус 2']
+            }
+
+    print(f"\\nСоздан справочник автоматизации: {len(automation_dict)} уникальных комбинаций")
+
+    # Проверяем наличие столбцов "Skillaz статус" и "Этап" в FINEBI
+    if 'Skillaz статус' in df_finebi.columns and 'Этап' in df_finebi.columns:
+        # Добавляем новые столбцы в конец FINEBI
+        def lookup_automation(row):
+            skillaz_status = str(row['Skillaz статус']).strip() if pd.notna(row['Skillaz статус']) else ''
+            etap = str(row['Этап']).strip() if pd.notna(row['Этап']) else ''
+            key = (skillaz_status, etap)
+            return automation_dict.get(key, {'processing_status 2': 'Нет данных', 'VR статус 2': 'Нет данных'})
+
+        df_finebi['processing_status 2'] = df_finebi.apply(lambda row: lookup_automation(row)['processing_status 2'], axis=1)
+        df_finebi['VR статус 2'] = df_finebi.apply(lambda row: lookup_automation(row)['VR статус 2'], axis=1)
+
+        # Статистика сопоставления
+        matched_automation = df_finebi[df_finebi['processing_status 2'] != 'Нет данных'].shape[0]
+        print(f"Сопоставлено с автоматизацией: {matched_automation} из {len(df_finebi)} строк ({matched_automation/len(df_finebi)*100:.1f}%)")
+    else:
+        print("\\n⚠️ В FINEBI отсутствуют столбцы 'Skillaz статус' или 'Этап'")
+        print(f"Доступные столбцы в FINEBI: {list(df_finebi.columns)}")
 
 # Подготовка SKILLAZ для экспорта
 # Удаляем вспомогательный столбец id_отклика_clean из SKILLAZ для экспорта
