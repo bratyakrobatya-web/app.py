@@ -3039,11 +3039,14 @@ print(f"\\nСопоставлено: {matched} из {total} строк ({matched
 # Обработка файла Автоматизация и добавление данных в FINEBI
 df_automation = pd.read_excel(BytesIO(uploaded[automation_file]))
 
+# Убираем пробелы в названиях столбцов
+df_automation.columns = df_automation.columns.str.strip()
+
 print(f"\\nАВТОМАТИЗАЦИЯ загружен: {len(df_automation)} строк")
 print(f"Столбцы: {list(df_automation.columns)}")
 
 # Проверяем наличие необходимых столбцов
-required_cols = ['Skillaz статус', 'Этап', 'processing_status 2', 'VR статус 2']
+required_cols = ['Skillaz статус', 'Этап', 'processing_status 2', 'VR статус 2', 'Статус оплаты']
 missing_cols = [col for col in required_cols if col not in df_automation.columns]
 
 if missing_cols:
@@ -3061,7 +3064,8 @@ else:
             key = (skillaz_status, etap)
             automation_dict[key] = {
                 'processing_status 2': row['processing_status 2'],
-                'VR статус 2': row['VR статус 2']
+                'VR статус 2': row['VR статус 2'],
+                'Статус оплаты': row['Статус оплаты']
             }
 
     print(f"\\nСоздан справочник автоматизации: {len(automation_dict)} уникальных комбинаций")
@@ -3073,10 +3077,15 @@ else:
             skillaz_status = str(row['Skillaz статус']).strip() if pd.notna(row['Skillaz статус']) else ''
             etap = str(row['Этап']).strip() if pd.notna(row['Этап']) else ''
             key = (skillaz_status, etap)
-            return automation_dict.get(key, {'processing_status 2': 'Нет данных', 'VR статус 2': 'Нет данных'})
+            return automation_dict.get(key, {
+                'processing_status 2': 'Нет данных',
+                'VR статус 2': 'Нет данных',
+                'Статус оплаты': 'Нет данных'
+            })
 
         df_finebi['processing_status 2'] = df_finebi.apply(lambda row: lookup_automation(row)['processing_status 2'], axis=1)
         df_finebi['VR статус 2'] = df_finebi.apply(lambda row: lookup_automation(row)['VR статус 2'], axis=1)
+        df_finebi['Статус оплаты'] = df_finebi.apply(lambda row: lookup_automation(row)['Статус оплаты'], axis=1)
 
         # Статистика сопоставления
         matched_automation = df_finebi[df_finebi['processing_status 2'] != 'Нет данных'].shape[0]
