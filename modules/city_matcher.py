@@ -62,6 +62,10 @@ def smart_match_city(
     city_part, region_part = extract_city_and_region(client_city)
     city_part_lower = normalize_city_name(city_part)
 
+    # Проверка на пустое значение после извлечения
+    if not city_part or not city_part_lower:
+        return None, []
+
     # Проверяем исключения - города, которые НЕ должны совпадать
     if city_part_lower in EXCLUDED_EXACT_MATCHES:
         word_candidates = get_candidates_by_word(city_part, hh_city_names)
