@@ -1315,34 +1315,34 @@ if uploaded_files and hh_areas is not None:
                 col_info1, col_info2 = st.columns(2)
 
                 with col_info1:
-                    st.info("""
-                    **⚡ Режим единой сверки гео**
-
-                    ✅ Распознаете все города **один раз**
-
-                    ✅ Автоматическое применение ко всем вакансиям
-
-                    ✅ Выгрузка общего гео в публикатор
-
-                    💡 Рекомендуется при ≥3 вакансиях
-                    """)
+                    st.markdown("""
+                    <div style="padding: 1.5rem; border-left: 3px solid #ff4b4b; background: transparent;">
+                        <p style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.8rem;">⚡ Режим единой сверки гео</p>
+                        <p style="margin: 0.3rem 0; color: #555;">✓ Распознаете все города один раз</p>
+                        <p style="margin: 0.3rem 0; color: #555;">✓ Автоматическое применение ко всем вакансиям</p>
+                        <p style="margin: 0.3rem 0; color: #555;">✓ Выгрузка общего гео в публикатор</p>
+                        <p style="margin: 0.8rem 0 0 0; color: #888; font-size: 0.9rem;">💡 Рекомендуется при ≥3 вакансиях</p>
+                    </div>
+                    """, unsafe_allow_html=True)
 
                 with col_info2:
-                    st.info("""
-                    **📋 Редактировать по вакансиям**
-
-                    ✅ Редактирование каждой вакансии отдельно
-
-                    ✅ Точечная настройка для каждой вакансии
-
-                    ✅ Полный контроль над каждым файлом
-
-                    💡 Для случаев с уникальными требованиями
-                    """)
+                    st.markdown("""
+                    <div style="padding: 1.5rem; border-left: 3px solid #666; background: transparent;">
+                        <p style="font-size: 1.1rem; font-weight: 600; margin-bottom: 0.8rem;">📋 Редактировать по вакансиям</p>
+                        <p style="margin: 0.3rem 0; color: #555;">✓ Редактирование каждой вакансии отдельно</p>
+                        <p style="margin: 0.3rem 0; color: #555;">✓ Точечная настройка для каждой вакансии</p>
+                        <p style="margin: 0.3rem 0; color: #555;">✓ Полный контроль над каждым файлом</p>
+                        <p style="margin: 0.8rem 0 0 0; color: #888; font-size: 0.9rem;">💡 Для случаев с уникальными требованиями</p>
+                    </div>
+                    """, unsafe_allow_html=True)
 
                 # Выбор режима через кнопки
                 st.markdown("---")
                 col_btn1, col_btn2 = st.columns(2)
+
+                # Инициализируем флаг для отслеживания применения изменений
+                if 'unified_changes_applied' not in st.session_state:
+                    st.session_state.unified_changes_applied = True  # Изначально нет неприменённых изменений
 
                 with col_btn1:
                     if st.button("⚡ Режим единой сверки гео",
@@ -1355,10 +1355,108 @@ if uploaded_files and hh_areas is not None:
                     if st.button("📋 Редактировать по вакансиям",
                                 use_container_width=True,
                                 type="primary" if st.session_state.geo_sync_mode == 'separate' else "secondary"):
+                        # Проверяем нужно ли применить изменения из единой сверки
+                        if (not st.session_state.unified_changes_applied and
+                            st.session_state.get('unified_selections', {})):
+                            # Применяем изменения с прогресс-баром
+                            st.session_state.apply_unified_changes = True
+
                         st.session_state.geo_sync_mode = 'separate'
                         st.rerun()
 
                 st.markdown("---")
+
+                # ============================================
+                # ПРИМЕНЕНИЕ ИЗМЕНЕНИЙ ИЗ ЕДИНОЙ СВЕРКИ
+                # ============================================
+                if st.session_state.get('apply_unified_changes', False):
+                    st.markdown("### 🔄 Применение изменений ко всем вакансиям")
+
+                    # Красный прогресс бар
+                    progress_bar = st.progress(0)
+                    status_text = st.empty()
+
+                    unified_mapping = st.session_state.get('unified_selections', {})
+
+                    if st.session_state.sheet_mode == 'tabs':
+                        # Режим вкладок
+                        total_sheets = len(st.session_state.sheets_results)
+
+                        for idx, (sheet_name, sheet_result) in enumerate(st.session_state.sheets_results.items()):
+                            progress = (idx + 1) / total_sheets
+                            progress_bar.progress(progress)
+                            status_text.text(f"Обработка {idx + 1} из {total_sheets} вкладок...")
+
+                            result_df_sheet = sheet_result['result_df']
+
+                            # Применяем изменения из unified_mapping
+                            for row_idx, row in result_df_sheet.iterrows():
+                                original = str(row['Исходное название']).strip()
+                                normalized = original.replace('ё', 'е').replace('Ё', 'Е').lower().strip()
+                                normalized = ' '.join(normalized.split())
+
+                                if normalized in unified_mapping:
+                                    new_value = unified_mapping[normalized]
+
+                                    if new_value == "❌ Нет совпадения":
+                                        result_df_sheet.at[row_idx, 'Итоговое гео'] = None
+                                        result_df_sheet.at[row_idx, 'ID HH'] = None
+                                        result_df_sheet.at[row_idx, 'Регион'] = None
+                                        result_df_sheet.at[row_idx, 'Совпадение %'] = 0
+                                        result_df_sheet.at[row_idx, 'Изменение'] = 'Нет'
+                                        result_df_sheet.at[row_idx, 'Статус'] = '❌ Не найдено'
+                                    else:
+                                        result_df_sheet.at[row_idx, 'Итоговое гео'] = new_value
+                                        if new_value in hh_areas:
+                                            result_df_sheet.at[row_idx, 'ID HH'] = hh_areas[new_value]['id']
+                                            result_df_sheet.at[row_idx, 'Регион'] = hh_areas[new_value]['parent']
+                                        result_df_sheet.at[row_idx, 'Изменение'] = 'Да' if check_if_changed(original, new_value) else 'Нет'
+                                        result_df_sheet.at[row_idx, 'Статус'] = '✅ Точное' if result_df_sheet.at[row_idx, 'Совпадение %'] >= 95 else '⚠️ Похожее'
+
+                            # Обновляем данные в session_state
+                            st.session_state.sheets_results[sheet_name]['result_df'] = result_df_sheet
+
+                    elif st.session_state.sheet_mode == 'columns':
+                        # Режим столбца "Вакансия"
+                        status_text.text("Применение изменений...")
+                        progress_bar.progress(0.5)
+
+                        # Применяем изменения к result_df
+                        for row_idx, row in result_df.iterrows():
+                            original = str(row['Исходное название']).strip()
+                            normalized = original.replace('ё', 'е').replace('Ё', 'Е').lower().strip()
+                            normalized = ' '.join(normalized.split())
+
+                            if normalized in unified_mapping:
+                                new_value = unified_mapping[normalized]
+
+                                if new_value == "❌ Нет совпадения":
+                                    result_df.at[row_idx, 'Итоговое гео'] = None
+                                    result_df.at[row_idx, 'ID HH'] = None
+                                    result_df.at[row_idx, 'Регион'] = None
+                                    result_df.at[row_idx, 'Совпадение %'] = 0
+                                    result_df.at[row_idx, 'Изменение'] = 'Нет'
+                                    result_df.at[row_idx, 'Статус'] = '❌ Не найдено'
+                                else:
+                                    result_df.at[row_idx, 'Итоговое гео'] = new_value
+                                    if new_value in hh_areas:
+                                        result_df.at[row_idx, 'ID HH'] = hh_areas[new_value]['id']
+                                        result_df.at[row_idx, 'Регион'] = hh_areas[new_value]['parent']
+                                    result_df.at[row_idx, 'Изменение'] = 'Да' if check_if_changed(original, new_value) else 'Нет'
+
+                        # Обновляем данные в session_state
+                        st.session_state.result_df = result_df
+                        progress_bar.progress(1.0)
+
+                    status_text.text("✅ Изменения применены!")
+                    progress_bar.empty()
+                    status_text.empty()
+
+                    # Сбрасываем флаги
+                    st.session_state.unified_changes_applied = True
+                    st.session_state.apply_unified_changes = False
+
+                    st.rerun()
 
                 # ============================================
                 # РЕЖИМ ЕДИНОЙ СВЕРКИ ГЕО
@@ -1431,12 +1529,6 @@ if uploaded_files and hh_areas is not None:
                         if v['score'] <= 95 and 'Дубликат' not in v['status']
                     }
 
-                    st.success(f"""
-                    📊 **Статистика:**
-                    - Всего уникальных городов: **{len(all_unique_cities)}**
-                    - Требуют проверки (совпадение ≤ 95%): **{len(editable_unique_cities)}**
-                    """)
-
                     if len(editable_unique_cities) > 0:
                         st.markdown("---")
                         st.markdown("#### ✏️ Редактирование уникальных городов")
@@ -1478,6 +1570,9 @@ if uploaded_files and hh_areas is not None:
                                 # Извлекаем название без процента
                                 city_match = selected.rsplit(' (', 1)[0]
                                 st.session_state.unified_selections[normalized_key] = city_match
+
+                            # Помечаем что есть неприменённые изменения
+                            st.session_state.unified_changes_applied = False
 
                         # Сортируем: сначала "Нет совпадения", затем по возрастанию процента
                         sorted_cities = sorted(
@@ -1620,8 +1715,6 @@ if uploaded_files and hh_areas is not None:
 
                     if st.session_state.sheet_mode == 'tabs':
                         # Режим вкладок
-                        st.info("Формируются файлы для каждой вкладки...")
-
                         for sheet_name, sheet_result in st.session_state.sheets_results.items():
                             result_df_sheet = sheet_result['result_df'].copy()
                             original_df_sheet = st.session_state.sheets_data[sheet_name]['df']
@@ -1689,8 +1782,6 @@ if uploaded_files and hh_areas is not None:
 
                     elif st.session_state.sheet_mode == 'columns':
                         # Режим столбца "Вакансия"
-                        st.info("Формируются файлы для каждой вакансии...")
-
                         # Находим столбец "Вакансия"
                         original_cols = st.session_state.original_df.columns.tolist()
                         vacancy_col = None
@@ -1782,8 +1873,6 @@ if uploaded_files and hh_areas is not None:
                         total_files = len(st.session_state.vacancy_files)
                         total_cities_in_files = sum(f['count'] for f in st.session_state.vacancy_files.values())
 
-                        st.success(f"✅ Сформировано **{total_files}** файлов с общим количеством **{total_cities_in_files}** городов")
-
                         # Кнопка для скачивания архива со всеми файлами
                         col_download1, col_download2 = st.columns(2)
 
@@ -1810,20 +1899,15 @@ if uploaded_files and hh_areas is not None:
                             st.markdown("#### 🚀 Скачать общее гео для публикатора")
 
                             # Формируем единый файл со всеми уникальными городами для публикатора
+                            # ТОЛЬКО ГОРОДА БЕЗ ЗАГОЛОВКОВ - для прямой загрузки в систему
                             publisher_cities = sorted(list(all_cities_for_publisher))
-                            publisher_df = pd.DataFrame({
-                                'Город': publisher_cities
-                            })
+                            publisher_df = pd.DataFrame(publisher_cities)
 
-                            # Добавляем ID и регион из справочника
-                            publisher_df['ID HH'] = publisher_df['Город'].apply(
-                                lambda x: hh_areas[x]['id'] if x in hh_areas else None
-                            )
-                            publisher_df['Регион'] = publisher_df['Город'].apply(
-                                lambda x: hh_areas[x]['parent'] if x in hh_areas else None
-                            )
-
-                            publisher_excel = create_excel_bytes_cached(publisher_df, 'Общее гео')
+                            # Создаем Excel без заголовков
+                            buffer = io.BytesIO()
+                            with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+                                publisher_df.to_excel(writer, index=False, header=False, sheet_name='Гео')
+                            publisher_excel = buffer.getvalue()
 
                             st.download_button(
                                 label=f"📥 Скачать для публикатора ({len(publisher_cities)} городов)",
