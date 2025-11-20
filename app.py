@@ -1100,6 +1100,30 @@ if uploaded_files and hh_areas is not None:
                         st.markdown("---")
                         st.subheader("✏️ Редактирование городов с совпадением ≤ 95%")
 
+                        # FIX: Force black border for Scenario 1 editing selectboxes using targeted CSS
+                        st.markdown("""
+                            <style>
+                                .scenario1-edit-section div[data-baseweb="select"] > div,
+                                .scenario1-edit-section .stSelectbox > div > div {
+                                    border: 2px solid #1a1a1a !important;
+                                    border-color: #1a1a1a !important;
+                                    outline: none !important;
+                                    box-shadow: none !important;
+                                }
+                                .scenario1-edit-section div[data-baseweb="select"] > div:hover,
+                                .scenario1-edit-section .stSelectbox:hover > div > div {
+                                    border-color: #1a1a1a !important;
+                                    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+                                }
+                                .scenario1-edit-section div[data-baseweb="select"] > div:focus-within,
+                                .scenario1-edit-section .stSelectbox > div > div:focus-within {
+                                    border-color: #1a1a1a !important;
+                                    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1) !important;
+                                }
+                            </style>
+                            <div class="scenario1-edit-section">
+                        """, unsafe_allow_html=True)
+
                         # Callback для сохранения выбора ТОЛЬКО при изменении
                         def on_city_select_scenario1(row_id, widget_key):
                             """Callback для сценария 1 - вызывается только при изменении"""
@@ -1167,6 +1191,9 @@ if uploaded_files and hh_areas is not None:
                                     st.text(row['Статус'])
 
                                 st.markdown("<hr style='margin-top: 5px; margin-bottom: 5px;'>", unsafe_allow_html=True)
+
+                        # Close the edit section container
+                        st.markdown("</div>", unsafe_allow_html=True)
 
                         # ============================================
                         # БЛОК: ДОБАВЛЕНИЕ ЛЮБОГО ГОРОДА (только для НЕ split режима)
