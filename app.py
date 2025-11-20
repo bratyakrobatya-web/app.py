@@ -2642,7 +2642,7 @@ st.markdown("""
 Полные дубликаты будут выделены оранжевым цветом и размещены вначале.
 """)
 
-uploaded_files = st.file_uploader(
+merger_uploaded_files = st.file_uploader(
     "Загрузите файлы для объединения",
     type=['xlsx', 'xls', 'xlsm', 'xlsb', 'csv'],
     accept_multiple_files=True,
@@ -2650,10 +2650,10 @@ uploaded_files = st.file_uploader(
     help="Можно загрузить несколько файлов Excel (xlsx, xls, xlsm, xlsb) или CSV с одинаковыми столбцами"
 )
 
-if uploaded_files:
+if merger_uploaded_files:
     # Валидация размера и расширения файлов
     files_valid = True
-    for uploaded_file in uploaded_files:
+    for uploaded_file in merger_uploaded_files:
         # Проверка размера
         is_valid_size, error_msg = validate_file_size(uploaded_file.size)
         if not is_valid_size:
@@ -2677,7 +2677,7 @@ if uploaded_files:
         with st.spinner("Обрабатываем файлы..."):
             # Читаем все файлы
             all_dataframes = []
-            for uploaded_file in uploaded_files:
+            for uploaded_file in merger_uploaded_files:
                 if uploaded_file.name.endswith('.csv'):
                     df = pd.read_csv(uploaded_file)
                 else:
