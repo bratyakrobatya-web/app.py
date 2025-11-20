@@ -1160,7 +1160,14 @@ if uploaded_files and hh_areas is not None:
                                 if row_id in st.session_state.manual_selections:
                                     selected_value = st.session_state.manual_selections[row_id]
                                 else:
-                                    selected_value = current_value
+                                    # Выбираем город с МАКСИМАЛЬНЫМ процентом
+                                    # Берем из options (уже отсортированного списка) первый элемент после "❌ Нет совпадения"
+                                    if len(options) > 1:
+                                        # options[1] - это первый город с максимальным процентом
+                                        # Убираем процент в скобках из строки
+                                        selected_value = options[1].rsplit(' (', 1)[0]
+                                    else:
+                                        selected_value = current_value
 
                                 # Быстрый поиск индекса O(1) вместо O(n)
                                 if selected_value == "❌ Нет совпадения":
@@ -1615,7 +1622,12 @@ if uploaded_files and hh_areas is not None:
                                 if normalized in st.session_state.unified_selections:
                                     selected_value = st.session_state.unified_selections[normalized]
                                 else:
-                                    selected_value = current_value
+                                    # Выбираем город с МАКСИМАЛЬНЫМ процентом
+                                    # Берем из options (уже отсортированного списка) первый элемент после "❌ Нет совпадения"
+                                    if len(options) > 1:
+                                        selected_value = options[1].rsplit(' (', 1)[0]
+                                    else:
+                                        selected_value = current_value
 
                                 # Поиск индекса
                                 if selected_value == "❌ Нет совпадения":
@@ -2057,7 +2069,12 @@ if uploaded_files and hh_areas is not None:
                             if selection_key in st.session_state.manual_selections:
                                 selected_value = st.session_state.manual_selections[selection_key]
                             else:
-                                selected_value = current_value
+                                # Выбираем город с МАКСИМАЛЬНЫМ процентом
+                                # Берем из options (уже отсортированного списка) первый элемент после "❌ Нет совпадения"
+                                if len(options) > 1:
+                                    selected_value = options[1].rsplit(' (', 1)[0]
+                                else:
+                                    selected_value = current_value
 
                             # Быстрый поиск индекса O(1)
                             if selected_value == "❌ Нет совпадения":
