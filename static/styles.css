@@ -28,8 +28,13 @@
 
 /* Анимация для логотипа */
 @keyframes rotate {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .rotating-earth {
@@ -111,26 +116,45 @@
 }
 
 /* Базовые стили */
-html, body, [class*="css"] {
+html,
+body,
+[class*="css"] {
     font-family: 'Golos Text' !important;
     font-size: 14px;
 }
 
 /* Применяем шрифт ко всем элементам Streamlit, кроме иконок */
-.stButton button, .stDownloadButton button,
-.stTextInput input, .stSelectbox, .stMultiSelect,
-.stTextArea textarea, .stNumberInput input,
-[data-testid="stFileUploader"], .uploadedFileName,
-p, div, label, h1, h2, h3, h4, h5, h6 {
+.stButton button,
+.stDownloadButton button,
+.stTextInput input,
+.stSelectbox,
+.stMultiSelect,
+.stTextArea textarea,
+.stNumberInput input,
+[data-testid="stFileUploader"],
+.uploadedFileName,
+p,
+div,
+label,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
     font-family: 'Golos Text' !important;
 }
 
 /* Исключаем иконочные шрифты из глобального применения */
-span[data-icon], span[class*="icon"], span.material-icons, span[class*="material"],
-button span[data-icon], button span[class*="icon"],
+span[data-icon],
+span[class*="icon"],
+span.material-icons,
+span[class*="material"],
+button span[data-icon],
+button span[class*="icon"],
 [data-testid="collapsedControl"] span,
 [data-testid="stSidebarCollapsedControl"] span {
-    font-family: 'Material Symbols Outlined', 'Material Icons', system-ui ;
+    font-family: 'Material Symbols Outlined', 'Material Icons', system-ui;
 }
 
 /* Улучшение качества изображений - максимальная четкость */
@@ -144,8 +168,8 @@ img {
 
 /* Специально для логотипа в sidebar - ультра-качество */
 [data-testid="stSidebar"] img {
-    image-rendering: high-quality ;
-    image-rendering: -webkit-optimize-contrast ;
+    image-rendering: high-quality;
+    image-rendering: -webkit-optimize-contrast;
     backface-visibility: hidden;
     transform: translateZ(0);
     -webkit-font-smoothing: antialiased;
@@ -190,78 +214,84 @@ h3 {
 
 /* Все обычные кнопки (включая primary и secondary) - БАЗОВЫЙ КРАСНЫЙ */
 .stButton>button {
-    border-radius: 20px ;
-    padding: 10px 20px ;
+    border-radius: 20px;
+    padding: 10px 20px;
     font-family: 'Golos Text' !important;
-    font-weight: normal ;
-    font-size: 14px ;
-    background: var(--button-color) ;
-    border: none ;
-    transition: all 0.3s ease ;
-    box-shadow: none ;
-    color: white ;
-    cursor: pointer ;
+    font-weight: normal;
+    font-size: 14px;
+    background: var(--button-color);
+    border: none;
+    transition: all 0.3s ease;
+    box-shadow: none;
+    color: white;
+    cursor: pointer;
 }
 
 /* Текст внутри кнопок - Regular шрифт */
-.stButton>button, .stButton>button span, .stButton>button p,
-.stButton>button div, .stButton>button * {
+.stButton>button,
+.stButton>button span,
+.stButton>button p,
+.stButton>button div,
+.stButton>button * {
     font-family: 'Golos Text' !important;
-    font-weight: normal ;
+    font-weight: normal;
 }
 
 .stButton>button:hover {
-    background: var(--button-hover) ;
-    transform: translateY(-2px) ;
-    box-shadow: var(--shadow-glow) ;
-    color: white ;
+    background: var(--button-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-glow);
+    color: white;
 }
 
 .stButton>button:active {
-    transform: translateY(0px) ;
-    box-shadow: none ;
+    transform: translateY(0px);
+    box-shadow: none;
 }
 
 /* Download кнопки - БАЗОВЫЙ КРАСНЫЙ */
 .stDownloadButton>button {
-    border-radius: 20px ;
-    padding: 10px 20px ;
+    border-radius: 20px;
+    padding: 10px 20px;
     font-family: 'Golos Text' !important;
-    font-weight: normal ;
-    font-size: 14px ;
-    background: var(--button-color) ;
-    border: none ;
-    transition: all 0.3s ease ;
-    box-shadow: none ;
-    color: white ;
-    cursor: pointer ;
+    font-weight: normal;
+    font-size: 14px;
+    background: var(--button-color);
+    border: none;
+    transition: all 0.3s ease;
+    box-shadow: none;
+    color: white;
+    cursor: pointer;
 }
 
 /* Текст внутри download кнопок - Regular шрифт */
-.stDownloadButton>button, .stDownloadButton>button span, .stDownloadButton>button p,
-.stDownloadButton>button div, .stDownloadButton>button * {
+.stDownloadButton>button,
+.stDownloadButton>button span,
+.stDownloadButton>button p,
+.stDownloadButton>button div,
+.stDownloadButton>button * {
     font-family: 'Golos Text' !important;
-    font-weight: normal ;
+    font-weight: normal;
 }
 
 .stDownloadButton>button:hover {
-    background: var(--button-hover) ;
-    transform: translateY(-2px) ;
-    box-shadow: var(--shadow-glow) ;
-    color: white ;
+    background: var(--button-hover);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-glow);
+    color: white;
 }
 
 .stDownloadButton>button:active {
-    transform: translateY(0px) ;
-    box-shadow: none ;
+    transform: translateY(0px);
+    box-shadow: none;
 }
 
 /* Tab кнопки - размер как обычные кнопки */
 .stTabs [data-baseweb="tab-list"] button {
-    padding: 10px 20px ;
-    font-size: 14px ;
+    padding: 10px 20px;
+    font-size: 14px;
     font-family: 'Golos Text' !important;
-    font-weight: normal ;
+    font-weight: normal;
 }
 
 /* File Uploader */
@@ -279,7 +309,7 @@ h3 {
 }
 
 /* Центрирование содержимого file uploader */
-[data-testid="stFileUploader"] > div {
+[data-testid="stFileUploader"]>div {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -293,12 +323,12 @@ h3 {
 
 /* Inputs - Selectbox с черной окантовкой */
 /* МАКСИМАЛЬНАЯ СПЕЦИФИЧНОСТЬ для перекрытия всех дефолтных стилей */
-div[data-baseweb="select"] > div,
-.stSelectbox > div > div,
-[data-testid="stSelectbox"] > div > div,
-div[data-baseweb="select"] > div[class],
-.stSelectbox > div > div[class],
-[data-testid="stSelectbox"] > div > div[class] {
+div[data-baseweb="select"]>div,
+.stSelectbox>div>div,
+[data-testid="stSelectbox"]>div>div,
+div[data-baseweb="select"]>div[class],
+.stSelectbox>div>div[class],
+[data-testid="stSelectbox"]>div>div[class] {
     position: relative;
     border: 2px solid #1a1a1a !important;
     border-color: #1a1a1a !important;
@@ -310,44 +340,53 @@ div[data-baseweb="select"] > div[class],
     box-shadow: none !important;
 }
 
-div[data-baseweb="select"] > div:hover,
-.stSelectbox:hover > div > div,
-[data-testid="stSelectbox"]:hover > div > div,
-div[data-baseweb="select"] > div[class]:hover,
-.stSelectbox:hover > div > div[class],
-[data-testid="stSelectbox"]:hover > div > div[class] {
+div[data-baseweb="select"]>div:hover,
+.stSelectbox:hover>div>div,
+[data-testid="stSelectbox"]:hover>div>div,
+div[data-baseweb="select"]>div[class]:hover,
+.stSelectbox:hover>div>div[class],
+[data-testid="stSelectbox"]:hover>div>div[class] {
     border-color: #1a1a1a !important;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
     filter: brightness(1.02);
 }
 
-div[data-baseweb="select"] > div:focus-within,
-.stSelectbox > div > div:focus-within,
-[data-testid="stSelectbox"] > div > div:focus-within,
-div[data-baseweb="select"] > div[class]:focus-within,
-.stSelectbox > div > div[class]:focus-within,
-[data-testid="stSelectbox"] > div > div[class]:focus-within {
+div[data-baseweb="select"]>div:focus-within,
+.stSelectbox>div>div:focus-within,
+[data-testid="stSelectbox"]>div>div:focus-within,
+div[data-baseweb="select"]>div[class]:focus-within,
+.stSelectbox>div>div[class]:focus-within,
+[data-testid="stSelectbox"]>div>div[class]:focus-within {
     border-color: #1a1a1a !important;
     box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1) !important;
     outline: none !important;
 }
 
-.stTextInput > div > div {
+/* Targeted fix for Scenario 1 Add Cities block */
+.scenario1-add-cities div[data-baseweb="select"]>div,
+.scenario1-add-cities .stSelectbox>div>div {
+    border: 2px solid #1a1a1a !important;
+    border-color: #1a1a1a !important;
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.stTextInput>div>div {
     border-radius: 10px;
     border: 1px solid #dee2e6;
 }
 
 /* MultiSelect с черной окантовкой */
-[data-testid="stMultiSelect"] [data-baseweb="select"] > div {
+[data-testid="stMultiSelect"] [data-baseweb="select"]>div {
     border: 2px solid #1a1a1a !important;
     border-color: #1a1a1a !important;
-    border-radius: 10px ;
-    background: white ;
-    transition: all 0.3s ease ;
-    cursor: pointer ;
+    border-radius: 10px;
+    background: white;
+    transition: all 0.3s ease;
+    cursor: pointer;
 }
 
-[data-testid="stMultiSelect"] [data-baseweb="select"] > div:hover {
+[data-testid="stMultiSelect"] [data-baseweb="select"]>div:hover {
     border-color: #1a1a1a !important;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
     filter: brightness(1.02);
@@ -355,38 +394,39 @@ div[data-baseweb="select"] > div[class]:focus-within,
 
 /* Информационные блоки - С ГРАДИЕНТОМ */
 .stInfo {
-    background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%) ;
-    border-left: 5px solid var(--ui-color) ;
+    background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
+    border-left: 5px solid var(--ui-color);
     border-radius: 10px;
     padding: 1rem;
 }
 
 .stSuccess {
-    background: rgba(244, 48, 31, 0.1) ;
-    border: 2px solid var(--ui-color) ;
+    background: rgba(244, 48, 31, 0.1);
+    border: 2px solid var(--ui-color);
     border-radius: 10px;
     padding: 1rem;
-    color: #1a1a1a ;
+    color: #1a1a1a;
 }
 
-.stSuccess > div {
-    color: #1a1a1a ;
+.stSuccess>div {
+    color: #1a1a1a;
 }
 
-.stSuccess p, .stSuccess strong {
-    color: #1a1a1a ;
+.stSuccess p,
+.stSuccess strong {
+    color: #1a1a1a;
 }
 
 .stWarning {
-    background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%) ;
-    border-left: 5px solid var(--ui-color) ;
+    background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
+    border-left: 5px solid var(--ui-color);
     border-radius: 10px;
     padding: 1rem;
 }
 
 .stError {
-    background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%) ;
-    border-left: 5px solid var(--ui-color) ;
+    background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
+    border-left: 5px solid var(--ui-color);
     border-radius: 10px;
     padding: 1rem;
 }
@@ -416,27 +456,27 @@ div[data-baseweb="select"] > div[class]:focus-within,
 }
 
 /* Slider - простой стиль */
-.stSlider > div > div {
-    background: #dee2e6 ;
-    height: 4px ;
+.stSlider>div>div {
+    background: #dee2e6;
+    height: 4px;
 }
 
 /* Slider - активная часть с градиентом */
-.stSlider > div > div > div {
-    background: var(--ui-color) ;
+.stSlider>div>div>div {
+    background: var(--ui-color);
 }
 
 /* Тумблер слайдера - простой круг */
-.stSlider > div > div > div > div {
-    background-color: white ;
-    border: 2px solid var(--ui-color) ;
-    height: 20px ;
+.stSlider>div>div>div>div {
+    background-color: white;
+    border: 2px solid var(--ui-color);
+    height: 20px;
 }
 
-.stSlider > div > div > div > div:hover {
-    background-color: white ;
-    box-shadow: 0 0 8px var(--ui-shadow) ;
-    border: 2px solid var(--ui-color) ;
+.stSlider>div>div>div>div:hover {
+    background-color: white;
+    box-shadow: 0 0 8px var(--ui-shadow);
+    border: 2px solid var(--ui-color);
 }
 
 /* Вкладки */
@@ -498,17 +538,17 @@ div.stCheckbox:hover {
     background: white;
     padding: 1rem;
     border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     border: 1px solid #f0f0f0;
 }
 
 /* Прогресс бар - базовый черный цвет вместо оранжевого */
-.stProgress > div > div > div > div {
-    background-color: #1a1a1a ;
+.stProgress>div>div>div>div {
+    background-color: #1a1a1a;
 }
 
-.stProgress [data-testid="stProgressBar"] > div > div {
-    background-color: #1a1a1a ;
+.stProgress [data-testid="stProgressBar"]>div>div {
+    background-color: #1a1a1a;
 }
 
 /* Divider */
@@ -522,47 +562,47 @@ hr {
 
 /* Кнопка Browse files в File Uploader - базовый красный */
 [data-testid="stFileUploader"] button {
-    background: var(--button-color) ;
-    border: none ;
-    color: white ;
-    border-radius: 20px ;
-    padding: 10px 20px ;
-    font-weight: normal ;
-    font-size: 14px ;
-    transition: all 0.3s ease ;
-    cursor: pointer ;
+    background: var(--button-color);
+    border: none;
+    color: white;
+    border-radius: 20px;
+    padding: 10px 20px;
+    font-weight: normal;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    cursor: pointer;
 }
 
 [data-testid="stFileUploader"] button:hover {
-    background: var(--button-hover) ;
+    background: var(--button-hover);
     transform: translateY(-2px);
-    box-shadow: var(--shadow-glow) ;
+    box-shadow: var(--shadow-glow);
 }
 
 /* Теги в мультиселекте - красный цвет вместо оранжевого */
 [data-testid="stMultiSelect"] span[data-baseweb="tag"] {
-    background-color: var(--ui-color) ;
-    color: white ;
+    background-color: var(--ui-color);
+    color: white;
     border-radius: 6px;
 }
 
 [data-testid="stMultiSelect"] span[data-baseweb="tag"]:hover {
-    background-color: #d42817 ;
+    background-color: #d42817;
 }
 
 /* Глобальные стили для ссылок - черный цвет вместо оранжевого */
 a {
-    color: #1a1a1a ;
+    color: #1a1a1a;
     text-decoration: none;
 }
 
 a:hover {
-    color: #000000 ;
-    text-decoration: none ;
+    color: #000000;
+    text-decoration: none;
 }
 
 a:visited {
-    color: #1a1a1a ;
+    color: #1a1a1a;
 }
 
 /* Стили для якорной навигации */
@@ -579,6 +619,7 @@ a:visited {
     font-size: 0.9rem;
     transition: all 0.3s ease;
 }
+
 .nav-link:hover {
     background: var(--button-hover);
     color: white !important;

@@ -1172,6 +1172,30 @@ if uploaded_files and hh_areas is not None:
                         # БЛОК: ДОБАВЛЕНИЕ ЛЮБОГО ГОРОДА (только для НЕ split режима)
                         # ============================================
                         st.markdown("---")
+                        
+                        # FIX: Force black border for Scenario 1 selectbox using targeted CSS
+                        st.markdown("""
+                            <style>
+                                .scenario1-add-cities div[data-baseweb="select"] > div,
+                                .scenario1-add-cities .stSelectbox > div > div {
+                                    border: 2px solid #1a1a1a !important;
+                                    border-color: #1a1a1a !important;
+                                    outline: none !important;
+                                    box-shadow: none !important;
+                                }
+                                .scenario1-add-cities div[data-baseweb="select"] > div:hover,
+                                .scenario1-add-cities .stSelectbox:hover > div > div {
+                                    border-color: #1a1a1a !important;
+                                }
+                                .scenario1-add-cities div[data-baseweb="select"] > div:focus-within,
+                                .scenario1-add-cities .stSelectbox > div > div:focus-within {
+                                    border-color: #1a1a1a !important;
+                                    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1) !important;
+                                }
+                            </style>
+                            <div class="scenario1-add-cities">
+                        """, unsafe_allow_html=True)
+                        
                         st.subheader("➕ Добавить дополнительные города")
                 
                         # Селектор на половину ширины экрана
@@ -1215,6 +1239,9 @@ if uploaded_files and hh_areas is not None:
                                 disabled=True,
                                 label_visibility="collapsed"
                             )
+                        
+                        # Close the custom container
+                        st.markdown("</div>", unsafe_allow_html=True)
 
                     # Если режим split - переходим сразу к блоку редактирования по вакансиям, пропуская стандартные блоки скачивания
                     if not show_standard_blocks:
