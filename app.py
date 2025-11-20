@@ -2843,14 +2843,6 @@ if uploaded_files and hh_areas is not None:
                         .str.replace(r'\s+', ' ', regex=True)
                     )
 
-                    # ДИАГНОСТИКА: Показываем данные перед агрегацией
-                    salary_debug_cols = [col for col in publisher_df.columns if 'зарплата' in str(col).lower()]
-                    if salary_debug_cols:
-                        st.markdown("#### 🔍 DEBUG: Данные перед агрегацией зарплат")
-                        debug_df = publisher_df[[city_col, '_normalized'] + salary_debug_cols].copy()
-                        st.dataframe(debug_df, use_container_width=True)
-                        st.info(f"Всего строк для агрегации: {len(publisher_df)}")
-
                     # Находим столбцы с "Зарплата" в названии
                     salary_cols = [col for col in publisher_df.columns if 'зарплата' in str(col).lower()]
 
