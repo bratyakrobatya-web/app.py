@@ -2935,8 +2935,8 @@ if uploaded_files and hh_areas is not None:
 
                     output_publisher = io.BytesIO()
                     with pd.ExcelWriter(output_publisher, engine='openpyxl') as writer:
-                        # FIX: header=False чтобы избежать записи числовых названий столбцов (0, 1, 2...) как первой строки
-                        publisher_df.to_excel(writer, index=False, header=False, sheet_name='Результат')
+                        # Экспортируем с заголовками столбцов
+                        publisher_df.to_excel(writer, index=False, header=True, sheet_name='Результат')
                     output_publisher.seek(0)  
                       
                     publisher_count = len(publisher_df)  
