@@ -2825,26 +2825,24 @@ if uploaded_files and hh_areas is not None:
                     if st.session_state.added_cities:
                         # Получаем последнюю строку из исходного файла
                         last_row_values = st.session_state.original_df.iloc[-1].tolist()
-                        
+
                         for city in st.session_state.added_cities:
                             new_row = [city] + last_row_values[1:]  # Город + остальные значения из последней строки
                             publisher_df.loc[len(publisher_df)] = new_row
-                        
-                        # Удаляем дубликаты
-                        # VECTORIZED: normalize city name
-                        publisher_df['_normalized'] = (
-                            publisher_df[original_cols[0]]
-                            .fillna('').astype(str)
-                            .str.replace('ё', 'е').str.replace('Ё', 'Е')
-                            .str.lower().str.strip()
-                            .str.replace(r'\s+', ' ', regex=True)
-                        )
-                        publisher_df = publisher_df.drop_duplicates(subset=['_normalized'], keep='first')
-                        publisher_df = publisher_df.drop(columns=['_normalized'])
 
                     # ============================================
                     # АГРЕГАЦИЯ ЗАРПЛАТ ДЛЯ ДУБЛЕЙ ПО ИТОГОВОМУ ГЕО
                     # ============================================
+                    # Нормализуем город для корректной агрегации дублей
+                    city_col = original_cols[0]
+                    publisher_df['_normalized'] = (
+                        publisher_df[city_col]
+                        .fillna('').astype(str)
+                        .str.replace('ё', 'е').str.replace('Ё', 'Е')
+                        .str.lower().str.strip()
+                        .str.replace(r'\s+', ' ', regex=True)
+                    )
+
                     # Находим столбцы с "Зарплата" в названии
                     salary_cols = [col for col in publisher_df.columns if 'зарплата' in str(col).lower()]
 
@@ -2872,9 +2870,6 @@ if uploaded_files and hh_areas is not None:
                                 errors='coerce'
                             )
 
-                            # Группируем по итоговому гео (первый столбец)
-                            city_col = original_cols[0]
-
                             # Создаем агрегационный словарь
                             agg_dict = {}
 
@@ -2882,24 +2877,46 @@ if uploaded_files and hh_areas is not None:
                             agg_dict[salary_from_col] = 'min'
                             agg_dict[salary_to_col] = 'max'
 
+                            # Для города: берём первое значение (будет использовано из группы)
+                            agg_dict[city_col] = 'first'
+
                             # Для остальных столбцов: берём первое значение
                             for col in publisher_df.columns:
-                                if col != city_col and col not in [salary_from_col, salary_to_col]:
+                                if col not in [city_col, salary_from_col, salary_to_col, '_normalized']:
                                     agg_dict[col] = 'first'
 
-                            # Выполняем группировку
-                            publisher_df = publisher_df.groupby(city_col, as_index=False).agg(agg_dict)
+                            # Выполняем группировку по нормализованному гео
+                            publisher_df = publisher_df.groupby('_normalized', as_index=False).agg(agg_dict)
 
                             # Конвертируем зарплаты обратно в целые числа
                             publisher_df[salary_from_col] = publisher_df[salary_from_col].fillna(0).astype(int)
                             publisher_df[salary_to_col] = publisher_df[salary_to_col].fillna(0).astype(int)
+
+                            # Удаляем служебный столбец
+                            publisher_df = publisher_df.drop(columns=['_normalized'])
+
+                            # ============================================
+                            # ФОРМИРУЕМ ФАЙЛ ДЛЯ ПУБЛИКАТОРА С НУЖНЫМИ СТОЛБЦАМИ
+                            # ============================================
+                            # Создаем новый DataFrame только с нужными колонками
+                            publisher_export = pd.DataFrame()
+                            publisher_export['Город'] = publisher_df[city_col]
+                            publisher_export['Зарплата от'] = publisher_df[salary_from_col]
+                            publisher_export['Зарплата до'] = publisher_df[salary_to_col]
+                            publisher_export['На руки? (да/нет)'] = 'Нет'
+
+                            publisher_df = publisher_export
+                    else:
+                        # Если нет зарплат, просто удаляем дубликаты
+                        publisher_df = publisher_df.drop_duplicates(subset=['_normalized'], keep='first')
+                        publisher_df = publisher_df.drop(columns=['_normalized'])
 
                     # Санитизация данных перед экспортом (защита от CSV Injection)
                     publisher_df = sanitize_csv_content(publisher_df)
 
                     output_publisher = io.BytesIO()
                     with pd.ExcelWriter(output_publisher, engine='openpyxl') as writer:
-                        publisher_df.to_excel(writer, index=False, header=False, sheet_name='Результат')  
+                        publisher_df.to_excel(writer, index=False, header=True, sheet_name='Результат')
                     output_publisher.seek(0)  
                       
                     publisher_count = len(publisher_df)  
