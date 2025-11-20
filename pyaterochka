@@ -186,6 +186,9 @@ print(f"Сопоставлено: {matched} из {total} строк ({matched/to
 # Загрузка файла Автоматизация
 df_automation = pd.read_excel(BytesIO(uploaded[automation_file]))
 
+# Убираем пробелы в названиях столбцов
+df_automation.columns = df_automation.columns.str.strip()
+
 print(f"АВТОМАТИЗАЦИЯ загружен: {len(df_automation)} строк")
 print(f"Столбцы: {list(df_automation.columns)}")
 

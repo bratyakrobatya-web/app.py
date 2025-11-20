@@ -3039,6 +3039,9 @@ print(f"\\nСопоставлено: {matched} из {total} строк ({matched
 # Обработка файла Автоматизация и добавление данных в FINEBI
 df_automation = pd.read_excel(BytesIO(uploaded[automation_file]))
 
+# Убираем пробелы в названиях столбцов
+df_automation.columns = df_automation.columns.str.strip()
+
 print(f"\\nАВТОМАТИЗАЦИЯ загружен: {len(df_automation)} строк")
 print(f"Столбцы: {list(df_automation.columns)}")
 
