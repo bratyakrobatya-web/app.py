@@ -2860,8 +2860,13 @@ if uploaded_files and hh_areas is not None:
                         .str.replace(r'\s+', ' ', regex=True)
                     )
 
-                    # Находим столбцы с "Зарплата" в названии
-                    salary_cols = [col for col in publisher_df.columns if 'зарплата' in str(col).lower()]
+                    # Находим столбцы с "Зарплата", "ОТ"/"от" или "ДО"/"до" в названии
+                    salary_cols = []
+                    for col in publisher_df.columns:
+                        col_lower = str(col).lower().strip()
+                        # Ищем столбцы со словом "зарплата" или начинающиеся с "от"/"до"
+                        if 'зарплата' in col_lower or col_lower.startswith('от') or col_lower.startswith('до'):
+                            salary_cols.append(col)
 
                     if len(salary_cols) >= 2 and len(publisher_df) > 0:
                         # Определяем столбцы "от" и "до"
