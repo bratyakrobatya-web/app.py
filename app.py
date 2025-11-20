@@ -1859,19 +1859,20 @@ if uploaded_files and hh_areas is not None:
                                         added_df = pd.DataFrame(added_rows)
                                         final_output = pd.concat([final_output, added_df], ignore_index=True)
 
-                                # Собираем города для публикатора
-                                for city in final_output[original_cols[0]].dropna().unique():
-                                    all_cities_for_publisher.add(city)
+                                # Собираем города для публикатора и сохраняем файл только если есть данные
+                                if len(final_output) > 0:
+                                    for city in final_output[original_cols[0]].dropna().unique():
+                                        all_cities_for_publisher.add(city)
 
-                                # Сохраняем файл
-                                safe_vacancy_name = str(vacancy).replace('/', '_').replace('\\', '_')[:50]
-                                excel_bytes = create_excel_bytes_cached(final_output, vacancy)
+                                    # Сохраняем файл
+                                    safe_vacancy_name = str(vacancy).replace('/', '_').replace('\\', '_')[:50]
+                                    excel_bytes = create_excel_bytes_cached(final_output, vacancy)
 
-                                st.session_state.vacancy_files[vacancy] = {
-                                    'data': excel_bytes,
-                                    'name': f"{safe_vacancy_name}.xlsx",
-                                    'count': len(final_output)
-                                }
+                                    st.session_state.vacancy_files[vacancy] = {
+                                        'data': excel_bytes,
+                                        'name': f"{safe_vacancy_name}.xlsx",
+                                        'count': len(final_output)
+                                    }
 
                     # Показываем кнопки для скачивания
                     if st.session_state.vacancy_files:
@@ -2933,23 +2934,27 @@ if uploaded_files and hh_areas is not None:
                     # Санитизация данных перед экспортом (защита от CSV Injection)
                     publisher_df = sanitize_csv_content(publisher_df)
 
-                    output_publisher = io.BytesIO()
-                    with pd.ExcelWriter(output_publisher, engine='openpyxl') as writer:
-                        # Экспортируем с заголовками столбцов
-                        publisher_df.to_excel(writer, index=False, header=True, sheet_name='Результат')
-                    output_publisher.seek(0)  
-                      
-                    publisher_count = len(publisher_df)  
-                      
-                    st.download_button(
-                        label=f"📤 Файл для публикатора\n{publisher_count} строк",
-                        data=output_publisher,
-                        file_name=f"geo_result_{uploaded_file.name.rsplit('.', 1)[0]}.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                        use_container_width=True,
-                        type="primary",
-                        key='download_publisher'
-                    )
+                    # Проверяем, есть ли данные для экспорта
+                    if len(publisher_df) > 0:
+                        output_publisher = io.BytesIO()
+                        with pd.ExcelWriter(output_publisher, engine='openpyxl') as writer:
+                            # Экспортируем с заголовками столбцов
+                            publisher_df.to_excel(writer, index=False, header=True, sheet_name='Результат')
+                        output_publisher.seek(0)
+
+                        publisher_count = len(publisher_df)
+
+                        st.download_button(
+                            label=f"📤 Файл для публикатора\n{publisher_count} строк",
+                            data=output_publisher,
+                            file_name=f"geo_result_{uploaded_file.name.rsplit('.', 1)[0]}.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            use_container_width=True,
+                            type="primary",
+                            key='download_publisher'
+                        )
+                    else:
+                        st.info("ℹ️ Нет данных для экспорта в файл публикатора")
 
                 with col2:
                     export_full_df = final_result_df.drop(['row_id', 'sort_priority'], axis=1, errors='ignore')
