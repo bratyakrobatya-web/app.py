@@ -1268,183 +1268,199 @@ if uploaded_files and hh_areas is not None:
                     # Инициализируем состояние
                     if 'vacancy_files' not in st.session_state:
                         st.session_state.vacancy_files = {}
+
+                    # Инициализируем выбранную вкладку
+                    if 'selected_sheet' not in st.session_state:
+                        st.session_state.selected_sheet = sheet_names[0]
+
+                    # Выбор вкладки через radio кнопки (как в Сценарии 2)
+                    st.markdown("#### 📋 Выберите вкладку для редактирования:")
+                    selected_sheet = st.radio(
+                        "Вкладка:",
+                        options=sheet_names,
+                        index=sheet_names.index(st.session_state.selected_sheet) if st.session_state.selected_sheet in sheet_names else 0,
+                        key="sheet_selector",
+                        horizontal=False,
+                        label_visibility="collapsed"
+                    )
+                    st.session_state.selected_sheet = selected_sheet
+
+                    st.markdown("---")
+
+                    # Показываем контент только для выбранной вкладки
+                    sheet_name = selected_sheet
+                    tab_idx = sheet_names.index(sheet_name)
+
+                    st.markdown(f"### 📄 {sheet_name}")
                     
-                    # Создаем вкладки для каждого листа Excel
-                    tabs = st.tabs([f"{name}" for name in sheet_names])
+                    # Получаем данные этой вкладки
+                    sheet_result = st.session_state.sheets_results[sheet_name]
+                    result_df_sheet = sheet_result['result_df']
+                    original_df_sheet = st.session_state.sheets_data[sheet_name]['df']
+
+                    # Блок редактирования городов с совпадением ≤ 95%
+                    editable_rows = result_df_sheet[
+                        (result_df_sheet['Совпадение %'] <= 95) &
+                        (~result_df_sheet['Статус'].str.contains('Дубликат', na=False))
+                    ].copy()
                     
-                    for tab_idx, (tab, sheet_name) in enumerate(zip(tabs, sheet_names)):
-                        with tab:
-                            st.markdown(f"### 📄 {sheet_name}")
-                            
-                            # Получаем данные этой вкладки
-                            sheet_result = st.session_state.sheets_results[sheet_name]
-                            result_df_sheet = sheet_result['result_df']
-                            original_df_sheet = st.session_state.sheets_data[sheet_name]['df']
+                    if len(editable_rows) > 0:
+                        # Убираем дубликаты по исходному названию (VECTORIZED)
+                        editable_rows['_normalized_original'] = (
+                            editable_rows['Исходное название']
+                            .fillna('').astype(str)
+                            .str.replace('ё', 'е').str.replace('Ё', 'Е')
+                            .str.lower().str.strip()
+                            .str.replace(r'\s+', ' ', regex=True)
+                        )
+                        editable_rows = editable_rows.drop_duplicates(subset=['_normalized_original'], keep='first')
 
-                            # Блок редактирования городов с совпадением ≤ 95%
-                            editable_rows = result_df_sheet[
-                                (result_df_sheet['Совпадение %'] <= 95) &
-                                (~result_df_sheet['Статус'].str.contains('Дубликат', na=False))
-                            ].copy()
-                            
-                            if len(editable_rows) > 0:
-                                # Убираем дубликаты по исходному названию (VECTORIZED)
-                                editable_rows['_normalized_original'] = (
-                                    editable_rows['Исходное название']
-                                    .fillna('').astype(str)
-                                    .str.replace('ё', 'е').str.replace('Ё', 'Е')
-                                    .str.lower().str.strip()
-                                    .str.replace(r'\s+', ' ', regex=True)
-                                )
-                                editable_rows = editable_rows.drop_duplicates(subset=['_normalized_original'], keep='first')
+                        # Сортируем: сначала "Нет совпадения", затем по возрастанию процента
+                        # VECTORIZED: sort priority (0 for not found, 1 for others)
+                        editable_rows['_sort_priority'] = (~editable_rows['Статус'].str.contains('❌ Не найдено', na=False)).astype(int)
+                        editable_rows = editable_rows.sort_values(
+                            ['_sort_priority', 'Совпадение %'],
+                            ascending=[True, True]
+                        )
+                        editable_rows = editable_rows.drop(columns=['_sort_priority'])
 
-                                # Сортируем: сначала "Нет совпадения", затем по возрастанию процента
-                                # VECTORIZED: sort priority (0 for not found, 1 for others)
-                                editable_rows['_sort_priority'] = (~editable_rows['Статус'].str.contains('❌ Не найдено', na=False)).astype(int)
-                                editable_rows = editable_rows.sort_values(
-                                    ['_sort_priority', 'Совпадение %'],
-                                    ascending=[True, True]
-                                )
-                                editable_rows = editable_rows.drop(columns=['_sort_priority'])
+                        st.markdown("#### ✏️ Редактирование городов с совпадением ≤ 95%")
 
-                                st.markdown("#### ✏️ Редактирование городов с совпадением ≤ 95%")
+                        # ============================================
+                        # CALLBACK для предотвращения полного rerun
+                        # ============================================
+                        def on_city_select_tab(selection_key, widget_key):
+                            """Callback для режима split - вызывается только при изменении"""
+                            selected = st.session_state.get(widget_key)
+                            if selected == "❌ Нет совпадения":
+                                st.session_state.manual_selections[selection_key] = "❌ Нет совпадения"
+                            elif selected:
+                                # Извлекаем название без процента
+                                city_match = selected.rsplit(' (', 1)[0]
+                                st.session_state.manual_selections[selection_key] = city_match
 
-                                # ============================================
-                                # CALLBACK для предотвращения полного rerun
-                                # ============================================
-                                def on_city_select_tab(selection_key, widget_key):
-                                    """Callback для режима split - вызывается только при изменении"""
-                                    selected = st.session_state.get(widget_key)
-                                    if selected == "❌ Нет совпадения":
-                                        st.session_state.manual_selections[selection_key] = "❌ Нет совпадения"
-                                    elif selected:
-                                        # Извлекаем название без процента
-                                        city_match = selected.rsplit(' (', 1)[0]
-                                        st.session_state.manual_selections[selection_key] = city_match
+                        # ============================================
+                        # Для каждого города показываем выбор
+                        for idx, row in editable_rows.iterrows():
+                            row_id = row['row_id']
+                            city_name = row['Исходное название']
+                            current_value = row['Итоговое гео']
+                            current_match = row['Совпадение %']
 
-                                # ============================================
-                                # Для каждого города показываем выбор
-                                for idx, row in editable_rows.iterrows():
-                                    row_id = row['row_id']
-                                    city_name = row['Исходное название']
-                                    current_value = row['Итоговое гео']
-                                    current_match = row['Совпадение %']
+                            # Используем кэш кандидатов из smart_match_city
+                            cache_key = (sheet_name, row_id)
+                            candidates = st.session_state.candidates_cache.get(cache_key, [])
+                            if not candidates:
+                                candidates = get_candidates_by_word(city_name, get_russian_cities_cached(hh_areas), limit=20)
 
-                                    # Используем кэш кандидатов из smart_match_city
-                                    cache_key = (sheet_name, row_id)
-                                    candidates = st.session_state.candidates_cache.get(cache_key, [])
-                                    if not candidates:
-                                        candidates = get_candidates_by_word(city_name, get_russian_cities_cached(hh_areas), limit=20)
-
-                                    # Кэшированная подготовка options (избегаем повторных вычислений)
-                                    options, candidates_dict = prepare_city_options(
-                                        tuple(candidates),
-                                        current_value,
-                                        current_match,
-                                        city_name
-                                    )
-
-                                    # Определяем текущий выбор
-                                    unique_key = f"select_{sheet_name}_{row_id}_{tab_idx}"
-                                    selection_key = (sheet_name, row_id)
-
-                                    if selection_key in st.session_state.manual_selections:
-                                        selected_value = st.session_state.manual_selections[selection_key]
-                                    else:
-                                        selected_value = current_value
-
-                                    # Быстрый поиск индекса O(1)
-                                    if selected_value == "❌ Нет совпадения":
-                                        default_idx = 0
-                                    else:
-                                        default_idx = candidates_dict.get(selected_value, 0)
-
-                                    col1, col2, col3 = st.columns([2, 3, 1])
-
-                                    with col1:
-                                        st.text(city_name)
-
-                                    with col2:
-                                        st.selectbox(
-                                            "Выберите город:",
-                                            options=options,
-                                            index=default_idx,
-                                            key=unique_key,
-                                            label_visibility="collapsed",
-                                            on_change=on_city_select_tab,
-                                            args=(selection_key, unique_key)
-                                        )
-
-                                    with col3:
-                                        st.text(f"{row['Совпадение %']:.1f}%")
-
-                                st.markdown("---")
-
-                            # Применяем ручные изменения через КЭШИРОВАННУЮ функцию
-                            # Фильтруем только изменения для текущей вкладки
-                            sheet_selections = {}
-                            for selection_key, new_value in st.session_state.manual_selections.items():
-                                if isinstance(selection_key, tuple):
-                                    key_sheet_name, row_id = selection_key
-                                    if key_sheet_name == sheet_name:
-                                        sheet_selections[row_id] = new_value
-                                else:
-                                    # Для обратной совместимости
-                                    sheet_selections[selection_key] = new_value
-
-                            # Используем кэшированную функцию вместо цикла
-                            # FIX: Передаем sheet_name в cache_key для уникальности кэша каждой вкладки
-                            result_df_sheet_final = apply_manual_selections_cached(
-                                result_df_sheet,
-                                sheet_selections,
-                                hh_areas,
-                                cache_key=f"tab_{sheet_name}"
-                            )
-                            
-                            # FIX: Используем кэшированную функцию подготовки данных
-                            # Это предотвращает повторные вычисления (merge, filter) при каждом клике
-                            final_output = prepare_final_sheet_output_cached(
-                                result_df_sheet_final,
-                                original_df_sheet,
-                                sheet_name
+                            # Кэшированная подготовка options (избегаем повторных вычислений)
+                            options, candidates_dict = prepare_city_options(
+                                tuple(candidates),
+                                current_value,
+                                current_match,
+                                city_name
                             )
 
-                            if len(final_output) > 0:
+                            # Определяем текущий выбор
+                            unique_key = f"select_{sheet_name}_{row_id}_{tab_idx}"
+                            selection_key = (sheet_name, row_id)
 
-                                # Превью итогового файла для вкладки
-                                st.markdown(f"#### 👀 Превью итогового файла - {sheet_name}")
-                                st.dataframe(final_output, use_container_width=True, height=300)
-
-                                # Кнопка скачивания
-                                st.markdown("---")
-                                safe_sheet_name = str(sheet_name).replace('/', '_').replace('\\', '_')[:50]
-
-
-
-                                # OPTIMIZED: Используем кэшированную генерацию файла
-                                excel_bytes = create_excel_bytes_cached(final_output, sheet_name)
-                                
-                                st.download_button(
-                                    label=f"📥 Скачать файл ({len(final_output)} уникальных городов)",
-                                    data=excel_bytes,
-                                    file_name=f"{safe_sheet_name}.xlsx",
-                                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                    use_container_width=True,
-                                    type="primary",
-                                    key=f"download_sheet_{sheet_name}_{tab_idx}"
-                                )
-                                
-                                # Сохраняем в session_state для архива (обновляется при каждом изменении селектора)
-                                st.session_state.vacancy_files[sheet_name] = {
-                                    'data': excel_bytes,
-                                    'name': f"{safe_sheet_name}.xlsx",
-                                    'count': len(final_output)
-                                }
+                            if selection_key in st.session_state.manual_selections:
+                                selected_value = st.session_state.manual_selections[selection_key]
                             else:
-                                st.warning("⚠️ Нет данных для выгрузки")
-                                # Удаляем из vacancy_files если данных больше нет
-                                if sheet_name in st.session_state.vacancy_files:
-                                    del st.session_state.vacancy_files[sheet_name]
+                                selected_value = current_value
+
+                            # Быстрый поиск индекса O(1)
+                            if selected_value == "❌ Нет совпадения":
+                                default_idx = 0
+                            else:
+                                default_idx = candidates_dict.get(selected_value, 0)
+
+                            col1, col2, col3 = st.columns([2, 3, 1])
+
+                            with col1:
+                                st.text(city_name)
+
+                            with col2:
+                                st.selectbox(
+                                    "Выберите город:",
+                                    options=options,
+                                    index=default_idx,
+                                    key=unique_key,
+                                    label_visibility="collapsed",
+                                    on_change=on_city_select_tab,
+                                    args=(selection_key, unique_key)
+                                )
+
+                            with col3:
+                                st.text(f"{row['Совпадение %']:.1f}%")
+
+                            # VISUAL: Добавляем разделитель как в Сценарии 2
+                            st.markdown("<hr style='margin-top: 5px; margin-bottom: 5px;'>", unsafe_allow_html=True)
+
+                    # Применяем ручные изменения через КЭШИРОВАННУЮ функцию
+                    # Фильтруем только изменения для текущей вкладки
+                    sheet_selections = {}
+                    for selection_key, new_value in st.session_state.manual_selections.items():
+                        if isinstance(selection_key, tuple):
+                            key_sheet_name, row_id = selection_key
+                            if key_sheet_name == sheet_name:
+                                sheet_selections[row_id] = new_value
+                        else:
+                            # Для обратной совместимости
+                            sheet_selections[selection_key] = new_value
+
+                    # Используем кэшированную функцию вместо цикла
+                    # FIX: Передаем sheet_name в cache_key для уникальности кэша каждой вкладки
+                    result_df_sheet_final = apply_manual_selections_cached(
+                        result_df_sheet,
+                        sheet_selections,
+                        hh_areas,
+                        cache_key=f"tab_{sheet_name}"
+                    )
+                    
+                    # FIX: Используем кэшированную функцию подготовки данных
+                    # Это предотвращает повторные вычисления (merge, filter) при каждом клике
+                    final_output = prepare_final_sheet_output_cached(
+                        result_df_sheet_final,
+                        original_df_sheet,
+                        sheet_name
+                    )
+
+                    if len(final_output) > 0:
+
+                        # Превью итогового файла для вкладки
+                        st.markdown(f"#### 👀 Превью итогового файла - {sheet_name}")
+                        st.dataframe(final_output, use_container_width=True, height=300)
+
+                        # Кнопка скачивания
+                        st.markdown("---")
+                        safe_sheet_name = str(sheet_name).replace('/', '_').replace('\\', '_')[:50]
+
+                        # OPTIMIZED: Используем кэшированную генерацию файла
+                        excel_bytes = create_excel_bytes_cached(final_output, sheet_name)
+                        
+                        st.download_button(
+                            label=f"📥 Скачать файл ({len(final_output)} уникальных городов)",
+                            data=excel_bytes,
+                            file_name=f"{safe_sheet_name}.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            use_container_width=True,
+                            type="primary",
+                            key=f"download_sheet_{sheet_name}_{tab_idx}"
+                        )
+                        
+                        # Сохраняем в session_state для архива (обновляется при каждом изменении селектора)
+                        st.session_state.vacancy_files[sheet_name] = {
+                            'data': excel_bytes,
+                            'name': f"{safe_sheet_name}.xlsx",
+                            'count': len(final_output)
+                        }
+                    else:
+                        st.warning("⚠️ Нет данных для выгрузки")
+                        # Удаляем из vacancy_files если данных больше нет
+                        if sheet_name in st.session_state.vacancy_files:
+                            del st.session_state.vacancy_files[sheet_name]
                     
                     # Кнопка для скачивания всех файлов архивом
                     st.markdown("---")
