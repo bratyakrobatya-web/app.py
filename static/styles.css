@@ -17,8 +17,8 @@
     --ui-shadow-hover: rgba(244, 48, 31, 0.35);
 
     /* Цвета для кнопок (красный) */
-    --primary-color: #f4301f;
-    --primary-dark: #d32f2f;
+    --primary-color: #1a1a1a;
+    --primary-dark: #000000;
 
     /* Тени для кнопок - красный */
     --shadow-primary: rgba(244, 48, 31, 0.25);
@@ -306,6 +306,8 @@ div[data-baseweb="select"] > div[class],
     background: white;
     transition: all 0.3s ease;
     cursor: pointer;
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 div[data-baseweb="select"] > div:hover,
@@ -315,7 +317,7 @@ div[data-baseweb="select"] > div[class]:hover,
 .stSelectbox:hover > div > div[class],
 [data-testid="stSelectbox"]:hover > div > div[class] {
     border-color: #1a1a1a !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
     filter: brightness(1.02);
 }
 
@@ -326,7 +328,8 @@ div[data-baseweb="select"] > div[class]:focus-within,
 .stSelectbox > div > div[class]:focus-within,
 [data-testid="stSelectbox"] > div > div[class]:focus-within {
     border-color: #1a1a1a !important;
-    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1) !important;
+    outline: none !important;
 }
 
 .stTextInput > div > div {
