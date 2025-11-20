@@ -100,6 +100,8 @@ def extract_city_and_region(text: str) -> Tuple[str, Optional[str]]:
         >>> extract_city_and_region("Иваново Ивановская область")
         ('Иваново', 'Ивановская область')
     """
+    # Конвертируем в строку на случай если передано число (float/int)
+    text = str(text).strip()
     text_lower = text.lower()
 
     # Префиксы населенных пунктов
@@ -178,8 +180,14 @@ def get_candidates_by_word(
         >>> candidates[0][0]
         'Москва'
     """
-    # Проверка на пустую строку
-    if not client_city or not client_city.strip():
+    # Проверка на пустое значение и конвертация в строку
+    if not client_city:
+        return []
+
+    # Конвертируем в строку на случай если передано число (float/int)
+    client_city = str(client_city).strip()
+
+    if not client_city:
         return []
 
     # Нормализуем исходное название для проверки исключений
