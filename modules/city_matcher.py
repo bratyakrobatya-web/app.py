@@ -245,6 +245,15 @@ def match_cities(
 
     # Не перезаписываем кэш, чтобы сохранить данные для всех вкладок
 
+    # Красный прогресс-бар через CSS
+    st.markdown("""
+        <style>
+        .stProgress > div > div > div > div {
+            background-color: #ff4b4b;
+        }
+        </style>
+    """, unsafe_allow_html=True)
+
     progress_bar = st.progress(0)
     status_text = st.empty()
 
@@ -429,6 +438,15 @@ def merge_cities_files(
     # Определяем названия столбцов для каждого файла
     first_col_name_df1 = df1.columns[0]
     first_col_name_df2 = df2.columns[0]
+
+    # Красный прогресс-бар через CSS
+    st.markdown("""
+        <style>
+        .stProgress > div > div > div > div {
+            background-color: #ff4b4b;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
     # Обрабатываем первый файл
     st.info("📄 Обработка первого файла...")
