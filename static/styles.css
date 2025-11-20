@@ -362,13 +362,33 @@ div[data-baseweb="select"]>div[class]:focus-within,
     outline: none !important;
 }
 
-/* Targeted fix for Scenario 1 Add Cities block */
-.scenario1-add-cities div[data-baseweb="select"]>div,
-.scenario1-add-cities .stSelectbox>div>div {
+/* GLOBAL FIX: Force black border for ALL selectboxes */
+/* Using high specificity to override any theme defaults */
+div[data-baseweb="select"]>div,
+.stSelectbox>div>div {
     border: 2px solid #1a1a1a !important;
     border-color: #1a1a1a !important;
     outline: none !important;
     box-shadow: none !important;
+    background-color: white !important;
+}
+
+/* Hover state */
+div[data-baseweb="select"]>div:hover,
+.stSelectbox:hover>div>div {
+    border-color: #1a1a1a !important;
+}
+
+/* Focus/Active state */
+div[data-baseweb="select"]>div:focus-within,
+.stSelectbox>div>div:focus-within {
+    border-color: #1a1a1a !important;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Dropdown menu items */
+div[data-baseweb="menu"] {
+    border-color: #1a1a1a !important;
 }
 
 .stTextInput>div>div {
