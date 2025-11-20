@@ -1582,7 +1582,7 @@ if uploaded_files and hh_areas is not None:
 
                         # Показываем города для редактирования
                         for normalized, city_data in sorted_cities:
-                            col1, col2, col3, col4 = st.columns([2, 3, 1, 1])
+                            col1, col2, col3 = st.columns([2, 3, 1])
 
                             with col1:
                                 # Показываем сколько раз встречается этот город
@@ -1636,9 +1636,6 @@ if uploaded_files and hh_areas is not None:
                             with col3:
                                 st.text(f"{city_data['score']:.1f}%")
 
-                            with col4:
-                                st.text(city_data['status'][:10])
-
                             st.markdown("<hr style='margin-top: 5px; margin-bottom: 5px;'>", unsafe_allow_html=True)
 
                         st.markdown("</div>", unsafe_allow_html=True)
@@ -1649,7 +1646,6 @@ if uploaded_files and hh_areas is not None:
                     # ============================================
                     # БЛОК: ДОБАВЛЕНИЕ ДОПОЛНИТЕЛЬНЫХ ГОРОДОВ
                     # ============================================
-                    st.markdown("---")
                     st.markdown("#### ➕ Добавить дополнительные города (применится ко всем вакансиям)")
 
                     # Инициализируем список добавленных городов для режима единой сверки
@@ -2845,6 +2841,58 @@ if uploaded_files and hh_areas is not None:
                         )
                         publisher_df = publisher_df.drop_duplicates(subset=['_normalized'], keep='first')
                         publisher_df = publisher_df.drop(columns=['_normalized'])
+
+                    # ============================================
+                    # АГРЕГАЦИЯ ЗАРПЛАТ ДЛЯ ДУБЛЕЙ ПО ИТОГОВОМУ ГЕО
+                    # ============================================
+                    # Находим столбцы с "Зарплата" в названии
+                    salary_cols = [col for col in publisher_df.columns if 'зарплата' in str(col).lower()]
+
+                    if len(salary_cols) >= 2 and len(publisher_df) > 0:
+                        # Определяем столбцы "от" и "до"
+                        salary_from_col = None
+                        salary_to_col = None
+
+                        for col in salary_cols:
+                            col_lower = str(col).lower()
+                            if 'от' in col_lower:
+                                salary_from_col = col
+                            elif 'до' in col_lower:
+                                salary_to_col = col
+
+                        # Если нашли оба столбца - выполняем агрегацию
+                        if salary_from_col and salary_to_col:
+                            # Преобразуем зарплаты в числа (убираем пробелы, запятые и т.д.)
+                            publisher_df[salary_from_col] = pd.to_numeric(
+                                publisher_df[salary_from_col].astype(str).str.replace(r'[^\d.]', '', regex=True),
+                                errors='coerce'
+                            )
+                            publisher_df[salary_to_col] = pd.to_numeric(
+                                publisher_df[salary_to_col].astype(str).str.replace(r'[^\d.]', '', regex=True),
+                                errors='coerce'
+                            )
+
+                            # Группируем по итоговому гео (первый столбец)
+                            city_col = original_cols[0]
+
+                            # Создаем агрегационный словарь
+                            agg_dict = {}
+
+                            # Для столбцов зарплат: MIN для "от", MAX для "до"
+                            agg_dict[salary_from_col] = 'min'
+                            agg_dict[salary_to_col] = 'max'
+
+                            # Для остальных столбцов: берём первое значение
+                            for col in publisher_df.columns:
+                                if col != city_col and col not in [salary_from_col, salary_to_col]:
+                                    agg_dict[col] = 'first'
+
+                            # Выполняем группировку
+                            publisher_df = publisher_df.groupby(city_col, as_index=False).agg(agg_dict)
+
+                            # Конвертируем зарплаты обратно в целые числа
+                            publisher_df[salary_from_col] = publisher_df[salary_from_col].fillna(0).astype(int)
+                            publisher_df[salary_to_col] = publisher_df[salary_to_col].fillna(0).astype(int)
 
                     # Санитизация данных перед экспортом (защита от CSV Injection)
                     publisher_df = sanitize_csv_content(publisher_df)
