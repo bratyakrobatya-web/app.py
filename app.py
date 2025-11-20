@@ -1282,7 +1282,565 @@ if uploaded_files and hh_areas is not None:
             if st.session_state.get('has_vacancy_mode', False):
                 # РЕЖИМ: Разделение по вакансиям/вкладкам с редактированием
                 st.markdown("---")
-                
+
+                # ============================================
+                # БЛОК: ВЫБОР РЕЖИМА РАБОТЫ (Единая сверка VS По вакансиям)
+                # ============================================
+                st.subheader("⚙️ Выберите режим работы")
+
+                # Инициализируем режим работы в session_state
+                if 'geo_sync_mode' not in st.session_state:
+                    # Определяем количество вакансий/вкладок
+                    if st.session_state.sheet_mode == 'tabs':
+                        num_items = len(st.session_state.sheets_results.keys())
+                    elif st.session_state.sheet_mode == 'columns':
+                        # Подсчитываем уникальные вакансии
+                        original_cols = st.session_state.original_df.columns.tolist()
+                        vacancy_col = None
+                        for col in original_cols:
+                            if 'вакансия' in str(col).lower():
+                                vacancy_col = col
+                                break
+                        if vacancy_col:
+                            num_items = len(result_df[vacancy_col].dropna().unique())
+                        else:
+                            num_items = 1
+                    else:
+                        num_items = 1
+
+                    # Если ≥3 вакансий/вкладок, рекомендуем режим единой сверки
+                    st.session_state.geo_sync_mode = 'unified' if num_items >= 3 else 'separate'
+
+                # Показываем информацию о преимуществах режимов
+                col_info1, col_info2 = st.columns(2)
+
+                with col_info1:
+                    st.info("""
+                    **⚡ Режим единой сверки гео**
+
+                    ✅ Распознаете все города **один раз**
+
+                    ✅ Автоматическое применение ко всем вакансиям
+
+                    ✅ Выгрузка общего гео в публикатор
+
+                    💡 Рекомендуется при ≥3 вакансиях
+                    """)
+
+                with col_info2:
+                    st.info("""
+                    **📋 Редактировать по вакансиям**
+
+                    ✅ Редактирование каждой вакансии отдельно
+
+                    ✅ Точечная настройка для каждой вакансии
+
+                    ✅ Полный контроль над каждым файлом
+
+                    💡 Для случаев с уникальными требованиями
+                    """)
+
+                # Выбор режима через кнопки
+                st.markdown("---")
+                col_btn1, col_btn2 = st.columns(2)
+
+                with col_btn1:
+                    if st.button("⚡ Режим единой сверки гео",
+                                use_container_width=True,
+                                type="primary" if st.session_state.geo_sync_mode == 'unified' else "secondary"):
+                        st.session_state.geo_sync_mode = 'unified'
+                        st.rerun()
+
+                with col_btn2:
+                    if st.button("📋 Редактировать по вакансиям",
+                                use_container_width=True,
+                                type="primary" if st.session_state.geo_sync_mode == 'separate' else "secondary"):
+                        st.session_state.geo_sync_mode = 'separate'
+                        st.rerun()
+
+                st.markdown("---")
+
+                # ============================================
+                # РЕЖИМ ЕДИНОЙ СВЕРКИ ГЕО
+                # ============================================
+                if st.session_state.geo_sync_mode == 'unified':
+                    st.markdown("### ⚡ Режим единой сверки гео")
+
+                    # Собираем все уникальные города из всех вкладок/вакансий
+                    all_unique_cities = {}  # {normalized_city: {original, matched, score, status, row_ids}}
+
+                    # Определяем источники данных (вкладки или вакансии)
+                    if st.session_state.sheet_mode == 'tabs':
+                        # Режим вкладок
+                        for sheet_name, sheet_result in st.session_state.sheets_results.items():
+                            result_df_temp = sheet_result['result_df']
+
+                            for idx, row in result_df_temp.iterrows():
+                                # Нормализуем название для группировки
+                                original = str(row['Исходное название']).strip()
+                                normalized = original.replace('ё', 'е').replace('Ё', 'Е').lower().strip()
+                                normalized = ' '.join(normalized.split())
+
+                                if normalized not in all_unique_cities:
+                                    all_unique_cities[normalized] = {
+                                        'original': original,
+                                        'matched': row['Итоговое гео'],
+                                        'score': row['Совпадение %'],
+                                        'status': row['Статус'],
+                                        'row_id': row['row_id'],
+                                        'sources': [(sheet_name, row['row_id'])]
+                                    }
+                                else:
+                                    # Город уже есть, добавляем источник
+                                    all_unique_cities[normalized]['sources'].append((sheet_name, row['row_id']))
+
+                    elif st.session_state.sheet_mode == 'columns':
+                        # Режим столбца "Вакансия"
+                        # Собираем уникальные города из result_df
+                        for idx, row in result_df.iterrows():
+                            original = str(row['Исходное название']).strip()
+                            normalized = original.replace('ё', 'е').replace('Ё', 'Е').lower().strip()
+                            normalized = ' '.join(normalized.split())
+
+                            if normalized not in all_unique_cities:
+                                # Определяем к каким вакансиям относится этот город
+                                original_cols = st.session_state.original_df.columns.tolist()
+                                vacancy_col = None
+                                for col in original_cols:
+                                    if 'вакансия' in str(col).lower():
+                                        vacancy_col = col
+                                        break
+
+                                vacancy_value = row[vacancy_col] if vacancy_col and vacancy_col in row else None
+
+                                all_unique_cities[normalized] = {
+                                    'original': original,
+                                    'matched': row['Итоговое гео'],
+                                    'score': row['Совпадение %'],
+                                    'status': row['Статус'],
+                                    'row_id': row['row_id'],
+                                    'sources': [(vacancy_value, row['row_id'])]
+                                }
+                            else:
+                                vacancy_value = row[vacancy_col] if vacancy_col and vacancy_col in row else None
+                                all_unique_cities[normalized]['sources'].append((vacancy_value, row['row_id']))
+
+                    # Фильтруем города для редактирования (совпадение ≤ 95%)
+                    editable_unique_cities = {
+                        k: v for k, v in all_unique_cities.items()
+                        if v['score'] <= 95 and 'Дубликат' not in v['status']
+                    }
+
+                    st.success(f"""
+                    📊 **Статистика:**
+                    - Всего уникальных городов: **{len(all_unique_cities)}**
+                    - Требуют проверки (совпадение ≤ 95%): **{len(editable_unique_cities)}**
+                    """)
+
+                    if len(editable_unique_cities) > 0:
+                        st.markdown("---")
+                        st.markdown("#### ✏️ Редактирование уникальных городов")
+
+                        # Инициализируем хранилище для изменений в режиме единой сверки
+                        if 'unified_selections' not in st.session_state:
+                            st.session_state.unified_selections = {}
+
+                        # CSS для selectbox
+                        st.markdown("""
+                            <style>
+                                .unified-edit-section div[data-baseweb="select"] > div,
+                                .unified-edit-section .stSelectbox > div > div {
+                                    border: 2px solid #1a1a1a !important;
+                                    border-color: #1a1a1a !important;
+                                    outline: none !important;
+                                    box-shadow: none !important;
+                                }
+                                .unified-edit-section div[data-baseweb="select"] > div:hover,
+                                .unified-edit-section .stSelectbox:hover > div > div {
+                                    border-color: #1a1a1a !important;
+                                    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
+                                }
+                                .unified-edit-section div[data-baseweb="select"] > div:focus-within,
+                                .unified-edit-section .stSelectbox > div > div:focus-within {
+                                    border-color: #1a1a1a !important;
+                                    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1) !important;
+                                }
+                            </style>
+                            <div class="unified-edit-section">
+                        """, unsafe_allow_html=True)
+
+                        # Callback для сохранения выбора
+                        def on_city_select_unified(normalized_key, widget_key):
+                            selected = st.session_state.get(widget_key)
+                            if selected == "❌ Нет совпадения":
+                                st.session_state.unified_selections[normalized_key] = "❌ Нет совпадения"
+                            elif selected:
+                                # Извлекаем название без процента
+                                city_match = selected.rsplit(' (', 1)[0]
+                                st.session_state.unified_selections[normalized_key] = city_match
+
+                        # Сортируем: сначала "Нет совпадения", затем по возрастанию процента
+                        sorted_cities = sorted(
+                            editable_unique_cities.items(),
+                            key=lambda x: (0 if '❌ Не найдено' in x[1]['status'] else 1, x[1]['score'])
+                        )
+
+                        # Показываем города для редактирования
+                        for normalized, city_data in sorted_cities:
+                            col1, col2, col3, col4 = st.columns([2, 3, 1, 1])
+
+                            with col1:
+                                # Показываем сколько раз встречается этот город
+                                occurrences = len(city_data['sources'])
+                                st.markdown(f"**{city_data['original']}** `(×{occurrences})`")
+
+                            with col2:
+                                # Получаем кандидатов
+                                city_name = city_data['original']
+                                current_value = city_data['matched']
+                                current_match = city_data['score']
+
+                                # Используем кэш или получаем кандидатов
+                                cache_key = ('unified', normalized)
+                                candidates = st.session_state.candidates_cache.get(cache_key, [])
+                                if not candidates:
+                                    candidates = get_candidates_by_word(city_name, get_russian_cities_cached(hh_areas), limit=20)
+                                    st.session_state.candidates_cache[cache_key] = candidates
+
+                                # Формируем options
+                                options, candidates_dict = prepare_city_options(
+                                    tuple(candidates),
+                                    current_value,
+                                    current_match,
+                                    city_name
+                                )
+
+                                # Определяем выбранное значение
+                                widget_key = f"unified_select_{normalized}"
+                                if normalized in st.session_state.unified_selections:
+                                    selected_value = st.session_state.unified_selections[normalized]
+                                else:
+                                    selected_value = current_value
+
+                                # Поиск индекса
+                                if selected_value == "❌ Нет совпадения":
+                                    default_idx = 0
+                                else:
+                                    default_idx = candidates_dict.get(selected_value, 0)
+
+                                st.selectbox(
+                                    "Выберите город:",
+                                    options=options,
+                                    index=default_idx,
+                                    key=widget_key,
+                                    label_visibility="collapsed",
+                                    on_change=on_city_select_unified,
+                                    args=(normalized, widget_key)
+                                )
+
+                            with col3:
+                                st.text(f"{city_data['score']:.1f}%")
+
+                            with col4:
+                                st.text(city_data['status'][:10])
+
+                            st.markdown("<hr style='margin-top: 5px; margin-bottom: 5px;'>", unsafe_allow_html=True)
+
+                        st.markdown("</div>", unsafe_allow_html=True)
+
+                    else:
+                        st.success("✅ Все города распознаны корректно (совпадение > 95%)!")
+
+                    # ============================================
+                    # БЛОК: ДОБАВЛЕНИЕ ДОПОЛНИТЕЛЬНЫХ ГОРОДОВ
+                    # ============================================
+                    st.markdown("---")
+                    st.markdown("#### ➕ Добавить дополнительные города (применится ко всем вакансиям)")
+
+                    # Инициализируем список добавленных городов для режима единой сверки
+                    if 'unified_added_cities' not in st.session_state:
+                        st.session_state.unified_added_cities = []
+
+                    col_selector = st.columns([1, 1])
+                    with col_selector[0]:
+                        russia_cities = get_russian_cities_cached(hh_areas)
+
+                        selected_city_unified = st.selectbox(
+                            "Выберите город:",
+                            options=sorted(russia_cities),
+                            key="unified_city_selector",
+                            help="Выберите город из справочника HH.ru"
+                        )
+
+                    col_btn_add1, col_btn_add2 = st.columns(2)
+                    with col_btn_add1:
+                        if st.button("➕ Добавить", use_container_width=True, type="primary", key="unified_add_btn"):
+                            if selected_city_unified and selected_city_unified not in st.session_state.unified_added_cities:
+                                st.session_state.unified_added_cities.append(selected_city_unified)
+                                st.success(f"✅ {selected_city_unified}")
+                                st.rerun()
+                            elif selected_city_unified in st.session_state.unified_added_cities:
+                                st.warning(f"⚠️ Уже добавлен")
+
+                    with col_btn_add2:
+                        if st.button("🗑️ Очистить", use_container_width=True, key="unified_clear_btn"):
+                            st.session_state.unified_added_cities = []
+                            st.rerun()
+
+                    if st.session_state.unified_added_cities:
+                        st.success(f"📋 Добавлено городов: **{len(st.session_state.unified_added_cities)}**")
+                        added_text = ", ".join(st.session_state.unified_added_cities)
+                        st.text_area(
+                            "Список:",
+                            value=added_text,
+                            height=80,
+                            disabled=True,
+                            label_visibility="collapsed",
+                            key="unified_added_list"
+                        )
+
+                    # ============================================
+                    # БЛОК: ВЫГРУЗКА РЕЗУЛЬТАТОВ
+                    # ============================================
+                    st.markdown("---")
+                    st.markdown("### 💾 Выгрузка результатов")
+
+                    # Применяем изменения из unified_selections ко всем вакансиям/вкладкам
+                    # Создаем mapping: normalized_city -> new_value
+                    unified_mapping = {}
+                    for normalized, new_value in st.session_state.unified_selections.items():
+                        unified_mapping[normalized] = new_value
+
+                    # Формируем файлы для каждой вакансии/вкладки с учетом изменений
+                    if 'vacancy_files' not in st.session_state:
+                        st.session_state.vacancy_files = {}
+
+                    # Также собираем все уникальные города для публикатора
+                    all_cities_for_publisher = set()
+
+                    if st.session_state.sheet_mode == 'tabs':
+                        # Режим вкладок
+                        st.info("Формируются файлы для каждой вкладки...")
+
+                        for sheet_name, sheet_result in st.session_state.sheets_results.items():
+                            result_df_sheet = sheet_result['result_df'].copy()
+                            original_df_sheet = st.session_state.sheets_data[sheet_name]['df']
+
+                            # Применяем изменения из unified_mapping
+                            for idx, row in result_df_sheet.iterrows():
+                                original = str(row['Исходное название']).strip()
+                                normalized = original.replace('ё', 'е').replace('Ё', 'Е').lower().strip()
+                                normalized = ' '.join(normalized.split())
+
+                                if normalized in unified_mapping:
+                                    new_value = unified_mapping[normalized]
+
+                                    if new_value == "❌ Нет совпадения":
+                                        result_df_sheet.at[idx, 'Итоговое гео'] = None
+                                        result_df_sheet.at[idx, 'ID HH'] = None
+                                        result_df_sheet.at[idx, 'Регион'] = None
+                                        result_df_sheet.at[idx, 'Совпадение %'] = 0
+                                        result_df_sheet.at[idx, 'Изменение'] = 'Нет'
+                                        result_df_sheet.at[idx, 'Статус'] = '❌ Не найдено'
+                                    else:
+                                        result_df_sheet.at[idx, 'Итоговое гео'] = new_value
+                                        if new_value in hh_areas:
+                                            result_df_sheet.at[idx, 'ID HH'] = hh_areas[new_value]['id']
+                                            result_df_sheet.at[idx, 'Регион'] = hh_areas[new_value]['parent']
+                                        result_df_sheet.at[idx, 'Изменение'] = 'Да' if check_if_changed(original, new_value) else 'Нет'
+                                        result_df_sheet.at[idx, 'Статус'] = '✅ Точное' if result_df_sheet.at[idx, 'Совпадение %'] >= 95 else '⚠️ Похожее'
+
+                            # Подготовка итогового вывода
+                            final_output = prepare_final_sheet_output_cached(
+                                result_df_sheet,
+                                original_df_sheet,
+                                sheet_name
+                            )
+
+                            # Добавляем вручную добавленные города
+                            if st.session_state.unified_added_cities:
+                                added_rows = []
+                                original_cols = original_df_sheet.columns.tolist()
+
+                                for city in st.session_state.unified_added_cities:
+                                    if city in hh_areas:
+                                        new_row = {col: None for col in original_cols}
+                                        new_row[original_cols[0]] = city
+                                        added_rows.append(new_row)
+
+                                if added_rows:
+                                    added_df = pd.DataFrame(added_rows)
+                                    final_output = pd.concat([final_output, added_df], ignore_index=True)
+
+                            # Собираем города для публикатора
+                            if len(final_output) > 0:
+                                for city in final_output[final_output.columns[0]].dropna().unique():
+                                    all_cities_for_publisher.add(city)
+
+                                # Сохраняем файл
+                                safe_sheet_name = str(sheet_name).replace('/', '_').replace('\\', '_')[:50]
+                                excel_bytes = create_excel_bytes_cached(final_output, sheet_name)
+
+                                st.session_state.vacancy_files[sheet_name] = {
+                                    'data': excel_bytes,
+                                    'name': f"{safe_sheet_name}.xlsx",
+                                    'count': len(final_output)
+                                }
+
+                    elif st.session_state.sheet_mode == 'columns':
+                        # Режим столбца "Вакансия"
+                        st.info("Формируются файлы для каждой вакансии...")
+
+                        # Находим столбец "Вакансия"
+                        original_cols = st.session_state.original_df.columns.tolist()
+                        vacancy_col = None
+                        for col in original_cols:
+                            if 'вакансия' in str(col).lower():
+                                vacancy_col = col
+                                break
+
+                        if vacancy_col:
+                            # Применяем изменения к result_df
+                            result_df_modified = result_df.copy()
+
+                            for idx, row in result_df_modified.iterrows():
+                                original = str(row['Исходное название']).strip()
+                                normalized = original.replace('ё', 'е').replace('Ё', 'Е').lower().strip()
+                                normalized = ' '.join(normalized.split())
+
+                                if normalized in unified_mapping:
+                                    new_value = unified_mapping[normalized]
+
+                                    if new_value == "❌ Нет совпадения":
+                                        result_df_modified.at[idx, 'Итоговое гео'] = None
+                                        result_df_modified.at[idx, 'ID HH'] = None
+                                        result_df_modified.at[idx, 'Регион'] = None
+                                        result_df_modified.at[idx, 'Совпадение %'] = 0
+                                        result_df_modified.at[idx, 'Изменение'] = 'Нет'
+                                        result_df_modified.at[idx, 'Статус'] = '❌ Не найдено'
+                                    else:
+                                        result_df_modified.at[idx, 'Итоговое гео'] = new_value
+                                        if new_value in hh_areas:
+                                            result_df_modified.at[idx, 'ID HH'] = hh_areas[new_value]['id']
+                                            result_df_modified.at[idx, 'Регион'] = hh_areas[new_value]['parent']
+                                        result_df_modified.at[idx, 'Изменение'] = 'Да' if check_if_changed(original, new_value) else 'Нет'
+
+                            # Получаем уникальные вакансии
+                            export_df = result_df_modified[
+                                (result_df_modified['Итоговое гео'].notna()) &
+                                (~result_df_modified['Статус'].str.contains('❌ Не найдено', na=False)) &
+                                (~result_df_modified['Статус'].str.contains('Пустое значение', na=False))
+                            ].copy()
+
+                            unique_vacancies = sorted(export_df[vacancy_col].dropna().unique())
+
+                            # Создаем файл для каждой вакансии
+                            for vacancy in unique_vacancies:
+                                vacancy_df = export_df[export_df[vacancy_col] == vacancy].copy()
+
+                                # Формируем итоговый DataFrame
+                                final_output = pd.DataFrame()
+                                final_output[original_cols[0]] = vacancy_df['Итоговое гео']
+
+                                for col in original_cols[1:]:
+                                    if col in vacancy_df.columns:
+                                        final_output[col] = vacancy_df[col].values
+
+                                # Удаляем дубликаты
+                                final_output = final_output.drop_duplicates(subset=[original_cols[0]], keep='first')
+
+                                # Добавляем вручную добавленные города
+                                if st.session_state.unified_added_cities:
+                                    added_rows = []
+                                    for city in st.session_state.unified_added_cities:
+                                        if city in hh_areas:
+                                            new_row = {col: None for col in original_cols}
+                                            new_row[original_cols[0]] = city
+                                            new_row[vacancy_col] = vacancy
+                                            added_rows.append(new_row)
+
+                                    if added_rows:
+                                        added_df = pd.DataFrame(added_rows)
+                                        final_output = pd.concat([final_output, added_df], ignore_index=True)
+
+                                # Собираем города для публикатора
+                                for city in final_output[original_cols[0]].dropna().unique():
+                                    all_cities_for_publisher.add(city)
+
+                                # Сохраняем файл
+                                safe_vacancy_name = str(vacancy).replace('/', '_').replace('\\', '_')[:50]
+                                excel_bytes = create_excel_bytes_cached(final_output, vacancy)
+
+                                st.session_state.vacancy_files[vacancy] = {
+                                    'data': excel_bytes,
+                                    'name': f"{safe_vacancy_name}.xlsx",
+                                    'count': len(final_output)
+                                }
+
+                    # Показываем кнопки для скачивания
+                    if st.session_state.vacancy_files:
+                        total_files = len(st.session_state.vacancy_files)
+                        total_cities_in_files = sum(f['count'] for f in st.session_state.vacancy_files.values())
+
+                        st.success(f"✅ Сформировано **{total_files}** файлов с общим количеством **{total_cities_in_files}** городов")
+
+                        # Кнопка для скачивания архива со всеми файлами
+                        col_download1, col_download2 = st.columns(2)
+
+                        with col_download1:
+                            st.markdown("#### 📦 Скачать все вакансии архивом")
+
+                            zip_buffer = io.BytesIO()
+                            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                                for item_name, file_info in st.session_state.vacancy_files.items():
+                                    zip_file.writestr(file_info['name'], file_info['data'])
+
+                            zip_buffer.seek(0)
+
+                            st.download_button(
+                                label=f"📥 Скачать архив ({total_files} файлов)",
+                                data=zip_buffer,
+                                file_name=f"all_vacancies_{datetime.now().strftime('%Y%m%d_%H%M%S')}.zip",
+                                mime="application/zip",
+                                use_container_width=True,
+                                type="primary"
+                            )
+
+                        with col_download2:
+                            st.markdown("#### 🚀 Скачать общее гео для публикатора")
+
+                            # Формируем единый файл со всеми уникальными городами для публикатора
+                            publisher_cities = sorted(list(all_cities_for_publisher))
+                            publisher_df = pd.DataFrame({
+                                'Город': publisher_cities
+                            })
+
+                            # Добавляем ID и регион из справочника
+                            publisher_df['ID HH'] = publisher_df['Город'].apply(
+                                lambda x: hh_areas[x]['id'] if x in hh_areas else None
+                            )
+                            publisher_df['Регион'] = publisher_df['Город'].apply(
+                                lambda x: hh_areas[x]['parent'] if x in hh_areas else None
+                            )
+
+                            publisher_excel = create_excel_bytes_cached(publisher_df, 'Общее гео')
+
+                            st.download_button(
+                                label=f"📥 Скачать для публикатора ({len(publisher_cities)} городов)",
+                                data=publisher_excel,
+                                file_name=f"publisher_geo_{datetime.now().strftime('%Y%m%d_%H%M%S')}.xlsx",
+                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                use_container_width=True,
+                                type="secondary"
+                            )
+
+                    # Останавливаем выполнение для режима единой сверки
+                    st.stop()
+
+                # ============================================
+                # РЕЖИМ РЕДАКТИРОВАНИЯ ПО ВАКАНСИЯМ (текущая логика)
+                # ============================================
+
                 # Определяем тип разделения: по вкладкам или по столбцу вакансий
                 if st.session_state.sheet_mode == 'tabs':
                     # РЕЖИМ ВКЛАДОК: каждая вкладка = отдельный файл
