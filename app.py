@@ -2776,9 +2776,9 @@ if uploaded_files and hh_areas is not None:
                 
                 with col1:
                     # Формируем файл для публикатора с исходными столбцами
-                    # FIX: Исключаем не найденные (❌ Не найдено) и дубликаты
+                    # FIX: Исключаем только не найденные (❌ Не найдено)
+                    # Дубликаты НЕ исключаем - они нужны для агрегации MIN/MAX зарплат
                     export_df = final_result_df[
-                        (~final_result_df['Статус'].str.contains('Дубликат', na=False)) &
                         (final_result_df['Итоговое гео'].notna()) &
                         (~final_result_df['Статус'].str.contains('❌ Не найдено', na=False))
                     ].copy()
@@ -2842,6 +2842,14 @@ if uploaded_files and hh_areas is not None:
                         .str.lower().str.strip()
                         .str.replace(r'\s+', ' ', regex=True)
                     )
+
+                    # ДИАГНОСТИКА: Показываем данные перед агрегацией
+                    salary_debug_cols = [col for col in publisher_df.columns if 'зарплата' in str(col).lower()]
+                    if salary_debug_cols:
+                        st.markdown("#### 🔍 DEBUG: Данные перед агрегацией зарплат")
+                        debug_df = publisher_df[[city_col, '_normalized'] + salary_debug_cols].copy()
+                        st.dataframe(debug_df, use_container_width=True)
+                        st.info(f"Всего строк для агрегации: {len(publisher_df)}")
 
                     # Находим столбцы с "Зарплата" в названии
                     salary_cols = [col for col in publisher_df.columns if 'зарплата' in str(col).lower()]
