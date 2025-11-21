@@ -3597,13 +3597,23 @@ with st.expander("Пятерочка", expanded=False):
     st.markdown("""
     ### Инструкция по запуску
 
-    **ВАЖНО!** Скрипт нужно запускать в Google Colab:
+    **ВАЖНО!** Скрипт нужно запускать в Google Colab.
 
-    1. Откройте [Google Colab](https://colab.research.google.com/)
-    2. Создайте новую ячейку
-    3. Скопируйте код ниже и вставьте в ячейку
-    4. Запустите код (нажмите ▶️ или Shift+Enter)
-    5. Загрузите файлы когда появится запрос
+    Нажмите на кнопку ниже, чтобы открыть готовый notebook с кодом:
+    """)
+
+    # Кнопка для открытия в Google Colab
+    colab_url = "https://colab.research.google.com/github/bratyakrobatya-web/app.py/blob/main/pyaterochka_colab.ipynb"
+    st.markdown(f"""
+    <a href="{colab_url}" target="_blank">
+        <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+    </a>
+    """, unsafe_allow_html=True)
+
+    st.markdown("""
+    #### Что делать после открытия:
+    1. Нажмите ▶️ на ячейку с кодом (или Shift+Enter)
+    2. Загрузите файлы когда появится запрос
 
     #### Ожидаемые файлы:
     - **"Отчет История лидов ВР"** или **"История лидов"** - отчет из SKILLAZ
